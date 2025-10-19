@@ -23,13 +23,6 @@ export default function App() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
 
   const [notes, setNotes] = useState([
     { id: 1, title: 'Quick Ideas', content: 'Remember to refactor the auth module...', timestamp: new Date().toISOString() }
@@ -368,7 +361,7 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-white text-black'}`}>
+    <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-slate-900 text-white' : 'bg-white text-black'}`}>
       <Header
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
