@@ -1,0 +1,22 @@
+# IDE files
+.idea/
+.vscode/
+
+# Dependencies
+node_modules/
+/frontend/node_modules
+/backend/node_modules
+
+# Build artifacts
+/frontend/dist
+/frontend/build
+/backend/dist
+/backend/build
+
+# Log files
+*.log
+
+# Environment variables
+.env
+.env.*
+!/.env.example
