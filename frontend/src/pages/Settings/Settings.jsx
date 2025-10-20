@@ -1,13 +1,8 @@
-const Settings = () => {
+import PropTypes from 'prop-types';
+
+const Settings = ({ toggleTheme }) => {
   const handleThemeChange = (e) => {
-    localStorage.setItem('theme', e.target.value);
-    // This is a simplified example. In a real application, you'd likely
-    // want to use a more robust state management solution to apply the theme.
-    if (e.target.value === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    toggleTheme(e.target.value);
   };
 
   return (
@@ -34,9 +29,10 @@ const Settings = () => {
           <h2 className="text-xl font-semibold mb-4">Preferences</h2>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Theme</label>
-            <select onChange={handleThemeChange} defaultValue={localStorage.getItem('theme') || 'dark'} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md">
+            <select id="theme-select" onChange={handleThemeChange} defaultValue={localStorage.getItem('theme') || 'dark'} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md">
               <option value="light">Light</option>
               <option value="dark">Dark</option>
+              <option value="blue-theme">Ocean Blue</option>
             </select>
           </div>
         </div>
@@ -44,6 +40,10 @@ const Settings = () => {
       </div>
     </div>
   );
+};
+
+Settings.propTypes = {
+  toggleTheme: PropTypes.func.isRequired,
 };
 
 export default Settings;
