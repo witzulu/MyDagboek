@@ -20,15 +20,14 @@ export default function App() {
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
+  const toggleTheme = (newTheme) => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
   };
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
+    root.classList.remove('light', 'dark', 'blue-theme');
     root.classList.add(theme);
   }, [theme]);
 
@@ -425,7 +424,7 @@ export default function App() {
               <Route path="/projects/:projectId/snippets" element={<CodeSnippets snippets={snippets} />} />
               <Route path="/projects/:projectId/time" element={<TimeTracking />} />
               <Route path="/projects/:projectId/team" element={<Team currentUser={currentUser} />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings" element={<Settings toggleTheme={toggleTheme} />} />
             </Route>
           )}
         </Routes>
