@@ -1,9 +1,14 @@
 import PropTypes from 'prop-types';
+import { useProject } from '../hooks/useProject';
 
 export default function ProgressReports({ projects }) {
+  const { selectedProject } = useProject();
+
   return (
     <div>
-      <h2 className="text-3xl font-bold mb-6 text-slate-800 dark:text-white">Progress Reports</h2>
+      <h2 className="text-3xl font-bold mb-6 text-slate-800 dark:text-white">
+        {selectedProject ? `${selectedProject.name}: Progress Reports` : 'Progress Reports'}
+      </h2>
       <div className="space-y-6">
         {projects.map(project => (
           <div key={project.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">

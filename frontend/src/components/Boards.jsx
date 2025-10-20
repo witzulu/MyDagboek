@@ -1,23 +1,19 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useProject } from '../hooks/useProject';
 import { Plus, X, Calendar, User, MessageSquare, ArrowRight } from 'lucide-react';
 
-export default function Boards({ boards, selectedBoard, setSelectedBoard, addColumn, addCard, deleteCard, updateCard, moveCard, getLabelColor }) {
+export default function Boards({ boards, selectedBoard, addColumn, addCard, deleteCard, updateCard, moveCard, getLabelColor }) {
+  const { selectedProject } = useProject();
   const currentBoard = boards.find(b => b.id === selectedBoard);
   const [selectedCard, setSelectedCard] = useState(null);
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <select
-          value={selectedBoard}
-          onChange={(e) => setSelectedBoard(e.target.value)}
-          className="text-3xl font-bold text-slate-800 dark:text-white bg-transparent border-none outline-none"
-        >
-          {boards.map(board => (
-            <option key={board.id} value={board.id}>{board.name}</option>
-          ))}
-        </select>
+        <h2 className="text-3xl font-bold text-slate-800 dark:text-white">
+            {selectedProject ? `${selectedProject.name}: Boards` : 'Boards'}
+        </h2>
         <button
           onClick={() => addColumn(selectedBoard)}
           className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-white"
@@ -263,7 +259,6 @@ export default function Boards({ boards, selectedBoard, setSelectedBoard, addCol
 Boards.propTypes = {
   boards: PropTypes.array.isRequired,
   selectedBoard: PropTypes.string.isRequired,
-  setSelectedBoard: PropTypes.func.isRequired,
   addColumn: PropTypes.func.isRequired,
   addCard: PropTypes.func.isRequired,
   deleteCard: PropTypes.func.isRequired,

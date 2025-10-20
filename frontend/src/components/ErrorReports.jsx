@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useProject } from '../hooks/useProject';
 import { X } from 'lucide-react';
 
 export default function ErrorReports({ errorReports, parseErrorReport, updateErrorReport, deleteErrorReport, getSeverityColor, getStatusColor }) {
+  const { selectedProject } = useProject();
   const [selectedError, setSelectedError] = useState(null);
   const [errorUploadText, setErrorUploadText] = useState('');
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Error Reports</h2>
+        <h2 className="text-3xl font-bold text-slate-800 dark:text-white">
+            {selectedProject ? `${selectedProject.name}: Error Reports` : 'Error Reports'}
+        </h2>
         <button
           onClick={() => {
             const example = JSON.stringify({

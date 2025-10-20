@@ -1,12 +1,36 @@
+import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useProject } from '../../hooks/useProject';
 import { Book, Layout, TrendingUp, Code, AlertCircle } from 'lucide-react';
 
-export default function Dashboard({ notes, boards, errorReports, snippets, setActiveSection, addNote, selectedBoard }) {
+const mockProjects = [
+  { id: 1, name: 'Dagboek v1.0', description: 'The first version of the Dagboek developer hub.', team: ['Alice', 'Bob'] },
+  { id: 2, name: 'API Refactor', description: 'Refactoring the backend API for better performance and scalability.', team: ['Charlie', 'Dana'] },
+  { id: 3, name: 'UI/UX Overhaul', description: 'A complete redesign of the user interface and experience.', team: ['Eve', 'Frank'] },
+];
+
+const ProjectDashboard = ({ notes, boards, errorReports, snippets, addNote, selectedBoard }) => {
+  const { projectId } = useParams();
+  const { setSelectedProject } = useProject();
+  const navigate = useNavigate();
+  const project = mockProjects.find(p => p.id === parseInt(projectId));
+
+  useEffect(() => {
+    if (project) {
+      setSelectedProject(project);
+    }
+  }, [project, setSelectedProject]);
+
+  if (!project) {
+    return <div>Project not found</div>;
+  }
+
   const currentBoard = boards.find(b => b.id === selectedBoard);
 
   return (
     <div>
-      <h2 className="text-3xl font-bold mb-6 text-slate-800 dark:text-white">Dashboard</h2>
+      <h2 className="text-3xl font-bold mb-6 text-slate-800 dark:text-white">{project.name} Dashboard</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
           <Book className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-2" />
@@ -64,28 +88,28 @@ export default function Dashboard({ notes, boards, errorReports, snippets, setAc
           <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => { setActiveSection('notebook'); addNote(); }}
+              onClick={() => { addNote(); navigate(`/projects/${projectId}/notebook`); }}
               className="p-4 bg-purple-100/20 dark:bg-purple-600/20 hover:bg-purple-200/30 dark:hover:bg-purple-600/30 border border-purple-300/50 dark:border-purple-500/50 rounded-lg text-left transition-colors"
             >
               <Book className="w-6 h-6 text-purple-600 dark:text-purple-400 mb-2" />
               <p className="font-medium text-sm">New Note</p>
             </button>
             <button
-              onClick={() => setActiveSection('boards')}
+              onClick={() => navigate(`/projects/${projectId}/boards`)}
               className="p-4 bg-blue-100/20 dark:bg-blue-600/20 hover:bg-blue-200/30 dark:hover:bg-blue-600/30 border border-blue-300/50 dark:border-blue-500/50 rounded-lg text-left transition-colors"
             >
               <Layout className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
               <p className="font-medium text-sm">Add Task</p>
             </button>
             <button
-              onClick={() => setActiveSection('errors')}
+              onClick={() => navigate(`/projects/${projectId}/errors`)}
               className="p-4 bg-red-100/20 dark:bg-red-600/20 hover:bg-red-200/30 dark:hover:bg-red-600/30 border border-red-300/50 dark:border-red-500/50 rounded-lg text-left transition-colors"
             >
               <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 mb-2" />
               <p className="font-medium text-sm">View Errors</p>
             </button>
             <button
-              onClick={() => setActiveSection('progress')}
+              onClick={() => navigate(`/projects/${projectId}/progress`)}
               className="p-4 bg-green-100/20 dark:bg-green-600/20 hover:bg-green-200/30 dark:hover:bg-green-600/30 border border-green-300/50 dark:border-green-500/50 rounded-lg text-left transition-colors"
             >
               <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400 mb-2" />
@@ -96,14 +120,15 @@ export default function Dashboard({ notes, boards, errorReports, snippets, setAc
       </div>
     </div>
   );
-}
-
-Dashboard.propTypes = {
-  notes: PropTypes.array.isRequired,
-  boards: PropTypes.array.isRequired,
-  errorReports: PropTypes.array.isRequired,
-  snippets: PropTypes.array.isRequired,
-  setActiveSection: PropTypes.func.isRequired,
-  addNote: PropTypes.func.isRequired,
-  selectedBoard: PropTypes.string.isRequired,
 };
+
+ProjectDashboard.propTypes = {
+    notes: PropTypes.array.isRequired,
+    boards: PropTypes.array.isRequired,
+    errorReports: PropTypes.array.isRequired,
+    snippets: PropTypes.array.isRequired,
+    addNote: PropTypes.func.isRequired,
+    selectedBoard: PropTypes.string.isRequired,
+};
+
+export default ProjectDashboard;

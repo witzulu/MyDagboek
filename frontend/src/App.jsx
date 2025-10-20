@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
+import MainLayout from './components/MainLayout';
 import Notebook from './components/Notebook';
 import Boards from './components/Boards';
 import ErrorReports from './components/ErrorReports';
@@ -10,18 +9,28 @@ import ProgressReports from './components/ProgressReports';
 import CodeSnippets from './components/CodeSnippets';
 import TimeTracking from './components/TimeTracking';
 import Team from './components/Team';
+import Projects from './pages/Projects/Projects';
+import Settings from './pages/Settings/Settings';
+import ProjectDashboard from './pages/Projects/ProjectDashboard';
+
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeSection, setActiveSection] = useState('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
   };
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+  }, [theme]);
 
 
   const [notes, setNotes] = useState([
@@ -154,7 +163,6 @@ export default function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setCurrentUser(null);
-    setActiveSection('dashboard');
   };
 
   const addNote = () => {
@@ -350,108 +358,78 @@ export default function App() {
     return colors[status] || 'bg-slate-600/20 text-slate-400';
   };
 
-  if (!isAuthenticated) {
-    return (
-      <LoginPage
-        loginForm={loginForm}
-        setLoginForm={setLoginForm}
-        handleLogin={handleLogin}
-      />
-    );
-  }
-
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-slate-900 text-white' : 'bg-white text-black'}`}>
-      <Header
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        currentUser={currentUser}
-        handleLogout={handleLogout}
-        theme={theme}
-        toggleTheme={toggleTheme}
-      />
-
-      <div className="flex">
-        {sidebarOpen && (
-          <Sidebar
-            activeSection={activeSection}
-            setActiveSection={setActiveSection}
-          />
-        )}
-
-        <main className="flex-1 p-6 overflow-x-auto">
-          {activeSection === 'dashboard' && (
-            <Dashboard
-              notes={notes}
-              boards={boards}
-              errorReports={errorReports}
-              snippets={snippets}
-              setActiveSection={setActiveSection}
-              addNote={addNote}
-              selectedBoard={selectedBoard}
-            />
-          )}
-
-          {activeSection === 'notebook' && (
-            <Notebook
-              notes={notes}
-              currentNote={currentNote}
-              setCurrentNote={setCurrentNote}
-              addNote={addNote}
-              updateNote={updateNote}
-              deleteNote={deleteNote}
-            />
-          )}
-
-          {activeSection === 'boards' && (
-            <Boards
-              boards={boards}
-              selectedBoard={selectedBoard}
-              setSelectedBoard={setSelectedBoard}
-              addColumn={addColumn}
-              addCard={addCard}
-              deleteCard={deleteCard}
-              updateCard={updateCard}
-              moveCard={moveCard}
-              getLabelColor={getLabelColor}
-            />
-          )}
-
-          {activeSection === 'errors' && (
-            <ErrorReports
-              errorReports={errorReports}
-              setErrorReports={setErrorReports}
-              parseErrorReport={parseErrorReport}
-              updateErrorReport={updateErrorReport}
-              deleteErrorReport={deleteErrorReport}
-              getSeverityColor={getSeverityColor}
-              getStatusColor={getStatusColor}
-            />
-          )}
-
-          {activeSection === 'progress' && (
-            <ProgressReports
-              projects={projects}
-            />
-          )}
-
-          {activeSection === 'snippets' && (
-            <CodeSnippets
-              snippets={snippets}
-            />
-          )}
-
-          {activeSection === 'time' && (
-            <TimeTracking />
-          )}
-
-          {activeSection === 'team' && (
-            <Team
+    <BrowserRouter>
+      <div className={`min-h-screen bg-background text-foreground`}>
+        <Routes>
+          {!isAuthenticated ? (
+            <Route path="*" element={<LoginPage
+              loginForm={loginForm}
+              setLoginForm={setLoginForm}
+              handleLogin={handleLogin}
+            />} />
+          ) : (
+            <Route path="/" element={<MainLayout
               currentUser={currentUser}
-            />
+              handleLogout={handleLogout}
+              theme={theme}
+              toggleTheme={toggleTheme}
+            />}>
+              <Route index element={<Navigate to="/projects" />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/:projectId" element={
+                <ProjectDashboard
+                  notes={notes}
+                  boards={boards}
+                  errorReports={errorReports}
+                  snippets={snippets}
+                  addNote={addNote}
+                  selectedBoard={selectedBoard}
+                />
+              } />
+              <Route path="/projects/:projectId/notebook" element={
+                <Notebook
+                  notes={notes}
+                  currentNote={currentNote}
+                  setCurrentNote={setCurrentNote}
+                  addNote={addNote}
+                  updateNote={updateNote}
+                  deleteNote={deleteNote}
+                />
+              } />
+              <Route path="/projects/:projectId/boards" element={
+                <Boards
+                  boards={boards}
+                  selectedBoard={selectedBoard}
+                  setSelectedBoard={setSelectedBoard}
+                  addColumn={addColumn}
+                  addCard={addCard}
+                  deleteCard={deleteCard}
+                  updateCard={updateCard}
+                  moveCard={moveCard}
+                  getLabelColor={getLabelColor}
+                />
+              } />
+              <Route path="/projects/:projectId/errors" element={
+                <ErrorReports
+                  errorReports={errorReports}
+                  setErrorReports={setErrorReports}
+                  parseErrorReport={parseErrorReport}
+                  updateErrorReport={updateErrorReport}
+                  deleteErrorReport={deleteErrorReport}
+                  getSeverityColor={getSeverityColor}
+                  getStatusColor={getStatusColor}
+                />
+              } />
+              <Route path="/projects/:projectId/progress" element={<ProgressReports projects={projects} />} />
+              <Route path="/projects/:projectId/snippets" element={<CodeSnippets snippets={snippets} />} />
+              <Route path="/projects/:projectId/time" element={<TimeTracking />} />
+              <Route path="/projects/:projectId/team" element={<Team currentUser={currentUser} />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
           )}
-        </main>
+        </Routes>
       </div>
-    </div>
+    </BrowserRouter>
   );
 }

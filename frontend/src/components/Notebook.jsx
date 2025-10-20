@@ -1,11 +1,16 @@
 import PropTypes from 'prop-types';
 import { Plus, Trash2 } from 'lucide-react';
+import { useProject } from '../hooks/useProject';
 
 export default function Notebook({ notes, currentNote, setCurrentNote, addNote, updateNote, deleteNote }) {
+  const { selectedProject } = useProject();
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Notebook</h2>
+        <h2 className="text-3xl font-bold text-slate-800 dark:text-white">
+          {selectedProject ? `${selectedProject.name}: Notebook` : 'Notebook'}
+        </h2>
         <button
           onClick={addNote}
           className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-white"
