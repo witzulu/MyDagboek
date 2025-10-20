@@ -21,8 +21,10 @@ export default function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
 
   const toggleTheme = (newTheme) => {
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
+    if (typeof newTheme === 'string') {
+      setTheme(newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
   };
 
   useEffect(() => {
