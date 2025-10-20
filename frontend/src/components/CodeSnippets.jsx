@@ -1,11 +1,16 @@
 import PropTypes from 'prop-types';
+import { useProject } from '../hooks/useProject';
 import { Plus } from 'lucide-react';
 
 export default function CodeSnippets({ snippets }) {
+  const { selectedProject } = useProject();
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Code Snippets</h2>
+        <h2 className="text-3xl font-bold text-slate-800 dark:text-white">
+            {selectedProject ? `${selectedProject.name}: Code Snippets` : 'Code Snippets'}
+        </h2>
         <button className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-white">
           <Plus className="w-4 h-4" />
           New Snippet
