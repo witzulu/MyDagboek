@@ -41,9 +41,9 @@ To get a local copy up and running, follow these simple steps.
     npm install
     ```
 3.  **Set up environment variables:**
-    Create a `.env` file in the `backend` directory by copying the example file:
+    Create a `.env` file in the `backend` directory by copying the template file:
     ```sh
-    cp .env.example .env
+    cp env.template .env
     ```
     Update the `.env` file with your database connection string and a secure JWT secret.
 
