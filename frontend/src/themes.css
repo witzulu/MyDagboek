@@ -1,0 +1,198 @@
+/* Base styles and CSS variables for all themes */
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Default CSS variables that will be overridden by themes */
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --primary: 262.1 83.3% 57.8%;
+  --primary-foreground: 262.1 83.3% 100%;
+  --secondary: 240 3.7% 15.9%;
+  --accent: 217.2 91.2% 59.8%;
+  --muted: 240 5% 64.9%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 262.1 83.3% 57.8%;
+  --radius: 0.5rem;
+}
+
+/* Dark Theme (Default) */
+.dark-theme {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --primary: 262.1 83.3% 57.8%;
+  --primary-foreground: 262.1 83.3% 100%;
+  --secondary: 240 3.7% 15.9%;
+  --accent: 217.2 91.2% 59.8%;
+  --muted: 240 5% 64.9%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 262.1 83.3% 57.8%;
+}
+
+/* Light Theme */
+.light-theme {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --primary: 262.1 83.3% 57.8%;
+  --primary-foreground: 262.1 83.3% 100%;
+  --secondary: 240 4.8% 95.9%;
+  --accent: 217.2 91.2% 59.8%;
+  --muted: 240 3.8% 46.1%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 262.1 83.3% 57.8%;
+}
+
+/* Ocean Theme */
+.blue-theme {
+  --background: 202 40% 9%;
+  --foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 217.2 91.2% 100%;
+  --secondary: 215 25% 27%;
+  --accent: 217.2 91.2% 59.8%;
+  --muted: 215 20% 65%;
+  --border: 215 25% 27%;
+  --input: 215 25% 27%;
+  --ring: 217.2 91.2% 59.8%;
+}
+
+/* Neon Theme */
+.purple-theme {
+  --background: 274 70% 5%;
+  --foreground: 270 100% 98%;
+  --primary: 274 100% 65%;
+  --primary-foreground: 274 100% 100%;
+  --secondary: 274 50% 15%;
+  --accent: 320 100% 55%;
+  --muted: 274 30% 60%;
+  --border: 274 50% 15%;
+  --input: 274 50% 15%;
+  --ring: 274 100% 65%;
+}
+
+/* Forest Theme */
+.green-theme {
+  --background: 120 30% 8%;
+  --foreground: 120 40% 98%;
+  --primary: 142 71% 45%;
+  --primary-foreground: 142 71% 100%;
+  --secondary: 120 25% 18%;
+  --accent: 35 92% 60%;
+  --muted: 120 20% 65%;
+  --border: 120 25% 18%;
+  --input: 120 25% 18%;
+  --ring: 142 71% 45%;
+}
+
+/* Sunset Theme */
+.orange-theme {
+  --background: 20 40% 8%;
+  --foreground: 20 40% 98%;
+  --primary: 24 100% 55%;
+  --primary-foreground: 24 100% 100%;
+  --secondary: 20 30% 18%;
+  --accent: 45 100% 55%;
+  --muted: 20 25% 65%;
+  --border: 20 30% 18%;
+  --input: 20 30% 18%;
+  --ring: 24 100% 55%;
+}
+
+/* Utility classes for theme-aware styling */
+.bg-background {
+  background-color: hsl(var(--background));
+}
+
+.text-foreground {
+  color: hsl(var(--foreground));
+}
+
+.bg-primary {
+  background-color: hsl(var(--primary));
+}
+
+.text-primary-foreground {
+  color: hsl(var(--primary-foreground));
+}
+
+.bg-secondary {
+  background-color: hsl(var(--secondary));
+}
+
+.bg-accent {
+  background-color: hsl(var(--accent));
+}
+
+.text-muted {
+  color: hsl(var(--muted));
+}
+
+.border-border {
+  border-color: hsl(var(--border));
+}
+
+.bg-input {
+  background-color: hsl(var(--input));
+}
+
+.ring-ring {
+  ring-color: hsl(var(--ring));
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Custom scrollbar styling that adapts to themes */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--secondary));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
+
+/* Focus styles that adapt to themes */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Selection styles that adapt to themes */
+::selection {
+  background-color: hsl(var(--primary) / 0.3);
+  color: hsl(var(--foreground));
+}
+
+/* Placeholder styling that adapts to themes */
+::placeholder {
+  color: hsl(var(--muted));
+  opacity: 0.7;
+}

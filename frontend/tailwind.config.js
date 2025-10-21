@@ -1,6 +1,5 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -14,6 +13,15 @@ export default {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
         },
+        secondary: 'hsl(var(--secondary))',
+        accent: 'hsl(var(--accent))',
+        muted: 'hsl(var(--muted))',
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+      },
+      borderRadius: {
+        DEFAULT: 'var(--radius)',
       },
     },
   },

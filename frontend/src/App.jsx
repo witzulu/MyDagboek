@@ -12,29 +12,29 @@ import Team from './components/Team';
 import Projects from './pages/Projects/Projects';
 import Settings from './pages/Settings/Settings';
 import ProjectDashboard from './pages/Projects/ProjectDashboard';
-
+import './themes.css';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+ 
 
-  const toggleTheme = (newTheme) => {
-    if (typeof newTheme === 'string') {
-      setTheme(newTheme);
-      localStorage.setItem('theme', newTheme);
-    }
-  };
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark', 'blue-theme');
-    root.classList.add(theme);
-  }, [theme]);
-
-
-  const [notes, setNotes] = useState([
+  const handleLogin = () => {
+      if (loginForm.username) {
+        setCurrentUser({ username: loginForm.username, role: 'Developer' });
+        setIsAuthenticated(true);
+      }
+    };
+  
+    const handleLogout = () => {
+      setIsAuthenticated(false);
+      setCurrentUser(null);
+      setLoginForm({ username: '', password: '' });
+    };
+  
+   
+    const [notes, setNotes] = useState([
     { id: 1, title: 'Quick Ideas', content: 'Remember to refactor the auth module...', timestamp: new Date().toISOString() }
   ]);
   const [currentNote, setCurrentNote] = useState(null);
@@ -154,17 +154,7 @@ export default function App() {
     { id: 1, title: 'Auth Helper', language: 'javascript', code: 'const validateToken = (token) => { ... }' }
   ]);
 
-  const handleLogin = () => {
-    if (loginForm.username) {
-      setCurrentUser({ username: loginForm.username, role: 'Developer' });
-      setIsAuthenticated(true);
-    }
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-  };
+  
 
   const addNote = () => {
     const newNote = {
