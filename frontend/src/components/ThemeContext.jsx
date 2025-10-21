@@ -106,51 +106,57 @@ export const useTheme = () => {
 };
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    // Initialize theme from localStorage or system preference
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme && themes.find(t => t.id === savedTheme)) {
-      return savedTheme;
-    }
-    
-    // Check system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return prefersDark ? 'dark' : 'light';
-  });
-
-  const applyTheme = (themeId) => {
-    const themeData = themes.find(t => t.id === themeId);
-    if (!themeData) return;
-
-    const root = document.documentElement;
-    
-    // Remove all theme classes
-    themes.forEach(t => root.classList.remove(`${t.id}-theme`));
-    
-    // Add new theme class
-    root.classList.add(`${themeId}-theme`);
-    
-    // Update CSS variables
-    Object.entries(themeData.colors).forEach(([key, value]) => {
-      root.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
-    });
-
-    // Save to localStorage
-    localStorage.setItem('theme', themeId);
-    
-    // Dispatch custom event for other components
-    window.dispatchEvent(new CustomEvent('themeChange', { detail: themeId }));
-  };
+  const [theme, setTheme] = useState('dark'); // Default to dark, client-side effect will override
 
   useEffect(() => {
-    applyTheme(theme);
+    try {
+      // This effect runs only on the client
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+      setTheme(initialTheme);
+    } catch (error) {
+      console.error('Error in theme initialization:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      // This effect applies the theme whenever it changes
+      const applyTheme = (themeId) => {
+        const themeData = themes.find(t => t.id === themeId);
+        if (!themeData) return;
+
+        const body = document.body;
+
+        // Remove all theme classes
+        themes.forEach(t => body.classList.remove(`${t.id}-theme`));
+
+        // Add new theme class
+        body.classList.add(`${themeId}-theme`);
+
+        // Update CSS variables
+        Object.entries(themeData.colors).forEach(([key, value]) => {
+          body.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
+        });
+
+        // Save to localStorage
+        localStorage.setItem('theme', themeId);
+
+        // Dispatch custom event for other components
+        window.dispatchEvent(new CustomEvent('themeChange', { detail: themeId }));
+      };
+
+      applyTheme(theme);
+    } catch (error) {
+      console.error('Error applying theme:', error);
+    }
   }, [theme]);
 
   useEffect(() => {
-    // Listen for system theme changes
+    // This effect listens for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = (e) => {
-      // Only auto-switch if user hasn't manually set a preference
       if (!localStorage.getItem('theme')) {
         setTheme(e.matches ? 'dark' : 'light');
       }
