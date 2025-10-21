@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Moon, Sun, Cloud, Sparkles, Leaf, Zap } from 'lucide-react';
 
@@ -120,38 +120,38 @@ export function ThemeProvider({ children }) {
     }
   }, []);
 
+  const applyTheme = useCallback((themeId) => {
+    const themeData = themes.find(t => t.id === themeId);
+    if (!themeData) return;
+
+    const body = document.body;
+
+    // Remove all theme classes
+    themes.forEach(t => body.classList.remove(`${t.id}-theme`));
+
+    // Add new theme class
+    body.classList.add(`${themeId}-theme`);
+
+    // Update CSS variables
+    Object.entries(themeData.colors).forEach(([key, value]) => {
+      body.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
+    });
+
+    // Save to localStorage
+    localStorage.setItem('theme', themeId);
+
+    // Dispatch custom event for other components
+    window.dispatchEvent(new CustomEvent('themeChange', { detail: themeId }));
+  }, []);
+
   useEffect(() => {
     try {
       // This effect applies the theme whenever it changes
-      const applyTheme = (themeId) => {
-        const themeData = themes.find(t => t.id === themeId);
-        if (!themeData) return;
-
-        const body = document.body;
-
-        // Remove all theme classes
-        themes.forEach(t => body.classList.remove(`${t.id}-theme`));
-
-        // Add new theme class
-        body.classList.add(`${themeId}-theme`);
-
-        // Update CSS variables
-        Object.entries(themeData.colors).forEach(([key, value]) => {
-          body.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
-        });
-
-        // Save to localStorage
-        localStorage.setItem('theme', themeId);
-
-        // Dispatch custom event for other components
-        window.dispatchEvent(new CustomEvent('themeChange', { detail: themeId }));
-      };
-
       applyTheme(theme);
     } catch (error) {
       console.error('Error applying theme:', error);
     }
-  }, [theme]);
+  }, [theme, applyTheme]);
 
   useEffect(() => {
     // This effect listens for system theme changes
