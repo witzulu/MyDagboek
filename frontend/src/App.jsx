@@ -18,7 +18,6 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [theme, setTheme] = useState('dark');
  
 
   const handleLogin = () => {
@@ -415,7 +414,7 @@ export default function App() {
               <Route path="/projects/:projectId/snippets" element={<CodeSnippets snippets={snippets} />} />
               <Route path="/projects/:projectId/time" element={<TimeTracking />} />
               <Route path="/projects/:projectId/team" element={<Team currentUser={currentUser} />} />
-              <Route path="/settings" element={<Settings toggleTheme={toggleTheme} />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
           )}
         </Routes>
