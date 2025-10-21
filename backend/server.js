@@ -34,12 +34,47 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dagboek', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('✅ MongoDB connected'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dagboek', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log('✅ MongoDB connected');
+    seedAdminUser();
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  }
+};
+
+const seedAdminUser = async () => {
+    const User = require('./src/models/User');
+    const bcrypt = require('bcryptjs');
+
+    try {
+        const adminExists = await User.findOne({ role: 'admin' });
+        if (!adminExists) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash('password', salt);
+
+            const adminUser = new User({
+                name: 'Admin User',
+                email: 'admin@dagboek.com',
+                password: hashedPassword,
+                role: 'admin',
+                status: 'approved'
+            });
+
+            await adminUser.save();
+            console.log('✅ Default admin user created.');
+        }
+    } catch (error) {
+        console.error('❌ Error seeding admin user:', error);
+    }
+};
+
+connectDB();
 
 // Mount routers
 app.use('/api/auth', authRoutes);

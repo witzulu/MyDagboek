@@ -53,6 +53,10 @@ To get a local copy up and running, follow these simple steps.
     ```
     The server will be running on `http://localhost:5000`.
 
+    > **Note:** The first time you run the backend server, it will automatically create a default admin account with the following credentials:
+    > - **Email:** `admin@dagboek.com`
+    > - **Password:** `password`
+
 ## Roadmap
 
 - [x] Add a backend to persist data
