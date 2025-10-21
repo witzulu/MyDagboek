@@ -12,31 +12,51 @@ To get a local copy up and running, follow these simple steps.
 
 ### Prerequisites
 
-* npm
-  ```sh
-  npm install npm@latest -g
-  ```
+*   **Node.js and npm:** Make sure you have Node.js and npm installed. You can download them from [nodejs.org](https://nodejs.org/).
+*   **MongoDB:** A running instance of MongoDB is required. You can use a local installation or a cloud service like MongoDB Atlas.
 
-### Installation
+### Frontend Setup
 
-1. Clone the repo
-   ```sh
-   git clone https://github.com/witzulu/MyDagboek.git
-   ```
-2. Install NPM packages
-   ```sh
-   cd frontend
-   npm install
-   ```
-3. Start the development server
+1.  **Navigate to the frontend directory:**
+    ```sh
+    cd frontend
+    ```
+2.  **Install dependencies:**
+    ```sh
+    npm install
+    ```
+3.  **Start the development server:**
     ```sh
     npm run dev
     ```
 
+### Backend Setup
+
+1.  **Navigate to the backend directory:**
+    ```sh
+    cd backend
+    ```
+2.  **Install dependencies:**
+    ```sh
+    npm install
+    ```
+3.  **Set up environment variables:**
+    Create a `.env` file in the `backend` directory by copying the example file:
+    ```sh
+    cp .env.example .env
+    ```
+    Update the `.env` file with your database connection string and a secure JWT secret.
+
+4.  **Run the development server:**
+    ```sh
+    npm run dev
+    ```
+    The server will be running on `http://localhost:5000`.
+
 ## Roadmap
 
-- [ ] Add a backend to persist data
-- [ ] Implement user authentication
+- [x] Add a backend to persist data
+- [x] Implement user authentication
 - [ ] Add more features to the notebook and boards
 - [ ] Add a CI/CD pipeline
 - [ ] Add a testing suite
