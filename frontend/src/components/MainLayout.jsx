@@ -2,19 +2,19 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import PropTypes from 'prop-types';
+import { useAuth } from '../context/AuthContext';
 
-const MainLayout = ({ currentUser, handleLogout, theme, toggleTheme }) => {
+const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { user, logout } = useAuth();
 
   return (
     <>
       <Header
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        currentUser={currentUser}
-        handleLogout={handleLogout}
-
+        currentUser={user}
+        handleLogout={logout}
       />
       <div className="flex">
         {sidebarOpen && <Sidebar />}
@@ -24,12 +24,6 @@ const MainLayout = ({ currentUser, handleLogout, theme, toggleTheme }) => {
       </div>
     </>
   );
-};
-
-MainLayout.propTypes = {
-    currentUser: PropTypes.object,
-    handleLogout: PropTypes.func.isRequired,
-
 };
 
 export default MainLayout;
