@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Book, Moon, Sun, Monitor, Sparkles, Cloud, Leaf, Zap } from 'lucide-react';
+import { Book, Moon, Sun, Sparkles, Cloud, Leaf, Zap } from 'lucide-react';
 import { useTheme } from './ThemeContext';
 
 export default function LoginPage({ loginForm, setLoginForm, handleLogin }) {

@@ -1,8 +1,10 @@
-import PropTypes from 'prop-types';
+import { useTheme } from '../../components/ThemeContext';
 
-const Settings = ({ toggleTheme }) => {
+const Settings = () => {
+  const { theme, setTheme, themes } = useTheme();
+
   const handleThemeChange = (e) => {
-    toggleTheme(e.target.value);
+    setTheme(e.target.value);
   };
 
   return (
@@ -29,10 +31,10 @@ const Settings = ({ toggleTheme }) => {
           <h2 className="text-xl font-semibold mb-4">Preferences</h2>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Theme</label>
-            <select id="theme-select" onChange={handleThemeChange} defaultValue={localStorage.getItem('theme') || 'dark'} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md">
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-              <option value="blue-theme">Ocean Blue</option>
+            <select id="theme-select" onChange={handleThemeChange} value={theme} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md">
+              {themes.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -40,10 +42,6 @@ const Settings = ({ toggleTheme }) => {
       </div>
     </div>
   );
-};
-
-Settings.propTypes = {
-  toggleTheme: PropTypes.func.isRequired,
 };
 
 export default Settings;

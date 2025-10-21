@@ -18,6 +18,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [theme, setTheme] = useState('dark');
  
 
   const handleLogin = () => {
@@ -363,8 +364,6 @@ export default function App() {
             <Route path="/" element={<MainLayout
               currentUser={currentUser}
               handleLogout={handleLogout}
-              theme={theme}
-              toggleTheme={toggleTheme}
             />}>
               <Route index element={<Navigate to="/projects" />} />
               <Route path="/projects" element={<Projects />} />
