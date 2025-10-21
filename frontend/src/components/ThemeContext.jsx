@@ -106,11 +106,10 @@ export const useTheme = () => {
 };
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('dark'); // Default to dark, client-side effect will override
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
     try {
-      // This effect runs only on the client
       const savedTheme = localStorage.getItem('theme');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
@@ -124,17 +123,18 @@ export function ThemeProvider({ children }) {
     const themeData = themes.find(t => t.id === themeId);
     if (!themeData) return;
 
-    const body = document.body;
+    // FIXED: Apply to document.documentElement instead of document.body
+    const root = document.documentElement;
 
     // Remove all theme classes
-    themes.forEach(t => body.classList.remove(`${t.id}-theme`));
+    themes.forEach(t => root.classList.remove(`${t.id}-theme`));
 
     // Add new theme class
-    body.classList.add(`${themeId}-theme`);
+    root.classList.add(`${themeId}-theme`);
 
-    // Update CSS variables
+    // Update CSS variables on root element
     Object.entries(themeData.colors).forEach(([key, value]) => {
-      body.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
+      root.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
     });
 
     // Save to localStorage
@@ -146,7 +146,6 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     try {
-      // This effect applies the theme whenever it changes
       applyTheme(theme);
     } catch (error) {
       console.error('Error applying theme:', error);
@@ -154,7 +153,6 @@ export function ThemeProvider({ children }) {
   }, [theme, applyTheme]);
 
   useEffect(() => {
-    // This effect listens for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = (e) => {
       if (!localStorage.getItem('theme')) {

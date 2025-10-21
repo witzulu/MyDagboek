@@ -15,11 +15,11 @@ export default function LoginPage({ loginForm, setLoginForm, handleLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-purple-100 to-slate-100 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 flex items-center justify-center p-4">
-      <div className="bg-background/50 backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md border border-border">
+    <div className="min-h-screen  from-slate-100 via-purple-100 to-slate-100 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 flex items-center justify-center p-4">
+      <div className=" backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md border border-border">
         {/* Theme Selector */}
         <div className="absolute top-4 right-4">
-          <div className="flex items-center gap-2 bg-secondary/50 backdrop-blur-sm rounded-lg p-2">
+          <div className="flex items-center gap-2  backdrop-blur-sm rounded-lg p-2">
             {themes.slice(0, 4).map((t) => {
               const Icon = themeIcons[t.id];
               return (

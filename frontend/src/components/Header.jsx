@@ -1,15 +1,15 @@
 import PropTypes from 'prop-types';
 import { Book, Menu, X, Sun, Moon } from 'lucide-react';
 import ThemeSwitcher from './ThemeSwitcher';
+import { useTheme } from './ThemeContext';
 
 export default function Header({ 
   sidebarOpen, 
   setSidebarOpen, 
   currentUser, 
-  handleLogout, 
-  theme, 
-  toggleTheme 
+  handleLogout
 }) {
+  const { theme, setTheme } = useTheme();
   return (
    <header className="bg-background border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
          <div className="flex items-center gap-4">
@@ -24,10 +24,10 @@ export default function Header({
          </div>
    
          <div className="flex items-center gap-4">
-           <ThemeSwitcher 
-             currentTheme={theme} 
-             onThemeChange={setTheme}
-           />
+          <ThemeSwitcher 
+        currentTheme={theme} 
+        onThemeChange={setTheme} 
+      />
            
            <div className="text-right">
              <p className="text-sm font-medium text-foreground">{currentUser.username}</p>
@@ -49,7 +49,5 @@ Header.propTypes = {
   sidebarOpen: PropTypes.bool.isRequired,
   setSidebarOpen: PropTypes.func.isRequired,
   currentUser: PropTypes.object.isRequired,
-  handleLogout: PropTypes.func.isRequired,
-  theme: PropTypes.string.isRequired,
-  toggleTheme: PropTypes.func.isRequired,
+  handleLogout: PropTypes.func.isRequired,  
 };

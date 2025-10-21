@@ -30,6 +30,18 @@ code {
   --radius: 0.5rem;
 }
 
+/* FIXED: Apply background to html and body elements */
+html {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  min-height: 100vh;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  min-height: 100vh;
+}
 
 /* Utility classes for theme-aware styling */
 .bg-background {
@@ -52,6 +64,7 @@ code {
   background-color: hsl(var(--secondary));
 }
 
+
 .bg-accent {
   background-color: hsl(var(--accent));
 }
@@ -73,8 +86,10 @@ code {
 }
 
 /* Smooth transitions for theme changes */
-* {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+*,
+html,
+body {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Custom scrollbar styling that adapts to themes */

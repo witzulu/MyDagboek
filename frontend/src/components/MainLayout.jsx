@@ -14,8 +14,7 @@ const MainLayout = ({ currentUser, handleLogout, theme, toggleTheme }) => {
         setSidebarOpen={setSidebarOpen}
         currentUser={currentUser}
         handleLogout={handleLogout}
-        theme={theme}
-        toggleTheme={toggleTheme}
+
       />
       <div className="flex">
         {sidebarOpen && <Sidebar />}
@@ -30,8 +29,7 @@ const MainLayout = ({ currentUser, handleLogout, theme, toggleTheme }) => {
 MainLayout.propTypes = {
     currentUser: PropTypes.object,
     handleLogout: PropTypes.func.isRequired,
-    theme: PropTypes.string.isRequired,
-    toggleTheme: PropTypes.func.isRequired,
+
 };
 
 export default MainLayout;

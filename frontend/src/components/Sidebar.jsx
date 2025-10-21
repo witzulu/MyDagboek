@@ -28,10 +28,10 @@ export default function Sidebar() {
       to={disabled ? '#' : item.to}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
         !disabled && location.pathname === item.to
-          ? 'bg-purple-600 text-white'
+          ? 'bg-primary text-primary-foreground'
           : disabled
-          ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
-          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+          ? 'bg-secondary text-muted cursor-not-allowed'
+          : 'hover:bg-secondary text-foreground'//'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
       }`}
       onClick={(e) => disabled && e.preventDefault()}
     >
@@ -50,7 +50,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 min-h-screen p-4 flex flex-col justify-between">
+    <aside className="w-64 min-h-screen p-4 flex flex-col justify-between">
       <div>
         <nav className="space-y-2">
           {projectNavItems.map(item => (
