@@ -49,7 +49,7 @@ const AdminDashboard = () => {
                 type="text"
                 id="siteName"
                 name="siteName"
-                value={settings.siteName}
+                value={settings.siteName || ''}
                 onChange={handleSettingsChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
@@ -60,7 +60,7 @@ const AdminDashboard = () => {
                 type="text"
                 id="siteLogo"
                 name="siteLogo"
-                value={settings.siteLogo}
+                value={settings.siteLogo || ''}
                 onChange={handleSettingsChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
