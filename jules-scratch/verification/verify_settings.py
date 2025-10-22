@@ -29,7 +29,7 @@ def run(playwright):
     page.get_by_role("link", name="Go to Admin Page").click()
 
     # Wait for the admin page to load and take a screenshot
-    page.wait_for_timeout(5000)
+    expect(page.get_by_role("heading", name="Admin Dashboard Test")).to_be_visible()
     page.screenshot(path="jules-scratch/verification/admin_dashboard.png")
 
     context.close()
