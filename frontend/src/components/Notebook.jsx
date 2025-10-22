@@ -1,8 +1,9 @@
-import PropTypes from 'prop-types';
 import { Plus, Trash2 } from 'lucide-react';
 import { useProject } from '../hooks/useProject';
+import { useProjects } from './ProjectContext';
 
-export default function Notebook({ notes, currentNote, setCurrentNote, addNote, updateNote, deleteNote }) {
+export default function Notebook() {
+  const { notes, currentNote, setCurrentNote, addNote, updateNote, deleteNote } = useProjects();
   const { selectedProject } = useProject();
 
   return (
@@ -78,11 +79,3 @@ export default function Notebook({ notes, currentNote, setCurrentNote, addNote, 
   );
 }
 
-Notebook.propTypes = {
-  notes: PropTypes.array.isRequired,
-  currentNote: PropTypes.object,
-  setCurrentNote: PropTypes.func.isRequired,
-  addNote: PropTypes.func.isRequired,
-  updateNote: PropTypes.func.isRequired,
-  deleteNote: PropTypes.func.isRequired,
-};
