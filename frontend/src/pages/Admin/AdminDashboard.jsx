@@ -52,6 +52,19 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleResetLogo = async () => {
+    try {
+      const updatedSettings = await api('/settings/reset-logo', {
+        method: 'DELETE',
+      });
+      updateSettings(updatedSettings);
+      alert('Logo reset successfully!');
+    } catch (error) {
+      console.error('Failed to reset logo', error);
+      alert('Failed to reset logo');
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
@@ -100,12 +113,21 @@ const AdminDashboard = () => {
                 className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
               />
             </div>
-            <button
-              type="submit"
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Save Settings
-            </button>
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Save Settings
+              </button>
+              <button
+                type="button"
+                onClick={handleResetLogo}
+                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Reset Logo
+              </button>
+            </div>
           </form>
         </div>
       )}
