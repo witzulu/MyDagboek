@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getSettings, updateSettings, uploadLogo } = require('../controllers/settingsController');
+const { getSettings, updateSettings, uploadLogo, resetLogo } = require('../controllers/settingsController');
 const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 
@@ -37,5 +37,10 @@ router.put('/', [authMiddleware, adminMiddleware], updateSettings);
 // @desc    Upload site logo
 // @access  Private/Admin
 router.post('/upload-logo', [authMiddleware, adminMiddleware, upload.single('logo')], uploadLogo);
+
+// @route   DELETE api/settings/reset-logo
+// @desc    Reset site logo
+// @access  Private/Admin
+router.delete('/reset-logo', [authMiddleware, adminMiddleware], resetLogo);
 
 module.exports = router;
