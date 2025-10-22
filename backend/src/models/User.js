@@ -26,7 +26,11 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'approved'],
     default: 'pending'
-  }
+  },
+  projects: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project'
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);

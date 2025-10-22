@@ -15,6 +15,7 @@ const projectRoutes = require('./src/routes/projects');
 const boardRoutes = require('./src/routes/boards');
 const listRoutes = require('./src/routes/lists');
 const taskRoutes = require('./src/routes/tasks');
+const settingsRoutes = require('./src/routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -83,6 +84,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/lists', listRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

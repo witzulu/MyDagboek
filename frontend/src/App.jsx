@@ -10,6 +10,10 @@ import RegisterPage from './pages/Auth/RegisterPage';
 
 // Admin Pages
 import UserApproval from './pages/Admin/UserApproval';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+
+// Settings Pages
+import UserSettings from './pages/Settings/UserSettings';
 
 // Core App Pages
 import Projects from './pages/Projects/Projects';
@@ -41,12 +45,13 @@ export default function App() {
               <Route path="projects/:projectId" element={<ProjectDashboard />} />
               <Route path="projects/:projectId/notebook" element={<Notebook />} />
               <Route path="projects/:projectId/boards" element={<Boards />} />
-              {/* Add other nested project routes here */}
+              <Route path="settings" element={<UserSettings />} />
             </Route>
           </Route>
 
           {/* Admin Routes */}
           <Route element={<ProtectedRoute adminOnly />}>
+            <Route path="/admin" element={<MainLayout><AdminDashboard /></MainLayout>} />
             <Route path="/admin/users" element={<MainLayout><UserApproval /></MainLayout>} />
           </Route>
 
