@@ -4,10 +4,13 @@ const api = async (endpoint, options = {}) => {
   const { body, ...customConfig } = options;
   const token = localStorage.getItem('token');
 
-  const headers = { 'Content-Type': 'application/json' };
-if (token) {
-  headers['Authorization'] = `Bearer ${token}`;
-}
+  const headers = {};
+  if (!(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
   const config = {
     method: body ? 'POST' : 'GET',
@@ -19,7 +22,11 @@ if (token) {
   };
 
   if (body) {
-    config.body = JSON.stringify(body);
+    if (body instanceof FormData) {
+      config.body = body;
+    } else {
+      config.body = JSON.stringify(body);
+    }
   }
 
   try {

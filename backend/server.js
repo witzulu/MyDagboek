@@ -34,6 +34,8 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+app.use('/uploads', express.static('uploads'));
+
 // Database connection
 const connectDB = async () => {
   try {
