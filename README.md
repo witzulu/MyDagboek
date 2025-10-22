@@ -60,7 +60,7 @@ To get a local copy up and running, follow these simple steps.
 ## Status
 
 Currently this app is not working the frontend shows and the authentication is setup but i have not implemented all the features yet.
-Ia m currently working on:
+I am currently working on.
     > Site Admin
     > Dashboard for each project
     > Notebook system
