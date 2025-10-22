@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useProject } from '../hooks/useProject';
 import { Plus, X, Calendar, User, MessageSquare, ArrowRight } from 'lucide-react';
-import { useProjects } from './ProjectContext';
+//import { useProjects } from './ProjectContext';
 
 export default function Boards() {
-  const { boards, selectedBoard, addColumn, addCard, deleteCard, updateCard, moveCard, getLabelColor } = useProjects();
+//  const { boards, selectedBoard, addColumn, addCard, deleteCard, updateCard, moveCard, getLabelColor } = useProjects();
   const { selectedProject } = useProject();
   const currentBoard = boards.find(b => b.id === selectedBoard);
   const [selectedCard, setSelectedCard] = useState(null);

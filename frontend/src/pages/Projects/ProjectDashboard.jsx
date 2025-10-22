@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useProject } from '../../hooks/useProject';
 import { Book, Layout, TrendingUp, Code, AlertCircle } from 'lucide-react';
-import { useProjects } from '../../components/ProjectContext';
+//import { useProjects } from '../../components/ProjectContext';
 
 
 const mockProjects = [
@@ -12,9 +12,9 @@ const mockProjects = [
 ];
 
 const ProjectDashboard = () => {
-  const { notes, boards, errorReports, snippets, addNote, selectedBoard } = useProjects();
+ // const { notes, boards, errorReports, snippets, addNote, selectedBoard } = useProjects();
   const { projectId } = useParams();
-  const { setSelectedProject } = useProject();
+ // const { setSelectedProject } = useProject();
   const navigate = useNavigate();
   const project = mockProjects.find(p => p.id === parseInt(projectId));
 

@@ -1,9 +1,9 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useProject } from '../hooks/useProject';
-import { useProjects } from './ProjectContext';
+//import { useProjects } from './ProjectContext';
 
 export default function Notebook() {
-  const { notes, currentNote, setCurrentNote, addNote, updateNote, deleteNote } = useProjects();
+  //const { notes, currentNote, setCurrentNote, addNote, updateNote, deleteNote } = useProjects();
   const { selectedProject } = useProject();
 
   return (

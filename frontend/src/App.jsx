@@ -51,9 +51,11 @@ export default function App() {
 
           {/* Admin Routes */}
           <Route element={<ProtectedRoute adminOnly />}>
-            <Route path="/admin" element={<MainLayout><AdminDashboard /></MainLayout>} />
-            <Route path="/admin/users" element={<MainLayout><UserApproval /></MainLayout>} />
-          </Route>
+  <Route path="/admin" element={<MainLayout />}>
+    <Route index element={<AdminDashboard />} />
+    <Route path="users" element={<UserApproval />} />
+  </Route>
+</Route>
 
           {/* Catch-all Route */}
           <Route path="*" element={<Navigate to={isAuthenticated ? "/projects" : "/login"} />} />
