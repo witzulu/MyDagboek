@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const config = require('../config');
 
 exports.register = async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -57,7 +58,7 @@ exports.login = async (req, res, next) => {
 
     jwt.sign(
       payload,
-      process.env.JWT_SECRET || 'your_jwt_secret',
+      config.JWT_SECRET,
       { expiresIn: '5h' },
       (err, token) => {
         if (err) throw err;
