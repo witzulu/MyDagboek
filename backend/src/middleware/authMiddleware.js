@@ -2,11 +2,18 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 
 module.exports = function (req, res, next) {
-  // Get token from header
-  const token = req.header('x-auth-token');
+  // Try both header types
+  let token = req.header('x-auth-token');
 
-  // Check if not token
   if (!token) {
+    const authHeader = req.header('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+
+  // Still no token
+  if (!token || token === 'null' || token === 'undefined') {
     return res.status(401).json({ msg: 'No token, authorization denied' });
   }
 
@@ -16,6 +23,7 @@ module.exports = function (req, res, next) {
     req.user = decoded.user;
     next();
   } catch (err) {
-    res.status(401).json({ msg: 'Token is not valid' });
+    console.error('JWT verification error:', err.message);
+    return res.status(401).json({ msg: 'Token is not valid', error: err.message });
   }
 };

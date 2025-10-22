@@ -42,6 +42,12 @@ const connectDB = async () => {
       useUnifiedTopology: true
     });
     console.log('✅ MongoDB connected');
+    require('./src/models/User');
+require('./src/models/Project');
+require('./src/models/Board');
+require('./src/models/List');
+require('./src/models/Task');
+
     seedAdminUser();
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);

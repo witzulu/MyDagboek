@@ -5,9 +5,9 @@ const api = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
 
   const headers = { 'Content-Type': 'application/json' };
-  if (token) {
-    headers['x-auth-token'] = token;
-  }
+if (token) {
+  headers['Authorization'] = `Bearer ${token}`;
+}
 
   const config = {
     method: body ? 'POST' : 'GET',
