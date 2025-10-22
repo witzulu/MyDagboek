@@ -1,28 +1,35 @@
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import { Book, Menu, X, Sun, Moon, Shield, Settings } from 'lucide-react';
+import { Book, Menu, X, Shield, Settings } from 'lucide-react';
 import ThemeSwitcher from './ThemeSwitcher';
 import { useTheme } from './ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 
-export default function Header({ 
-  sidebarOpen, 
-  setSidebarOpen, 
-  currentUser, 
-  handleLogout
+export default function Header({
+  sidebarOpen,
+  setSidebarOpen,
+  currentUser,
+  handleLogout,
 }) {
   const { theme, setTheme } = useTheme();
+  const { settings } = useSettings();
+
   return (
-   <header className="bg-background border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-         <div className="flex items-center gap-4">
-           <button
-             onClick={() => setSidebarOpen(!sidebarOpen)}
-             className="p-2 hover:bg-secondary rounded-lg transition-colors"
-           >
-             {sidebarOpen ? <X className="w-5 h-5 text-foreground" /> : <Menu className="w-5 h-5 text-foreground" />}
-           </button>
-           <Book className="w-8 h-8 text-primary" />
-           <h1 className="text-2xl font-bold text-foreground">Dagboek</h1>
-         </div>
+    <header className="bg-background border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 hover:bg-secondary rounded-lg transition-colors"
+        >
+          {sidebarOpen ? <X className="w-5 h-5 text-foreground" /> : <Menu className="w-5 h-5 text-foreground" />}
+        </button>
+        {settings.siteLogo ? (
+          <img src={`http://localhost:5000${settings.siteLogo}`} alt="Site Logo" className="h-8 w-8" />
+        ) : (
+          <Book className="w-8 h-8 text-primary" />
+        )}
+        <h1 className="text-2xl font-bold text-foreground">{settings.siteName}</h1>
+      </div>
    
          <div className="flex items-center gap-4">
           <ThemeSwitcher 

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, approveUser, deleteUser, updateUserProfile } = require('../controllers/userController');
+const { getUsers, approveUser, blockUser, unblockUser, updateUserProfile } = require('../controllers/userController');
 const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 
@@ -14,10 +14,15 @@ router.get('/', [authMiddleware, adminMiddleware], getUsers);
 // @access  Private/Admin
 router.put('/:id/approve', [authMiddleware, adminMiddleware], approveUser);
 
-// @route   DELETE api/users/:id
-// @desc    Delete a user
+// @route   PUT api/users/:id/block
+// @desc    Block a user
 // @access  Private/Admin
-router.delete('/:id', [authMiddleware, adminMiddleware], deleteUser);
+router.put('/:id/block', [authMiddleware, adminMiddleware], blockUser);
+
+// @route   PUT api/users/:id/unblock
+// @desc    Unblock a user
+// @access  Private/Admin
+router.put('/:id/unblock', [authMiddleware, adminMiddleware], unblockUser);
 
 // @route   PUT api/users/profile
 // @desc    Update user profile

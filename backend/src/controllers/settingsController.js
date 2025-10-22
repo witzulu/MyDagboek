@@ -17,6 +17,30 @@ exports.getSettings = async (req, res, next) => {
   }
 };
 
+// @desc    Upload site logo
+// @route   POST /api/settings/upload-logo
+// @access  Private/Admin
+exports.uploadLogo = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ msg: 'Please upload a file' });
+    }
+
+    let settings = await SiteSettings.findOne();
+    if (!settings) {
+      settings = new SiteSettings();
+    }
+
+    settings.siteLogo = `/uploads/${req.file.filename}`;
+
+    await settings.save();
+    res.json(settings);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
 // @desc    Update site settings
 // @route   PUT /api/settings
 // @access  Private/Admin

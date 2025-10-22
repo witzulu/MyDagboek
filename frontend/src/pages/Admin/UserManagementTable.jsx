@@ -26,12 +26,21 @@ const UserManagementTable = () => {
     }
   };
 
-  const handleRemove = async (userId) => {
+  const handleBlock = async (userId) => {
     try {
-      await api(`/users/${userId}`, { method: 'DELETE' });
+      await api(`/users/${userId}/block`, { method: 'PUT' });
       fetchUsers();
     } catch (error) {
-      console.error('Failed to remove user', error);
+      console.error('Failed to block user', error);
+    }
+  };
+
+  const handleUnblock = async (userId) => {
+    try {
+      await api(`/users/${userId}/unblock`, { method: 'PUT' });
+      fetchUsers();
+    } catch (error) {
+      console.error('Failed to unblock user', error);
     }
   };
 
@@ -44,25 +53,26 @@ const UserManagementTable = () => {
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projects</th>
             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {users.map((user) => (
             <tr key={user._id}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.status}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.role}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {user.projects.map(p => p.name).join(', ')}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.name}</td>
+              <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
+              <td className="px-6 py-4 text-sm text-gray-500">{user.status}</td>
+              <td className="px-6 py-4 text-sm text-gray-500">{user.role}</td>
+              <td className="px-6 py-4 text-right text-sm font-medium">
                 {user.status === 'pending' && (
                   <button onClick={() => handleApprove(user._id)} className="text-indigo-600 hover:text-indigo-900 mr-4">Approve</button>
                 )}
-                <button onClick={() => handleRemove(user._id)} className="text-red-600 hover:text-red-900">Remove</button>
+                {user.status === 'approved' && (
+                  <button onClick={() => handleBlock(user._id)} className="text-red-600 hover:text-red-900">Block</button>
+                )}
+                {user.status === 'blocked' && (
+                  <button onClick={() => handleUnblock(user._id)} className="text-green-600 hover:text-green-900">Unblock</button>
+                )}
               </td>
             </tr>
           ))}

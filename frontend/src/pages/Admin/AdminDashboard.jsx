@@ -1,34 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import UserManagementTable from './UserManagementTable';
+import { useSettings } from '../../context/SettingsContext';
 
 const AdminDashboard = () => {
-  const [settings, setSettings] = useState({ siteName: '', siteLogo: '' });
+  const { settings, updateSettings } = useSettings();
+  const [activeTab, setActiveTab] = useState('siteSettings');
+  const [localSettings, setLocalSettings] = useState(settings);
+  const [logoFile, setLogoFile] = useState(null);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const data = await api('/settings');
-        setSettings(data);
-      } catch (error) {
-        console.error('Failed to fetch settings', error);
-      }
-    };
-    fetchSettings();
-  }, []);
+    setLocalSettings(settings);
+  }, [settings]);
 
   const handleSettingsChange = (e) => {
-    setSettings({ ...settings, [e.target.name]: e.target.value });
+    setLocalSettings({ ...localSettings, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files[0]) {
+      setLogoFile(e.target.files[0]);
+    }
   };
 
   const handleSettingsSubmit = async (e) => {
     e.preventDefault();
     try {
-      const updatedSettings = await api('/settings', {
+      let settingsToUpdate = { ...localSettings };
+
+      if (logoFile) {
+        const formData = new FormData();
+        formData.append('logo', logoFile);
+        const updatedSettingsWithLogo = await api('/settings/upload-logo', {
+          method: 'POST',
+          body: formData,
+        });
+        settingsToUpdate.siteLogo = updatedSettingsWithLogo.siteLogo;
+      }
+
+      const finalUpdatedSettings = await api('/settings', {
         method: 'PUT',
-        body: settings,
+        body: settingsToUpdate,
       });
-      setSettings(updatedSettings);
+
+      updateSettings(finalUpdatedSettings);
+      setLogoFile(null);
       alert('Settings updated successfully!');
     } catch (error) {
       console.error('Failed to update settings', error);
@@ -39,7 +55,22 @@ const AdminDashboard = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="flex border-b mb-4">
+        <button
+          className={`py-2 px-4 ${activeTab === 'siteSettings' ? 'border-b-2 border-indigo-500 font-semibold' : ''}`}
+          onClick={() => setActiveTab('siteSettings')}
+        >
+          Site Settings
+        </button>
+        <button
+          className={`py-2 px-4 ${activeTab === 'userManagement' ? 'border-b-2 border-indigo-500 font-semibold' : ''}`}
+          onClick={() => setActiveTab('userManagement')}
+        >
+          User Management
+        </button>
+      </div>
+
+      {activeTab === 'siteSettings' && (
         <div>
           <h2 className="text-xl font-semibold mb-4">Site Settings</h2>
           <form onSubmit={handleSettingsSubmit} className="space-y-4">
@@ -49,20 +80,24 @@ const AdminDashboard = () => {
                 type="text"
                 id="siteName"
                 name="siteName"
-                value={settings.siteName || ''}
+                value={localSettings.siteName || ''}
                 onChange={handleSettingsChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               />
             </div>
             <div>
-              <label htmlFor="siteLogo" className="block text-sm font-medium">Site Logo URL</label>
+              <label htmlFor="siteLogo" className="block text-sm font-medium">Site Logo</label>
+              {settings.siteLogo && (
+                <div className="mt-2">
+                  <img src={`http://localhost:5000${settings.siteLogo}`} alt="Site Logo" className="h-16 w-16 object-cover" />
+                </div>
+              )}
               <input
-                type="text"
+                type="file"
                 id="siteLogo"
                 name="siteLogo"
-                value={settings.siteLogo || ''}
-                onChange={handleSettingsChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                onChange={handleFileChange}
+                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
               />
             </div>
             <button
@@ -73,11 +108,14 @@ const AdminDashboard = () => {
             </button>
           </form>
         </div>
+      )}
+
+      {activeTab === 'userManagement' && (
         <div>
           <h2 className="text-xl font-semibold mb-4">User Management</h2>
           <UserManagementTable />
         </div>
-      </div>
+      )}
     </div>
   );
 };

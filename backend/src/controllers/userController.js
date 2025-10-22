@@ -48,10 +48,10 @@ exports.updateUserProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Delete a user
-// @route   DELETE /api/users/:id
+// @desc    Block a user
+// @route   PUT /api/users/:id/block
 // @access  Private/Admin
-exports.deleteUser = async (req, res, next) => {
+exports.blockUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
 
@@ -59,9 +59,31 @@ exports.deleteUser = async (req, res, next) => {
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    await user.remove();
+    user.status = 'blocked';
+    await user.save();
 
-    res.json({ msg: 'User removed successfully' });
+    res.json({ msg: 'User blocked successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Unblock a user
+// @route   PUT /api/users/:id/unblock
+// @access  Private/Admin
+exports.unblockUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    user.status = 'approved';
+    await user.save();
+
+    res.json({ msg: 'User unblocked successfully' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
