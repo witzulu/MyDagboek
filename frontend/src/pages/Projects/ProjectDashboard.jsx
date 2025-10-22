@@ -1,8 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import PropTypes from 'prop-types';
 import { useProject } from '../../hooks/useProject';
 import { Book, Layout, TrendingUp, Code, AlertCircle } from 'lucide-react';
+import { useProjects } from '../../components/ProjectContext';
+
 
 const mockProjects = [
   { id: 1, name: 'Dagboek v1.0', description: 'The first version of the Dagboek developer hub.', team: ['Alice', 'Bob'] },
@@ -10,7 +11,8 @@ const mockProjects = [
   { id: 3, name: 'UI/UX Overhaul', description: 'A complete redesign of the user interface and experience.', team: ['Eve', 'Frank'] },
 ];
 
-const ProjectDashboard = ({ notes, boards, errorReports, snippets, addNote, selectedBoard }) => {
+const ProjectDashboard = () => {
+  const { notes, boards, errorReports, snippets, addNote, selectedBoard } = useProjects();
   const { projectId } = useParams();
   const { setSelectedProject } = useProject();
   const navigate = useNavigate();
@@ -120,15 +122,6 @@ const ProjectDashboard = ({ notes, boards, errorReports, snippets, addNote, sele
       </div>
     </div>
   );
-};
-
-ProjectDashboard.propTypes = {
-    notes: PropTypes.array.isRequired,
-    boards: PropTypes.array.isRequired,
-    errorReports: PropTypes.array.isRequired,
-    snippets: PropTypes.array.isRequired,
-    addNote: PropTypes.func.isRequired,
-    selectedBoard: PropTypes.string.isRequired,
 };
 
 export default ProjectDashboard;

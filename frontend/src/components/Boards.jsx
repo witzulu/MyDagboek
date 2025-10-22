@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
 import { useProject } from '../hooks/useProject';
 import { Plus, X, Calendar, User, MessageSquare, ArrowRight } from 'lucide-react';
+import { useProjects } from './ProjectContext';
 
-export default function Boards({ boards, selectedBoard, addColumn, addCard, deleteCard, updateCard, moveCard, getLabelColor }) {
+export default function Boards() {
+  const { boards, selectedBoard, addColumn, addCard, deleteCard, updateCard, moveCard, getLabelColor } = useProjects();
   const { selectedProject } = useProject();
   const currentBoard = boards.find(b => b.id === selectedBoard);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -256,13 +257,3 @@ export default function Boards({ boards, selectedBoard, addColumn, addCard, dele
   );
 }
 
-Boards.propTypes = {
-  boards: PropTypes.array.isRequired,
-  selectedBoard: PropTypes.string.isRequired,
-  addColumn: PropTypes.func.isRequired,
-  addCard: PropTypes.func.isRequired,
-  deleteCard: PropTypes.func.isRequired,
-  updateCard: PropTypes.func.isRequired,
-  moveCard: PropTypes.func.isRequired,
-  getLabelColor: PropTypes.func.isRequired,
-};
