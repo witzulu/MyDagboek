@@ -57,6 +57,14 @@ To get a local copy up and running, follow these simple steps.
     > - **Email:** `admin@dagboek.com`
     > - **Password:** `password`
 
+## Status
+
+Currently this app is not working the frontend shows and the authentication is setup but i have not implemented all the features yet.
+Ia m currently working on:
+    > Site Admin
+    > Dashboard for each project
+    > Notebook system
+
 ## Roadmap
 
 - [x] Add a backend to persist data
