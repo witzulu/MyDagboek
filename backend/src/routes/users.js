@@ -14,4 +14,14 @@ router.get('/', [authMiddleware, adminMiddleware], getUsers);
 // @access  Private/Admin
 router.put('/:id/approve', [authMiddleware, adminMiddleware], approveUser);
 
+// @route   DELETE api/users/:id
+// @desc    Delete a user
+// @access  Private/Admin
+router.delete('/:id', [authMiddleware, adminMiddleware], deleteUser);
+
+// @route   PUT api/users/profile
+// @desc    Update user profile
+// @access  Private
+router.put('/profile', authMiddleware, updateUserProfile);
+
 module.exports = router;
