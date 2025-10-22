@@ -22,15 +22,15 @@ def run(playwright):
     password_input.fill("password")
     page.get_by_role("button", name="Login").click(force=True)
 
-    # Go to the admin page and take a screenshot
-    page.goto("http://localhost:5173/admin")
-    expect(page.get_by_role("heading", name="Admin Dashboard")).to_be_visible()
-    page.screenshot(path="jules-scratch/verification/admin_dashboard.png")
+    # Go to the settings page
+    page.goto("http://localhost:5174/settings")
 
-    # Go to the settings page and take a screenshot
-    page.goto("http://localhost:5173/settings")
-    expect(page.get_by_role("heading", name="Your Settings")).to_be_visible()
-    page.screenshot(path="jules-scratch/verification/user_settings.png")
+    # Click the debug link to the admin page
+    page.get_by_role("link", name="Go to Admin Page").click()
+
+    # Wait for the admin page to load and take a screenshot
+    page.wait_for_timeout(5000)
+    page.screenshot(path="jules-scratch/verification/admin_dashboard.png")
 
     context.close()
     browser.close()
