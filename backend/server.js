@@ -16,6 +16,7 @@ const boardRoutes = require('./src/routes/boards');
 const listRoutes = require('./src/routes/lists');
 const taskRoutes = require('./src/routes/tasks');
 const settingsRoutes = require('./src/routes/settings');
+const { projectNotesRouter, noteRouter } = require('./src/routes/notes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -92,6 +93,8 @@ app.use('/api/boards', boardRoutes);
 app.use('/api/lists', listRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/projects/:projectId/notes', projectNotesRouter);
+app.use('/api/notes', noteRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -18,7 +18,7 @@ import UserSettings from './pages/Settings/UserSettings';
 // Core App Pages
 import Projects from './pages/Projects/Projects';
 import ProjectDashboard from './pages/Projects/ProjectDashboard';
-import Notebook from './components/Notebook';
+import NotebookPage from './pages/NotebookPage';
 import Boards from './components/Boards';
 
 // Auth Components
@@ -43,7 +43,7 @@ export default function App() {
               <Route index element={<Navigate to="/projects" />} />
               <Route path="projects" element={<Projects />} />
               <Route path="projects/:projectId" element={<ProjectDashboard />} />
-              <Route path="projects/:projectId/notebook" element={<Notebook />} />
+              <Route path="projects/:projectId/notebook" element={<NotebookPage />} />
               <Route path="projects/:projectId/boards" element={<Boards />} />
               <Route path="settings" element={<UserSettings />} />
             </Route>
