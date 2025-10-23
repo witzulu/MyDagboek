@@ -21,10 +21,13 @@ const NoteEditor = ({ note, onSave, setIsEditing }) => {
   useEffect(() => {
     const handler = setTimeout(async () => {
       try {
-        const { data } = await api.put(`/projects/${note.project}/notes/${note._id}`, {
-          title,
-          content,
-          tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        const data = await api(`/projects/${note.project}/notes/${note._id}`, {
+          method: 'PUT',
+          body: {
+            title,
+            content,
+            tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+          },
         });
         onSave(data);
       } catch (err) {
@@ -41,10 +44,9 @@ const NoteEditor = ({ note, onSave, setIsEditing }) => {
     const formData = new FormData();
     formData.append('image', image);
     try {
-      const { data } = await api.post('/notes/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const data = await api('/notes/upload', {
+        method: 'POST',
+        body: formData,
       });
       return data.imageUrl;
     } catch (err) {
