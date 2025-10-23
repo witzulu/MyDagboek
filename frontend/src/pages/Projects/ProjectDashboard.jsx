@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useProject } from '../../hooks/useProject';
 import api from '../../services/api';
@@ -71,8 +71,9 @@ const ProjectDashboard = () => {
 
         <div className="bg-secondary dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
           <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
-          {/* Quick actions can be added back as features are implemented */}
-          <p className="text-slate-500">Quick actions will be available as new features are added.</p>
+          <Link to={`/projects/${projectId}/notebook`} className="text-blue-500 hover:underline">
+            Go to Notebook
+          </Link>
         </div>
       </div>
     </div>
