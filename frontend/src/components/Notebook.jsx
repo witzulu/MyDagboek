@@ -29,58 +29,55 @@ export default function Notebook() {
   const [notes, setNotes] = useState([]);
   const [currentNote, setCurrentNote] = useState(null);
 
-  const apiFetch = useCallback((url, options = {}) => {
-    const token = localStorage.getItem("token");
-    const headers = {
-      ...options.headers,
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    if (!(options.body instanceof FormData)) {
-        headers['Content-Type'] = 'application/json';
-    }
-
-    return fetch(url, { ...options, headers }).then(res => {
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return res.json();
-    });
-  }, []);
-
   useEffect(() => {
-    if (!selectedProject?._id) return;
-    apiFetch(`/api/projects/${selectedProject._id}/notes`)
+    if (!selectedProject || !selectedProject._id) return;
+    fetch(`/api/projects/${selectedProject._id}/notes`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to load notes");
+        return res.json();
+      })
       .then(setNotes)
       .catch(err => console.error("Error fetching notes:", err));
-  }, [selectedProject, apiFetch]);
+  }, [selectedProject]);
 
   const addNote = async () => {
     if (!selectedProject?._id) return;
-    const newNote = await apiFetch(`/api/projects/${selectedProject._id}/notes`, {
+    const res = await fetch(`/api/projects/${selectedProject._id}/notes`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
       body: JSON.stringify({ title: "New Note", content: "" }),
     });
+    const newNote = await res.json();
     setNotes(prev => [newNote, ...prev]);
     setCurrentNote(newNote);
   };
 
   const updateNote = useCallback(async (id, fields) => {
-    try {
-      const updated = await apiFetch(`/api/notes/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(fields),
-      });
-      setNotes(prev => prev.map(n => (n._id === id ? updated : n)));
-      if (currentNote?._id === id) {
-        setCurrentNote(prev => ({ ...prev, ...updated }));
-      }
-    } catch (err) {
-      console.error("Error updating note:", err);
+    const res = await fetch(`/api/notes/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(fields),
+    });
+    const updated = await res.json();
+    setNotes(prev => prev.map(n => (n._id === id ? updated : n)));
+    if (currentNote?._id === id) {
+      setCurrentNote(prev => ({ ...prev, ...fields }));
     }
-  }, [currentNote, apiFetch]);
+  }, [currentNote]);
 
   const deleteNote = async (id) => {
-    await apiFetch(`/api/notes/${id}`, { method: "DELETE" });
+    await fetch(`/api/notes/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
     setNotes(prev => prev.filter(n => n._id !== id));
     if (currentNote?._id === id) setCurrentNote(null);
   };
@@ -88,16 +85,13 @@ export default function Notebook() {
   const handleImageUpload = async (image) => {
     const formData = new FormData();
     formData.append('image', image);
-    try {
-        const { imageUrl } = await apiFetch('/api/notes/upload', {
-            method: 'POST',
-            body: formData,
-        });
-        return imageUrl;
-    } catch (err) {
-        console.error('Failed to upload image:', err);
-        return null;
-    }
+    const res = await fetch('/api/notes/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: formData,
+    });
+    const { imageUrl } = await res.json();
+    return imageUrl;
   };
 
   // Debounced update for editor changes
@@ -107,7 +101,7 @@ export default function Notebook() {
       updateNote(currentNote._id, { title: currentNote.title, content: currentNote.content });
     }, 1000); // Auto-save after 1 second of inactivity
     return () => clearTimeout(handler);
-  }, [currentNote?.title, currentNote?.content]);
+  }, [currentNote?.title, currentNote?.content, updateNote]);
 
   return (
     <div>
