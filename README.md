@@ -64,7 +64,17 @@ I am currently working on.
     > Site Admin
     > Dashboard for each project
     > Notebook system
-
+## Features (currently implemented)
+1. Projects
+    Projects allow you to group notebooks, boards, error reports,codesnippets, etc into one project.
+   
+2. Notebooks
+   - A rich-text Markdown editor with a toolbar for creating and editing notes.
+   - Image upload and embedding functionality within notes.
+   - A tagging system to organize notes by topic.
+   - A pinning feature to highlight important notes.
+   - A search functionality to easily find notes by title, content, or tags.
+     
 ## Roadmap
 
 - [x] Add a backend to persist data
