@@ -29,3 +29,15 @@ code {
 .mdxeditor-toolbar button {
   color: var(--foreground);
 }
+
+.prose pre {
+  background-color: #f3f4f6; /* A light gray background */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-family: monospace;
+  white-space: pre-wrap; /* Ensures long lines wrap */
+}
+
+.dark .prose pre {
+  background-color: #1f2937; /* A darker gray for dark mode */
+}
