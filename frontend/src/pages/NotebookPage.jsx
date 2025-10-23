@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
-import NotebookList from '../../components/notebook/NotebookList';
+import NotebookList from '../components/notebook/NotebookList';
 
 const NotebookPage = () => {
   const { projectId } = useParams();
