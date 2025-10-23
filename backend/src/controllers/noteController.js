@@ -106,12 +106,13 @@ exports.createNote = async (req, res, next) => {
 };
 
 exports.updateNote = async (req, res, next) => {
-  const { title, content, tags, isPinned } = req.body;
+  const { title, content, tags, isPinned, drawing } = req.body;
   const noteFields = {};
   if (title !== undefined) noteFields.title = title;
   if (content !== undefined) noteFields.content = content;
   if (tags !== undefined) noteFields.tags = tags;
   if (isPinned !== undefined) noteFields.isPinned = isPinned;
+  if (drawing !== undefined) noteFields.drawing = drawing;
 
   try {
     let note = await Note.findById(req.params.id);
