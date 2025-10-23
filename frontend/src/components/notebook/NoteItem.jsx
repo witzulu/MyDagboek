@@ -8,7 +8,7 @@ const NoteItem = ({ note, setNotes }) => {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this note?')) {
       try {
-        await api.delete(`/projects/${note.project}/notes/${note._id}`);
+        await api(`/projects/${note.project}/notes/${note._id}`, { method: 'DELETE' });
         setNotes(prevNotes => prevNotes.filter(n => n._id !== note._id));
       } catch (err) {
         console.error('Failed to delete note:', err);
@@ -24,8 +24,9 @@ const NoteItem = ({ note, setNotes }) => {
 
   const handlePin = async () => {
     try {
-      const { data } = await api.put(`/projects/${note.project}/notes/${note._id}`, {
-        isPinned: !note.isPinned,
+      const data = await api(`/projects/${note.project}/notes/${note._id}`, {
+        method: 'PUT',
+        body: { isPinned: !note.isPinned },
       });
       handleUpdate(data);
     } catch (err) {

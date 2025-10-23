@@ -13,9 +13,7 @@ const NotebookPage = () => {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const { data } = await api.get(`/projects/${projectId}/notes`, {
-          params: { search: searchTerm },
-        });
+        const data = await api(`/projects/${projectId}/notes?search=${searchTerm}`);
         setNotes(data);
         setLoading(false);
       } catch (err) {
@@ -35,7 +33,10 @@ const NotebookPage = () => {
 
   const handleCreateNote = async () => {
     try {
-      const { data } = await api.post(`/projects/${projectId}/notes`, { title: 'New Note' });
+      const data = await api(`/projects/${projectId}/notes`, {
+        method: 'POST',
+        body: { title: 'New Note' },
+      });
       setNotes([...notes, data]);
     } catch (err) {
       console.error('Failed to create note:', err);
