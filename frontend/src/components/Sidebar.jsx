@@ -1,21 +1,22 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useProject } from '../hooks/useProject';
 import { Book, Layout, TrendingUp, Code, Clock, Users, AlertCircle, FolderKanban, Settings } from 'lucide-react';
 
 export default function Sidebar() {
   const location = useLocation();
+  const { projectId } = useParams();
   const { selectedProject } = useProject();
 
   const projectNavItems = [
-    { to: `/projects/${selectedProject?.id}`, icon: Layout, label: 'Dashboard' },
-    { to: `/projects/${selectedProject?.id}/notebook`, icon: Book, label: 'Notebook' },
-    { to: `/projects/${selectedProject?.id}/boards`, icon: Layout, label: 'Boards' },
-    { to: `/projects/${selectedProject?.id}/errors`, icon: AlertCircle, label: 'Error Reports' },
-    { to: `/projects/${selectedProject?.id}/progress`, icon: TrendingUp, label: 'Progress Reports' },
-    { to: `/projects/${selectedProject?.id}/snippets`, icon: Code, label: 'Code Snippets' },
-    { to: `/projects/${selectedProject?.id}/time`, icon: Clock, label: 'Time Tracking' },
-    { to: `/projects/${selectedProject?.id}/team`, icon: Users, label: 'Team' }
+    { to: `/projects/${projectId}`, icon: Layout, label: 'Dashboard' },
+    { to: `/projects/${projectId}/notebook`, icon: Book, label: 'Notebook' },
+    { to: `/projects/${projectId}/boards`, icon: Layout, label: 'Boards' },
+    { to: `/projects/${projectId}/errors`, icon: AlertCircle, label: 'Error Reports' },
+    { to: `/projects/${projectId}/progress`, icon: TrendingUp, label: 'Progress Reports' },
+    { to: `/projects/${projectId}/snippets`, icon: Code, label: 'Code Snippets' },
+    { to: `/projects/${projectId}/time`, icon: Clock, label: 'Time Tracking' },
+    { to: `/projects/${projectId}/team`, icon: Users, label: 'Team' }
   ];
 
   const globalNavItems = [
@@ -31,7 +32,7 @@ export default function Sidebar() {
           ? 'bg-primary text-primary-foreground'
           : disabled
           ? 'bg-secondary text-muted cursor-not-allowed'
-          : 'hover:bg-secondary text-foreground'//'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+          : 'hover:bg-secondary text-foreground'
       }`}
       onClick={(e) => disabled && e.preventDefault()}
     >
@@ -54,7 +55,7 @@ export default function Sidebar() {
       <div>
         <nav className="space-y-2">
           {projectNavItems.map(item => (
-            <NavLink key={item.to} item={item} disabled={!selectedProject} />
+            <NavLink key={item.to} item={item} disabled={!projectId} />
           ))}
         </nav>
       </div>

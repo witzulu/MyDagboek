@@ -11,20 +11,23 @@ const ProjectDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        setLoading(true);
-        const data = await api(`/projects/${projectId}`);
-        setProject(data);
-        setSelectedProject(data);
-      } catch (error) {
-        console.error('Failed to fetch project details', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchProject = async () => {
+    try {
+      setLoading(true);
+      const data = await api(`/projects/${projectId}`);
+      setProject(data);
+      setSelectedProject(data);
+    } catch (error) {
+      console.error('Failed to fetch project details', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  if (projectId) {
     fetchProject();
-  }, [projectId, setSelectedProject]);
+  }
+}, [projectId, setSelectedProject]);
 
   if (loading) {
     return <div>Loading...</div>;
