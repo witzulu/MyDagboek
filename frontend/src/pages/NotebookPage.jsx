@@ -11,6 +11,8 @@ const NotebookPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    if (!projectId) return;
+
     const fetchNotes = async () => {
       try {
         const data = await api(`/projects/${projectId}/notes?search=${searchTerm}`);
