@@ -6,7 +6,7 @@ import {
   listsPlugin,
   quotePlugin,
   thematicBreakPlugin,
-  Toolbar,
+  toolbarPlugin,
   UndoRedo,
   BoldItalicUnderlineToggles,
   imagePlugin
@@ -79,14 +79,17 @@ const NoteEditor = ({ note, onSave, setIsEditing }) => {
           imagePlugin({
             imageUploadHandler: handleImageUpload,
           }),
+          toolbarPlugin({
+            toolbarContents: () => (
+              <>
+                <UndoRedo />
+                <BoldItalicUnderlineToggles />
+              </>
+            )
+          })
         ]}
         contentEditableClassName="prose"
-      >
-        <Toolbar>
-          <UndoRedo />
-          <BoldItalicUnderlineToggles />
-        </Toolbar>
-      </MDXEditor>
+      />
       <button
         onClick={() => setIsEditing(false)}
         className="mt-2 bg-gray-200 dark:bg-gray-700 text-black dark:text-white px-4 py-2 rounded"
