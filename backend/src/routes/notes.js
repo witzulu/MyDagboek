@@ -24,4 +24,8 @@ const noteRouter = express.Router();
 
 noteRouter.post('/upload', authMiddleware, uploadImage, handleImageUpload);
 
+noteRouter.route('/:id')
+    .put(authMiddleware, updateNote)
+    .delete(authMiddleware, deleteNote);
+
 module.exports = { projectNotesRouter: router, noteRouter };
