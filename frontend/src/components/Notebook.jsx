@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
 import {
@@ -32,6 +32,17 @@ export default function Notebook() {
   const [currentNote, setCurrentNote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTag, setSelectedTag] = useState(null);
+
+  const filteredNotes = notes
+    .filter(note =>
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter(note =>
+      !selectedTag || (note.tags && note.tags.includes(selectedTag))
+    );
 
   // Use projectId from URL if selectedProject is not available
   const currentProjectId = selectedProject?._id || projectId;
@@ -200,12 +211,19 @@ export default function Notebook() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <input
+            type="text"
+            placeholder="Search notes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-3 py-2 mb-4 bg-slate-100/50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
           <h3 className="font-semibold mb-4 text-slate-800 dark:text-white">All Notes</h3>
           <div className="space-y-2">
-            {notes.length === 0 ? (
-              <p className="text-slate-500 dark:text-slate-400 text-sm">No notes yet</p>
+            {filteredNotes.length === 0 ? (
+              <p className="text-slate-500 dark:text-slate-400 text-sm">No notes found</p>
             ) : (
-              notes.map((note) => (
+              filteredNotes.map((note) => (
                 <div
                   key={note._id}
                   onClick={() => setCurrentNote(note)}
@@ -216,11 +234,33 @@ export default function Notebook() {
                   }`}
                 >
                   <p className="font-medium text-sm">{note.title || "Untitled"}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {note.tags && note.tags.map((tag, index) => (
+                      <button
+                        key={index}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTag(tag);
+                        }}
+                        className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-full text-xs hover:bg-purple-200 dark:hover:bg-purple-800"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {new Date(note.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
               ))
+            )}
+             {selectedTag && (
+              <button
+                onClick={() => setSelectedTag(null)}
+                className="w-full mt-2 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+              >
+                Clear Tag Filter
+              </button>
             )}
           </div>
         </div>
@@ -243,6 +283,38 @@ export default function Notebook() {
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
+              </div>
+              <div className="mb-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {currentNote.tags && currentNote.tags.map((tag, index) => (
+                    <div key={index} className="flex items-center gap-1 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-full px-3 py-1 text-sm">
+                      <span>{tag}</span>
+                      <button
+                        onClick={() => {
+                          const newTags = currentNote.tags.filter((_, i) => i !== index);
+                          setCurrentNote(prev => ({ ...prev, tags: newTags }));
+                          updateNote(currentNote._id, { tags: newTags });
+                        }}
+                        className="text-purple-500 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-100"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <input
+                    type="text"
+                    placeholder="Add a tag..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.target.value.trim() !== '') {
+                        const newTags = [...(currentNote.tags || []), e.target.value.trim()];
+                        setCurrentNote(prev => ({ ...prev, tags: newTags }));
+                        updateNote(currentNote._id, { tags: newTags });
+                        e.target.value = '';
+                      }
+                    }}
+                    className="bg-transparent outline-none"
+                  />
+                </div>
               </div>
               <MDXEditor
                 markdown={currentNote.content}
