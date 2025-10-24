@@ -95,9 +95,9 @@ export default function Board() {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="p-4">
         <h2 className="text-3xl font-bold mb-4">{board.name}</h2>
-        <SortableContext items={board.lists.map(list => list._id)} strategy={horizontalListSortingStrategy}>
+        <SortableContext items={(board.lists || []).map(list => list._id)} strategy={horizontalListSortingStrategy}>
           <div className="flex gap-4 overflow-x-auto">
-            {board.lists.map(list => (
+            {(board.lists || []).map(list => (
               <List
                 key={list._id}
                 list={list}

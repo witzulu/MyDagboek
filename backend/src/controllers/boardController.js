@@ -1,5 +1,6 @@
 // backend/src/controllers/boardController.js
 const Board = require('../models/Board');
+const List = require('../models/List');
 
 // @desc    Get all boards (optionally filter by project or user)
 // @route   GET /api/boards
@@ -15,22 +16,29 @@ exports.getBoards = async (req, res) => {
   }
 };
 
-// @desc    Get a single board by ID
+// @desc    Get a single board by ID with its lists and tasks
 // @route   GET /api/boards/:id
 // @access  Private
 exports.getBoardById = async (req, res) => {
   try {
-    const board = await Board.findById(req.params.id);
+    const board = await Board.findById(req.params.id).lean(); // Use .lean() for a plain JS object
 
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
     }
+
+    // Find all lists associated with the board and populate their tasks
+    const lists = await List.find({ board: req.params.id }).populate('tasks');
+
+    // Attach the lists to the board object
+    board.lists = lists;
 
     res.json(board);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // @desc    Create a new board
 // @route   POST /api/boards
