@@ -71,7 +71,9 @@ exports.getBoardById = async (req, res, next) => {
       return res.status(404).json({ message: 'Board not found or user not authorized' });
     }
 
-    const lists = await List.find({ board: board._id }).sort({ position: 'asc' });
+    const lists = await List.find({ board: board._id })
+      .sort({ position: 'asc' })
+      .populate('tasks');
 
     res.status(200).json({ board, lists });
   } catch (error) {
