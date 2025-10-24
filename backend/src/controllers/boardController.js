@@ -1,59 +1,47 @@
-// backend/src/controllers/boardController.js
 const Board = require('../models/Board');
 const List = require('../models/List');
-const Task = require('../models/Task'); // Ensure Task model is imported
+const Task = require('../models/Task');
 
-// @desc    Get all boards (optionally filter by project or user)
-// @route   GET /api/boards
+// @desc    Get all boards for a specific project
+// @route   GET /api/projects/:projectId/boards
 // @access  Private
 exports.getBoards = async (req, res) => {
   try {
-    const boards = await Board.find({});
+    const boards = await Board.find({ project: req.params.projectId });
     res.json(boards);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get a single board by ID with its lists and tasks
+// @desc    Get a single board by ID
 // @route   GET /api/boards/:id
 // @access  Private
 exports.getBoardById = async (req, res) => {
   try {
     const board = await Board.findById(req.params.id);
-
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
     }
-
-    // Find all lists for the board and populate their tasks
     const lists = await List.find({ board: board._id }).populate('tasks');
-
-    // Convert the Mongoose document to a plain object to attach the lists
     const boardObject = board.toObject();
     boardObject.lists = lists;
-
     res.json(boardObject);
   } catch (error) {
-    console.error('Error fetching board by ID:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-
-// @desc    Create a new board
-// @route   POST /api/boards
+// @desc    Create a new board for a specific project
+// @route   POST /api/projects/:projectId/boards
 // @access  Private
 exports.createBoard = async (req, res) => {
   try {
-    const { name, description } = req.body;
-
+    const { name } = req.body;
     const board = new Board({
       name,
-      description,
-      // user: req.user._id, // if boards belong to a user
+      project: req.params.projectId,
     });
-
     const createdBoard = await board.save();
     res.status(201).json(createdBoard);
   } catch (error) {
@@ -66,6 +54,7 @@ exports.createBoard = async (req, res) => {
 // @access  Private
 exports.updateBoard = async (req, res) => {
   try {
+    // TODO: Ensure user has permission to update this board
     const { name, description } = req.body;
     const board = await Board.findById(req.params.id);
 
@@ -88,12 +77,13 @@ exports.updateBoard = async (req, res) => {
 // @access  Private
 exports.deleteBoard = async (req, res) => {
   try {
+    // TODO: Ensure user has permission to delete this board
     const board = await Board.findById(req.params.id);
 
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
     }
-
+    // TODO: Add cascading delete for lists and tasks
     await board.deleteOne();
     res.json({ message: 'Board deleted successfully' });
   } catch (error) {
