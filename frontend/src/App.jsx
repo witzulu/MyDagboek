@@ -19,7 +19,7 @@ import UserSettings from './pages/Settings/UserSettings';
 import Projects from './pages/Projects/Projects';
 import ProjectDashboard from './pages/Projects/ProjectDashboard';
 import Notebook from './components/Notebook';
-import Boards from './components/Boards';
+import Boards from './pages/Boards/Boards';
 
 // Auth Components
 import ProtectedRoute from './components/Auth/ProtectedRoute';
