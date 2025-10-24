@@ -1,5 +1,6 @@
 const List = require('../models/List');
 const Board = require('../models/Board');
+const Task = require('../models/Task');
 
 // @desc    Create a new list
 // @route   POST /api/boards/:boardId/lists
@@ -79,11 +80,11 @@ exports.deleteList = async (req, res, next) => {
       return res.status(401).json({ message: 'User not authorized' });
     }
 
-    // Note: In the future, we might need to handle tasks within the list before deleting.
-    // For now, we'll just remove the list.
-    await list.remove();
+    // Also delete all tasks within the list
+    await Task.deleteMany({ list: listId });
+    await list.deleteOne();
 
-    res.status(200).json({ message: 'List removed successfully' });
+    res.status(200).json({ message: 'List and its tasks removed successfully' });
   } catch (error) {
     next(error);
   }

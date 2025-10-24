@@ -79,7 +79,7 @@ exports.deleteTask = async (req, res, next) => {
       return res.status(401).json({ message: 'User not authorized' });
     }
 
-    await task.remove();
+    await task.deleteOne();
     res.status(200).json({ message: 'Task removed' });
   } catch (error) {
     next(error);

@@ -124,27 +124,16 @@ exports.deleteBoard = async (req, res, next) => {
       return res.status(401).json({ message: 'User not authorized' });
     }
 
-    // Use a transaction for atomicity
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    // Sequentially delete associated documents
+    // Delete all tasks associated with the board
+    await Task.deleteMany({ board: board._id });
+    // Delete all lists associated with the board
+    await List.deleteMany({ board: board._id });
+    // Delete the board itself
+    await board.deleteOne();
 
-    try {
-      // Delete all tasks associated with the board
-      await Task.deleteMany({ board: board._id }, { session });
-      // Delete all lists associated with the board
-      await List.deleteMany({ board: board._id }, { session });
-      // Delete the board itself
-      await board.remove({ session });
+    res.status(200).json({ message: 'Board and all associated lists and tasks removed' });
 
-      await session.commitTransaction();
-      res.status(200).json({ message: 'Board and all associated lists and tasks removed' });
-
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
   } catch (error) {
     next(error);
   }
