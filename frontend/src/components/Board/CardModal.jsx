@@ -5,14 +5,16 @@ const CardModal = ({ isOpen, onClose, onSave, task, listId }) => {
   const [description, setDescription] = useState('');
 
   useEffect(() => {
-    if (task) {
-      setTitle(task.title);
-      setDescription(task.description);
-    } else {
-      setTitle('');
-      setDescription('');
+    if (isOpen) {
+      if (task) {
+        setTitle(task.title);
+        setDescription(task.description);
+      } else {
+        setTitle('');
+        setDescription('');
+      }
     }
-  }, [task]);
+  }, [task, isOpen]);
 
   if (!isOpen) return null;
 

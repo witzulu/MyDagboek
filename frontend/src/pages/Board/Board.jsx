@@ -233,7 +233,7 @@ const Board = () => {
       const savedTask = await response.json();
 
       setLists(prevLists => {
-        const newLists = [...prevLists];
+        const newLists = JSON.parse(JSON.stringify(prevLists));
         const listIndex = newLists.findIndex(l => l._id === listId);
 
         if (listIndex === -1) return prevLists;
