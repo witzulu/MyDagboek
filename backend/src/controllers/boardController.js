@@ -1,16 +1,15 @@
 // backend/src/controllers/boardController.js
 const Board = require('../models/Board');
 const List = require('../models/List');
+const Task = require('../models/Task'); // Ensure Task model is imported
 
 // @desc    Get all boards (optionally filter by project or user)
 // @route   GET /api/boards
 // @access  Private
 exports.getBoards = async (req, res) => {
   try {
-    // Example: filter by user if your Board model includes a user reference
-    // const boards = await Board.find({ user: req.user._id });
     const boards = await Board.find({});
-    res.json(boards); // ✅ return valid JSON
+    res.json(boards);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -21,20 +20,22 @@ exports.getBoards = async (req, res) => {
 // @access  Private
 exports.getBoardById = async (req, res) => {
   try {
-    const board = await Board.findById(req.params.id).lean(); // Use .lean() for a plain JS object
+    const board = await Board.findById(req.params.id);
 
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
     }
 
-    // Find all lists associated with the board and populate their tasks
-    const lists = await List.find({ board: req.params.id }).populate('tasks');
+    // Find all lists for the board and populate their tasks
+    const lists = await List.find({ board: board._id }).populate('tasks');
 
-    // Attach the lists to the board object
-    board.lists = lists;
+    // Convert the Mongoose document to a plain object to attach the lists
+    const boardObject = board.toObject();
+    boardObject.lists = lists;
 
-    res.json(board);
+    res.json(boardObject);
   } catch (error) {
+    console.error('Error fetching board by ID:', error);
     res.status(500).json({ message: error.message });
   }
 };
