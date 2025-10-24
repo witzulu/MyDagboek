@@ -4,11 +4,16 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import Card from '../../components/Board/Card';
+import CardModal from '../../components/Board/CardModal';
 
 const Board = () => {
   const { projectId, boardId } = useParams();
   const [board, setBoard] = useState(null);
   const [lists, setLists] = useState([]);
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [targetListId, setTargetListId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -119,20 +124,74 @@ const Board = () => {
     }
   };
 
+  const findList = (taskId) => lists.find(list => list.tasks.some(task => task._id === taskId));
+
   const handleDragEnd = async (event) => {
     const { active, over } = event;
-    if (active.id !== over.id) {
-      setLists((items) => {
-        const oldIndex = items.findIndex(item => item._id === active.id);
-        const newIndex = items.findIndex(item => item._id === over.id);
-        const newOrder = arrayMove(items, oldIndex, newIndex);
+    if (!over) return;
 
-        // After reordering, update the backend
-        const orderedListIds = newOrder.map(item => item._id);
-        updateListOrder(orderedListIds);
+    // Distinguish between list and task dragging
+    const isListDrag = lists.some(list => list._id === active.id);
 
-        return newOrder;
+    if (isListDrag) {
+      if (active.id !== over.id) {
+        setLists((items) => {
+          const oldIndex = items.findIndex(item => item._id === active.id);
+          const newIndex = items.findIndex(item => item._id === over.id);
+          const newOrder = arrayMove(items, oldIndex, newIndex);
+          const orderedListIds = newOrder.map(item => item._id);
+          updateListOrder(orderedListIds);
+          return newOrder;
+        });
+      }
+    } else {
+      // Handle task drag
+      const sourceList = findList(active.id);
+      const destList = findList(over.id) || lists.find(list => list._id === over.id);
+
+      if (!sourceList || !destList) return;
+
+      setLists(prevLists => {
+        const newLists = JSON.parse(JSON.stringify(prevLists));
+        const sourceListIndex = newLists.findIndex(l => l._id === sourceList._id);
+        const destListIndex = newLists.findIndex(l => l._id === destList._id);
+        const sourceTaskIndex = newLists[sourceListIndex].tasks.findIndex(t => t._id === active.id);
+
+        const [movedTask] = newLists[sourceListIndex].tasks.splice(sourceTaskIndex, 1);
+        movedTask.list = destList._id;
+
+        let destTaskIndex;
+        if (sourceList._id === destList._id) {
+          // Reordering within the same list
+          destTaskIndex = newLists[destListIndex].tasks.findIndex(t => t._id === over.id);
+          newLists[destListIndex].tasks.splice(destTaskIndex, 0, movedTask);
+        } else {
+          // Moving to a different list
+          destTaskIndex = newLists[destListIndex].tasks.length;
+          newLists[destListIndex].tasks.push(movedTask);
+        }
+
+        updateTaskPosition(movedTask, destList._id, destTaskIndex);
+
+        return newLists;
       });
+    }
+  };
+
+  const updateTaskPosition = async (task, newListId, newPosition) => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/tasks/${task._id}/move`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newListId, newPosition }),
+      });
+    } catch (err) {
+      setError("Failed to save task position.");
+      // Optionally, revert the optimistic update here
     }
   };
 
@@ -152,8 +211,67 @@ const Board = () => {
     }
   };
 
+  const handleSaveTask = async ({ title, description, listId, taskId }) => {
+    const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
+    const method = taskId ? 'PUT' : 'POST';
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title, description, listId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save task: ${await response.text()}`);
+      }
+
+      const savedTask = await response.json();
+
+      setLists(prevLists => {
+        const newLists = [...prevLists];
+        const listIndex = newLists.findIndex(l => l._id === listId);
+
+        if (listIndex === -1) return prevLists;
+
+        if (taskId) {
+          // Update existing task
+          const taskIndex = newLists[listIndex].tasks.findIndex(t => t._id === taskId);
+          if (taskIndex !== -1) {
+            newLists[listIndex].tasks[taskIndex] = savedTask;
+          }
+        } else {
+          // Add new task
+          if (!newLists[listIndex].tasks) {
+            newLists[listIndex].tasks = [];
+          }
+          newLists[listIndex].tasks.push(savedTask);
+        }
+        return newLists;
+      });
+
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
+      <CardModal
+        isOpen={isCardModalOpen}
+        onClose={() => {
+          setIsCardModalOpen(false);
+          setEditingTask(null);
+          setTargetListId(null);
+        }}
+        onSave={handleSaveTask}
+        task={editingTask}
+        listId={targetListId}
+      />
       <h1 className="text-2xl font-bold mb-4">{board.name}</h1>
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={lists.map(l => l._id)} strategy={horizontalListSortingStrategy}>
@@ -164,6 +282,8 @@ const Board = () => {
                 list={list}
                 onUpdateList={handleUpdateList}
                 onDeleteList={handleDeleteList}
+                onAddTask={() => { setTargetListId(list._id); setIsCardModalOpen(true); }}
+                onEditTask={(task) => { setEditingTask(task); setIsCardModalOpen(true); }}
               />
             ))}
             <div className="w-72 flex-shrink-0">
@@ -176,7 +296,7 @@ const Board = () => {
   );
 };
 
-const SortableList = ({ list, onUpdateList, onDeleteList }) => {
+const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask }) => {
   const {
     attributes,
     listeners,
@@ -191,13 +311,20 @@ const SortableList = ({ list, onUpdateList, onDeleteList }) => {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <List list={list} onUpdateList={onUpdateList} onDeleteList={onDeleteList} />
+    <div ref={setNodeRef} style={style}>
+      <List
+        list={list}
+        onUpdateList={onUpdateList}
+        onDeleteList={onDeleteList}
+        onAddTask={onAddTask}
+        onEditTask={onEditTask}
+        dragHandleProps={{...attributes, ...listeners}}
+      />
     </div>
   );
 };
 
-const List = ({ list, onUpdateList, onDeleteList }) => {
+const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHandleProps }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(list.name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -213,7 +340,7 @@ const List = ({ list, onUpdateList, onDeleteList }) => {
 
   return (
     <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg w-72 flex-shrink-0">
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-2" {...dragHandleProps}>
         {!isRenaming ? (
           <h2 className="font-semibold">{list.name}</h2>
         ) : (
@@ -248,7 +375,20 @@ const List = ({ list, onUpdateList, onDeleteList }) => {
           )}
         </div>
       </div>
-      {/* Cards will go here */}
+      <SortableContext items={list.tasks?.map(t => t._id) || []}>
+        <div className="mt-2 space-y-2">
+          {list.tasks && list.tasks.map(task => (
+            <div key={task._id} onClick={() => onEditTask(task)}>
+              <Card task={task} />
+            </div>
+          ))}
+        </div>
+      </SortableContext>
+      <div className="mt-3">
+        <button onClick={onAddTask} className="w-full text-left p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700">
+          + Add a card
+        </button>
+      </div>
     </div>
   );
 };
