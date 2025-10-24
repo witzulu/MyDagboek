@@ -1,13 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const {
-  createList,
-  updateList,
-  deleteList,
-  reorderLists,
-} = require('../controllers/listController');
-const { protect } = require('../middleware/authMiddleware');
+const { getLists, getListById, createList, updateList, deleteList } = require('../controllers/listController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.route('/:listId').put(protect, updateList).delete(protect, deleteList);
+router.route('/').get(authMiddleware, getLists).post(authMiddleware, createList);
+router.route('/:id').get(authMiddleware, getListById).put(authMiddleware, updateList).delete(authMiddleware, deleteList);
 
 module.exports = router;

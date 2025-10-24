@@ -1,32 +1,20 @@
 const mongoose = require('mongoose');
 
-const listSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-  },
+const ListSchema = new mongoose.Schema({
   board: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Board',
-    required: true,
+    required: true
   },
-  position: {
-    type: Number,
+  name: {
+    type: String,
     required: true,
+    trim: true
   },
-}, {
-  timestamps: true,
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
-});
+  tasks: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task'
+  }]
+}, { timestamps: true });
 
-// Virtual populate for tasks
-listSchema.virtual('tasks', {
-  ref: 'Task',
-  localField: '_id',
-  foreignField: 'list',
-  options: { sort: { position: 'asc' } } // Sort tasks by position when populating
-});
-
-module.exports = mongoose.model('List', listSchema);
+module.exports = mongoose.model('List', ListSchema);

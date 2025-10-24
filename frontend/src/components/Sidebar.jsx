@@ -11,7 +11,7 @@ export default function Sidebar() {
   const projectNavItems = [
     { to: `/projects/${projectId}`, icon: Layout, label: 'Dashboard' },
     { to: `/projects/${projectId}/notebook`, icon: Book, label: 'Notebook' },
-    { to: `/projects/${projectId}/boards`, icon: FolderKanban, label: 'Boards' },
+    { to: `/projects/${projectId}/boards`, icon: Layout, label: 'Boards' },
     { to: `/projects/${projectId}/errors`, icon: AlertCircle, label: 'Error Reports' },
     { to: `/projects/${projectId}/progress`, icon: TrendingUp, label: 'Progress Reports' },
     { to: `/projects/${projectId}/snippets`, icon: Code, label: 'Code Snippets' },
