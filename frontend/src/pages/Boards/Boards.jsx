@@ -31,7 +31,7 @@ export default function Boards() {
         }
         const data = await response.json();
         setBoards(data);
-      } catch (err)_ {
+      } catch (err) {
         setError(err.message);
       } finally {
         setLoading(false);
