@@ -1,9 +1,20 @@
 const express = require('express');
-const router = express.Router();
-const { getBoards, getBoardById, createBoard, updateBoard, deleteBoard } = require('../controllers/boardController');
+const { getBoards, createBoard, getBoardById, updateBoard, deleteBoard } = require('../controllers/boardController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-router.route('/').get(authMiddleware, getBoards).post(authMiddleware, createBoard);
-router.route('/:id').get(authMiddleware, getBoardById).put(authMiddleware, updateBoard).delete(authMiddleware, deleteBoard);
+// This router handles routes nested under /api/projects/:projectId/boards
+const projectBoardsRouter = express.Router({ mergeParams: true });
 
-module.exports = router;
+projectBoardsRouter.route('/')
+  .get(authMiddleware, getBoards)
+  .post(authMiddleware, createBoard);
+
+// This router handles direct routes like /api/boards/:id
+const boardRouter = express.Router();
+
+boardRouter.route('/:id')
+  .get(authMiddleware, getBoardById)
+  .put(authMiddleware, updateBoard)
+  .delete(authMiddleware, deleteBoard);
+
+module.exports = { projectBoardsRouter, boardRouter };

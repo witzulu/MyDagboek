@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@excalidraw/excalidraw/index.css";
+@import "@excalidraw/excalidraw/dist/excalidraw.min.css";
 
 body {
   margin: 0;
