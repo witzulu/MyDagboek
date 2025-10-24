@@ -72,7 +72,6 @@ I am currently working on.
 2. Site Admin
 3. User Admin
 4. Dashboard for each project
-5. Basic notes  (will add more features later)
 6. initial boards (create boards and add list and tasks)
    
 7. Notebooks
