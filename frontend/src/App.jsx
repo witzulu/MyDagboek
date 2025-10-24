@@ -19,7 +19,8 @@ import UserSettings from './pages/Settings/UserSettings';
 import Projects from './pages/Projects/Projects';
 import ProjectDashboard from './pages/Projects/ProjectDashboard';
 import Notebook from './components/Notebook';
-import Boards from './pages/Boards/Boards';
+import BoardListPage from './pages/Boards/BoardListPage';
+import Board from './pages/Board/Board';
 
 // Auth Components
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -44,18 +45,19 @@ export default function App() {
               <Route path="projects" element={<Projects />} />
               <Route path="projects/:projectId" element={<ProjectDashboard />} />
               <Route path="projects/:projectId/notebook" element={<Notebook />} />
-              <Route path="projects/:projectId/boards" element={<Boards />} />
+              <Route path="projects/:projectId/boards" element={<BoardListPage />} />
+              <Route path="projects/:projectId/boards/:boardId" element={<Board />} />
               <Route path="settings" element={<UserSettings />} />
             </Route>
           </Route>
 
           {/* Admin Routes */}
           <Route element={<ProtectedRoute adminOnly />}>
-  <Route path="/admin" element={<MainLayout />}>
-    <Route index element={<AdminDashboard />} />
-    <Route path="users" element={<UserApproval />} />
-  </Route>
-</Route>
+            <Route path="/admin" element={<MainLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<UserApproval />} />
+            </Route>
+          </Route>
 
           {/* Catch-all Route */}
           <Route path="*" element={<Navigate to={isAuthenticated ? "/projects" : "/login"} />} />
