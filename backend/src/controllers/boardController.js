@@ -1,5 +1,6 @@
 const Board = require('../models/Board');
 const Project = require('../models/Project');
+const List = require('../models/List');
 
 // @desc    Get all boards for a project
 // @route   GET /api/projects/:projectId/boards
@@ -44,14 +45,39 @@ exports.createBoard = async (req, res, next) => {
       user: req.user.id,
     });
 
+    // Create default lists
+    const defaultLists = [
+      { name: 'To-Do', board: board._id, position: 0 },
+      { name: 'In Progress', board: board._id, position: 1 },
+      { name: 'Done', board: board._id, position: 2 },
+    ];
+
+    await List.insertMany(defaultLists);
+
     res.status(201).json(board);
   } catch (error) {
     next(error);
   }
 };
 
-// Placeholder for getting a single board
-exports.getBoardById = async (req, res, next) => { res.status(501).json({ message: 'Not implemented' }); };
+// @desc    Get a single board by ID with its lists
+// @route   GET /api/boards/:id
+// @access  Private
+exports.getBoardById = async (req, res, next) => {
+  try {
+    const board = await Board.findOne({ _id: req.params.id, user: req.user.id });
+
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found or user not authorized' });
+    }
+
+    const lists = await List.find({ board: board._id }).sort({ position: 'asc' });
+
+    res.status(200).json({ board, lists });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // Placeholder for updating a board
 exports.updateBoard = async (req, res, next) => { res.status(501).json({ message: 'Not implemented' }); };

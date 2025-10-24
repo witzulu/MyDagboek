@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import CreateBoardModal from '../../components/CreateBoardModal';
 
 const Boards = () => {
@@ -88,10 +88,10 @@ const Boards = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {!loading && !error && boards.map(board => (
-          <div key={board._id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <Link to={`/projects/${projectId}/boards/${board._id}`} key={board._id} className="block bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-lg transition-shadow">
             <h2 className="text-xl font-bold mb-2">{board.name}</h2>
             <p className="text-gray-700 dark:text-gray-300">{board.description}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -9,23 +9,23 @@ const {
   uploadImage,
   handleImageUpload
 } = require('../controllers/noteController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
-  .get(authMiddleware, getNotes)
-  .post(authMiddleware, createNote);
+  .get(protect, getNotes)
+  .post(protect, createNote);
 
 router.route('/:id')
-  .get(authMiddleware, getNoteById)
-  .put(authMiddleware, updateNote)
-  .delete(authMiddleware, deleteNote);
+  .get(protect, getNoteById)
+  .put(protect, updateNote)
+  .delete(protect, deleteNote);
 
 const noteRouter = express.Router();
 
-noteRouter.post('/upload', authMiddleware, uploadImage, handleImageUpload);
+noteRouter.post('/upload', protect, uploadImage, handleImageUpload);
 
 noteRouter.route('/:id')
-    .put(authMiddleware, updateNote)
-    .delete(authMiddleware, deleteNote);
+    .put(protect, updateNote)
+    .delete(protect, deleteNote);
 
 module.exports = { projectNotesRouter: router, noteRouter };

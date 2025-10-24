@@ -1,20 +1,20 @@
 const mongoose = require('mongoose');
 
-const ListSchema = new mongoose.Schema({
-  board: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Board',
-    required: true
-  },
+const listSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
-  tasks: [{
+  board: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Task'
-  }]
+    ref: 'Board',
+    required: true,
+  },
+  position: {
+    type: Number,
+    required: true,
+  },
 }, { timestamps: true });
 
-module.exports = mongoose.model('List', ListSchema);
+module.exports = mongoose.model('List', listSchema);
