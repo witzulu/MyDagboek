@@ -61,14 +61,21 @@ To get a local copy up and running, follow these simple steps.
 
 Currently this app is not working the frontend shows and the authentication is setup but i have not implemented all the features yet.
 I am currently working on.
-    > Site Admin
-    > Dashboard for each project
-    > Notebook system
+
+    > Board enhancement
+    > List enchancement
+    > task enhancement
+    
 ## Features (currently implemented)
 1. Projects
     Projects allow you to group notebooks, boards, error reports,codesnippets, etc into one project.
+2. Site Admin
+3. User Admin
+4. Dashboard for each project
+5. Basic notes  (will add more features later)
+6. initial boards (create boards and add list and tasks)
    
-2. Notebooks
+7. Notebooks
    - A rich-text Markdown editor with a toolbar for creating and editing notes.
    - Image upload and embedding functionality within notes.
    - A tagging system to organize notes by topic.
