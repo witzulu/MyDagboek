@@ -1,32 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const { getUsers, approveUser, blockUser, unblockUser, updateUserProfile } = require('../controllers/userController');
-const authMiddleware = require('../middleware/authMiddleware');
-const adminMiddleware = require('../middleware/adminMiddleware');
+const { protect } = require('../middleware/authMiddleware');
+const admin = require('../middleware/adminMiddleware');
 
 // @route   GET api/users
 // @desc    Get all users
 // @access  Private/Admin
-router.get('/', [authMiddleware, adminMiddleware], getUsers);
+router.get('/', [protect, admin], getUsers);
 
 // @route   PUT api/users/:id/approve
 // @desc    Approve a user
 // @access  Private/Admin
-router.put('/:id/approve', [authMiddleware, adminMiddleware], approveUser);
+router.put('/:id/approve', [protect, admin], approveUser);
 
 // @route   PUT api/users/:id/block
 // @desc    Block a user
 // @access  Private/Admin
-router.put('/:id/block', [authMiddleware, adminMiddleware], blockUser);
+router.put('/:id/block', [protect, admin], blockUser);
 
 // @route   PUT api/users/:id/unblock
 // @desc    Unblock a user
 // @access  Private/Admin
-router.put('/:id/unblock', [authMiddleware, adminMiddleware], unblockUser);
+router.put('/:id/unblock', [protect, admin], unblockUser);
 
 // @route   PUT api/users/profile
 // @desc    Update user profile
 // @access  Private
-router.put('/profile', authMiddleware, updateUserProfile);
+router.put('/profile', protect, updateUserProfile);
 
 module.exports = router;
