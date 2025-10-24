@@ -94,6 +94,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/projects/:projectId/notes', projectNotesRouter);
 app.use('/api/notes', noteRouter);
+app.use('/api/boards', boardRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
