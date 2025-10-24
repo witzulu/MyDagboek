@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@excalidraw/excalidraw/dist/excalidraw.min.css";
 
 body {
   margin: 0;
@@ -10,35 +9,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
-.mdxeditor {
-  background-color: var(--background);
-  color: var(--foreground);
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-}
-
-.mdxeditor-toolbar {
-  background-color: var(--secondary);
-  color: var(--foreground);
-}
-
-.mdxeditor-toolbar button {
-  color: var(--foreground);
-}
-
 .prose pre {
-  background-color: #f3f4f6; /* A light gray background */
-  padding: 1rem;
-  border-radius: 0.5rem;
-  font-family: monospace;
-  white-space: pre-wrap; /* Ensures long lines wrap */
-}
-
-.dark .prose pre {
-  background-color: #1f2937; /* A darker gray for dark mode */
+    background-color: var(--code-bg);
+    color: var(--code-text);
+    font-family: 'Courier New', Courier, monospace;
 }
