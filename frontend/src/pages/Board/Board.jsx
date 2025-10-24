@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Card from '../../components/Board/Card';
 import CardModal from '../../components/Board/CardModal';
+import EditBoardModal from '../../components/Board/EditBoardModal';
 
 const Board = () => {
   const { projectId, boardId } = useParams();
+  const navigate = useNavigate();
   const [board, setBoard] = useState(null);
   const [lists, setLists] = useState([]);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [targetListId, setTargetListId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -259,6 +262,38 @@ const Board = () => {
     }
   };
 
+  const handleUpdateBoard = async (updatedData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/boards/${boardId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(updatedData),
+      });
+      if (!response.ok) throw new Error('Failed to update board');
+      const updatedBoard = await response.json();
+      setBoard(updatedBoard);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteBoard = async () => {
+    if (window.confirm('Are you sure you want to delete this board and all its contents?')) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/boards/${boardId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error('Failed to delete board');
+        navigate(`/projects/${projectId}/boards`);
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <CardModal
@@ -272,7 +307,19 @@ const Board = () => {
         task={editingTask}
         listId={targetListId}
       />
-      <h1 className="text-2xl font-bold mb-4">{board.name}</h1>
+      <EditBoardModal
+        isOpen={isEditBoardModalOpen}
+        onClose={() => setIsEditBoardModalOpen(false)}
+        onSave={handleUpdateBoard}
+        board={board}
+      />
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">{board.name}</h1>
+        <div className="flex space-x-2">
+          <button onClick={() => setIsEditBoardModalOpen(true)} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md">Edit</button>
+          <button onClick={handleDeleteBoard} className="px-3 py-1 bg-red-500 text-white rounded-md">Delete</button>
+        </div>
+      </div>
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={lists.map(l => l._id)} strategy={horizontalListSortingStrategy}>
           <div className="flex items-start space-x-4 overflow-x-auto">
