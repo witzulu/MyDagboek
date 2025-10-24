@@ -4,8 +4,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { getSettings, updateSettings, uploadLogo, resetLogo } = require('../controllers/settingsController');
-const authMiddleware = require('../middleware/authMiddleware');
-const adminMiddleware = require('../middleware/adminMiddleware');
+const { protect } = require('../middleware/authMiddleware');
+const { admin } = require('../middleware/adminMiddleware');
 
 const uploadDir = 'uploads/';
 if (!fs.existsSync(uploadDir)) {
@@ -31,16 +31,16 @@ router.get('/', getSettings);
 // @route   PUT api/settings
 // @desc    Update site settings
 // @access  Private/Admin
-router.put('/', [authMiddleware, adminMiddleware], updateSettings);
+router.put('/', [protect, admin], updateSettings);
 
 // @route   POST api/settings/upload-logo
 // @desc    Upload site logo
 // @access  Private/Admin
-router.post('/upload-logo', [authMiddleware, adminMiddleware, upload.single('logo')], uploadLogo);
+router.post('/upload-logo', [protect, admin, upload.single('logo')], uploadLogo);
 
 // @route   DELETE api/settings/reset-logo
 // @desc    Reset site logo
 // @access  Private/Admin
-router.delete('/reset-logo', [authMiddleware, adminMiddleware], resetLogo);
+router.delete('/reset-logo', [protect, admin], resetLogo);
 
 module.exports = router;
