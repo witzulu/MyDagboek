@@ -1,9 +1,9 @@
 const express = require('express');
-const router = express.Router();
+const router = express.Router({ mergeParams: true }); // Enable mergeParams
 const { getBoards, getBoardById, createBoard, updateBoard, deleteBoard } = require('../controllers/boardController');
-const authMiddleware = require('../middleware/authMiddleware');
+const protect = require('../middleware/authMiddleware');
 
-router.route('/').get(authMiddleware, getBoards).post(authMiddleware, createBoard);
-router.route('/:id').get(authMiddleware, getBoardById).put(authMiddleware, updateBoard).delete(authMiddleware, deleteBoard);
+router.route('/').get(protect, getBoards).post(protect, createBoard);
+router.route('/:id').get(protect, getBoardById).put(protect, updateBoard).delete(protect, deleteBoard);
 
 module.exports = router;

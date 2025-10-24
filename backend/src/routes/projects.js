@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { getProjects, getProjectById, createProject, updateProject, deleteProject } = require('../controllers/projectController');
-const authMiddleware = require('../middleware/authMiddleware');
+const protect = require('../middleware/authMiddleware');
+const boardRouter = require('./boards'); // Import board router
 
-router.route('/').get(authMiddleware, getProjects).post(authMiddleware, createProject);
-router.route('/:id').get(authMiddleware, getProjectById).put(authMiddleware, updateProject).delete(authMiddleware, deleteProject);
+router.use('/:projectId/boards', boardRouter); // Nest the board routes
+
+router.route('/').get(protect, getProjects).post(protect, createProject);
+router.route('/:id').get(protect, getProjectById).put(protect, updateProject).delete(protect, deleteProject);
 
 module.exports = router;
