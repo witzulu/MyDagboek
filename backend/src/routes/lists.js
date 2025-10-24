@@ -1,9 +1,12 @@
 const express = require('express');
-const router = express.Router();
-const { getLists, getListById, createList, updateList, deleteList } = require('../controllers/listController');
-const authMiddleware = require('../middleware/authMiddleware');
+const router = express.Router({ mergeParams: true });
+const { createList, updateList, deleteList } = require('../controllers/listController');
+const protect = require('../middleware/authMiddleware');
+const taskRouter = require('./tasks');
 
-router.route('/').get(authMiddleware, getLists).post(authMiddleware, createList);
-router.route('/:id').get(authMiddleware, getListById).put(authMiddleware, updateList).delete(authMiddleware, deleteList);
+router.use('/:listId/tasks', taskRouter);
+
+router.route('/').post(protect, createList);
+router.route('/:id').put(protect, updateList).delete(protect, deleteList);
 
 module.exports = router;

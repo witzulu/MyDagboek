@@ -116,6 +116,7 @@ export default function Board() {
               ))}
             </div>
           </SortableContext>
+        </div>
         <CardModal
           isOpen={modalState.isOpen}
           onClose={closeModal}
