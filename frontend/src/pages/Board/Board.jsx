@@ -97,9 +97,9 @@ export default function Board() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-3xl font-bold">{board.name}</h2>
           <div>
-            {/* Add Board Actions (Edit/Delete) here */}
-            <button className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">Edit Board</button>
-            <button className="p-2 ml-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">Delete Board</button>
+            {/* TODO: Implement Edit and Delete Board functionality */}
+            <button disabled className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded transition-colors cursor-not-allowed">Edit Board</button>
+            <button disabled className="p-2 ml-2 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded transition-colors cursor-not-allowed">Delete Board</button>
           </div>
         </div>
         <div className="flex-1 overflow-x-auto">
@@ -108,14 +108,14 @@ export default function Board() {
               {(board.lists || []).map(list => (
                 <List
                   key={list._id}
-                list={list}
-                tasks={list.tasks}
-                onAddTask={() => openModal(null, list._id)}
-                onEditTask={(task) => openModal(task)}
-              />
-            ))}
-          </div>
-        </SortableContext>
+                  list={list}
+                  tasks={list.tasks}
+                  onAddTask={() => openModal(null, list._id)}
+                  onEditTask={(task) => openModal(task)}
+                />
+              ))}
+            </div>
+          </SortableContext>
         <CardModal
           isOpen={modalState.isOpen}
           onClose={closeModal}
