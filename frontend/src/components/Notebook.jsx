@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, Pencil } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
+import DrawingCanvas from "./DrawingCanvas";
+import DrawingPreview from "./DrawingPreview";
 import {
   MDXEditor,
   headingsPlugin,
@@ -34,6 +36,7 @@ export default function Notebook() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const filteredNotes = notes
     .filter(note =>
@@ -346,12 +349,38 @@ export default function Notebook() {
                             <Separator />
                             <InsertTable />
                             <InsertThematicBreak />
+                             <Separator />
+                            <button
+                                onClick={() => setIsDrawing(true)}
+                                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                title="Add Drawing"
+                            >
+                                <Pencil className="w-5 h-5" />
+                            </button>
                         </>
                         )
                     })
                 ]}
                 contentEditableClassName="prose"
               />
+              <DrawingPreview
+                drawingData={currentNote.drawing}
+                onEdit={() => setIsDrawing(true)}
+              />
+              {isDrawing && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                  <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-4xl h-3/4">
+                    <DrawingCanvas
+                      initialData={currentNote.drawing}
+                      onSave={(drawingData) => {
+                        updateNote(currentNote._id, { drawing: drawingData });
+                        setIsDrawing(false);
+                      }}
+                      onClose={() => setIsDrawing(false)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center h-96 text-slate-500 dark:text-slate-500">

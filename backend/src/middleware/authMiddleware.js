@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 
-exports.protect = function (req, res, next) {
+module.exports = function (req, res, next) {
   // Try both header types
   let token = req.header('x-auth-token');
 
