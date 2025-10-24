@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useProject } from '../hooks/useProject';
+import { useProject } from '../../hooks/useProject';
 import { Plus } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import CreateBoardModal from '../components/CreateBoardModal';
+import CreateBoardModal from '../../components/CreateBoardModal';
 
 export default function Boards() {
   const { selectedProject } = useProject();
