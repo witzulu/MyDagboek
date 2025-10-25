@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { CheckSquare } from 'lucide-react';
 
 const Card = ({ task }) => {
   const {
@@ -16,13 +17,19 @@ const Card = ({ task }) => {
     transition,
   };
 
+  const checklistExists = task.checklist && task.checklist.length > 0;
+  let completedItems = 0;
+  if (checklistExists) {
+    completedItems = task.checklist.filter(item => item.done).length;
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white dark:bg-gray-700 p-2 rounded-md shadow-sm mb-2 cursor-pointer hover:shadow-md"
+      className="bg-white dark:bg-gray-700 p-3 rounded-md shadow-sm mb-2 cursor-pointer hover:shadow-md"
     >
       <div className="flex flex-wrap gap-1 mb-2">
         {task.labels?.map(label => (
@@ -31,12 +38,20 @@ const Card = ({ task }) => {
           </span>
         ))}
       </div>
-      <p>{task.title}</p>
-      {task.dueDate && (
-        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Due: {new Date(task.dueDate).toLocaleDateString()}
-        </div>
-      )}
+      <p className="text-sm">{task.title}</p>
+      <div className="flex justify-between items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
+        {task.dueDate && (
+          <span>
+            Due: {new Date(task.dueDate).toLocaleDateString()}
+          </span>
+        )}
+        {checklistExists && (
+          <span className={`flex items-center space-x-1 px-2 py-1 rounded ${completedItems === task.checklist.length ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : ''}`}>
+            <CheckSquare size={14} />
+            <span>{completedItems}/{task.checklist.length}</span>
+          </span>
+        )}
+      </div>
     </div>
   );
 };

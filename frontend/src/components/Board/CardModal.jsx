@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import LabelManager from './LabelManager';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 
-const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel }) => {
+const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(null);
   const [assignedLabels, setAssignedLabels] = useState([]);
+  const [attachments, setAttachments] = useState([]);
+  const [checklist, setChecklist] = useState([]);
+  const [newChecklistItem, setNewChecklistItem] = useState('');
+  const [editingChecklistItem, setEditingChecklistItem] = useState(null);
+  const [editingText, setEditingText] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -14,23 +20,32 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
         setAssignedLabels(task.labels || []);
+        setAttachments(task.attachments || []);
+        setChecklist(task.checklist || []);
       } else {
         setTitle('');
         setDescription('');
         setDueDate(null);
         setAssignedLabels([]);
+        setAttachments([]);
+        setChecklist([]);
       }
+      setNewChecklistItem('');
+      setEditingChecklistItem(null);
+      setEditingText('');
     }
   }, [task, isOpen]);
 
   if (!isOpen) return null;
+
+  const getToken = () => localStorage.getItem('token');
 
   const handleSubmit = () => {
     onSave({
       title,
       description,
       dueDate,
-      labels: assignedLabels,
+      labels: assignedLabels.map(l => l._id || l),
       listId: task ? task.list : listId,
       taskId: task ? task._id : null
     });
@@ -38,14 +53,137 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   };
 
   const handleLabelToggle = (labelId) => {
-    setAssignedLabels(prev =>
-      prev.includes(labelId) ? prev.filter(id => id !== labelId) : [...prev, labelId]
-    );
+    const isAssigned = assignedLabels.some(l => l._id === labelId);
+    if (isAssigned) {
+        setAssignedLabels(prev => prev.filter(l => l._id !== labelId));
+    } else {
+        const labelToAdd = projectLabels.find(l => l._id === labelId);
+        if(labelToAdd) setAssignedLabels(prev => [...prev, labelToAdd]);
+    }
   };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !task) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/attachments`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData,
+      });
+      if (res.ok) {
+        const updatedAttachments = await res.json();
+        setAttachments(updatedAttachments);
+        onTaskUpdate({ ...task, attachments: updatedAttachments });
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/attachments/${attachmentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        const updatedAttachments = await res.json();
+        setAttachments(updatedAttachments);
+        onTaskUpdate({ ...task, attachments: updatedAttachments });
+      }
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+    }
+  };
+
+  const handleAddChecklistItem = async () => {
+    if (!newChecklistItem.trim()) return;
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/checklist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ text: newChecklistItem }),
+      });
+      if (res.ok) {
+        const updatedChecklist = await res.json();
+        setChecklist(updatedChecklist);
+        setNewChecklistItem('');
+        onTaskUpdate({ ...task, checklist: updatedChecklist });
+      }
+    } catch (error) {
+      console.error('Error adding checklist item:', error);
+    }
+  };
+
+  const handleUpdateChecklistItem = async (itemId) => {
+    if (!editingText.trim()) return;
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/checklist/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify({ text: editingText }),
+      });
+      if (res.ok) {
+        const updatedChecklist = await res.json();
+        setChecklist(updatedChecklist);
+        setEditingChecklistItem(null);
+        setEditingText('');
+        onTaskUpdate({ ...task, checklist: updatedChecklist });
+      }
+    } catch (error) {
+      console.error('Error updating checklist item:', error);
+    }
+  };
+
+  const handleToggleChecklistItem = async (itemId, currentStatus) => {
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/checklist/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ done: !currentStatus }),
+      });
+      if (res.ok) {
+        const updatedChecklist = await res.json();
+        setChecklist(updatedChecklist);
+        onTaskUpdate({ ...task, checklist: updatedChecklist });
+      }
+    } catch (error) {
+      console.error('Error updating checklist item:', error);
+    }
+  };
+
+  const handleDeleteChecklistItem = async (itemId) => {
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/checklist/${itemId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        const updatedChecklist = await res.json();
+        setChecklist(updatedChecklist);
+        onTaskUpdate({ ...task, checklist: updatedChecklist });
+      }
+    } catch (error) {
+      console.error('Error deleting checklist item:', error);
+    }
+  };
+
+  const checklistProgress = checklist.length > 0 ? (checklist.filter(item => item.done).length / checklist.length) * 100 : 0;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-lg">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">{task ? 'Edit Card' : 'Create Card'}</h2>
         <div className="space-y-4">
           <input
@@ -53,13 +191,13 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             placeholder="Card title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 rounded border"
+            className="w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
           />
           <textarea
             placeholder="Card description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 rounded border h-32"
+            className="w-full p-2 rounded border h-32 bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
           />
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
@@ -67,15 +205,90 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               type="date"
               value={dueDate || ''}
               onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1 block w-full p-2 rounded border"
+              className="mt-1 block w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
           <LabelManager
             projectLabels={projectLabels}
-            assignedLabels={assignedLabels}
+            assignedLabels={assignedLabels.map(l => l._id || l)}
             onLabelToggle={handleLabelToggle}
             onNewLabel={onNewLabel}
           />
+
+          {/* Attachments Section */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Attachments</h3>
+            <div className="space-y-2">
+              {attachments.map(file => (
+                <div key={file._id} className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                  <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
+                  <button onClick={() => handleDeleteAttachment(file._id)} className="text-red-500 hover:text-red-700">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2">
+              <label className="w-full flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-blue-500 hover:text-white">
+                <span className="text-base leading-normal">Select a file</span>
+                <input type='file' className="hidden" onChange={handleFileChange} />
+              </label>
+            </div>
+          </div>
+
+          {/* Checklist Section */}
+          {task && (
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Checklist</h3>
+              {checklist.length > 0 && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                  <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${checklistProgress}%` }}></div>
+                </div>
+              )}
+              <div className="space-y-1">
+                {checklist.map(item => (
+                  <div key={item._id} className="flex items-center group">
+                    <input
+                      type="checkbox"
+                      checked={item.done}
+                      onChange={() => handleToggleChecklistItem(item._id, item.done)}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    {editingChecklistItem === item._id ? (
+                      <input
+                        type="text"
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        onBlur={() => handleUpdateChecklistItem(item._id)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleUpdateChecklistItem(item._id)}
+                        className="ml-2 flex-grow p-1 rounded border bg-white dark:bg-gray-600"
+                        autoFocus
+                      />
+                    ) : (
+                      <span className={`ml-2 flex-grow ${item.done ? 'line-through text-gray-500' : ''}`}>{item.text}</span>
+                    )}
+                    <button onClick={() => { setEditingChecklistItem(item._id); setEditingText(item.text); }} className="ml-2 text-gray-500 opacity-0 group-hover:opacity-100">
+                      <Edit2 size={16} />
+                    </button>
+                    <button onClick={() => handleDeleteChecklistItem(item._id)} className="ml-2 text-red-500 opacity-0 group-hover:opacity-100">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center mt-2">
+                <input
+                  type="text"
+                  value={newChecklistItem}
+                  onChange={(e) => setNewChecklistItem(e.target.value)}
+                  placeholder="Add an item"
+                  className="w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <button onClick={handleAddChecklistItem} className="ml-2 px-4 py-2 rounded bg-green-500 text-white"><Plus size={16}/></button>
+              </div>
+            </div>
+          )}
+
         </div>
         <div className="mt-6 flex justify-between items-center">
           <div>
