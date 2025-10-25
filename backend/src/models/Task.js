@@ -1,5 +1,32 @@
 const mongoose = require('mongoose');
 
+const attachmentSchema = new mongoose.Schema({
+  filename: {
+    type: String,
+    required: true,
+  },
+  filepath: {
+    type: String,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+const checklistItemSchema = new mongoose.Schema({
+  text: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  done: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 const taskSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -32,6 +59,8 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Label'
   }],
+  attachments: [attachmentSchema],
+  checklist: [checklistItemSchema],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Task', taskSchema);

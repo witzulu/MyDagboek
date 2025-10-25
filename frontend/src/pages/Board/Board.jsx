@@ -286,6 +286,27 @@ const Board = () => {
     }
   };
 
+  const handleTaskUpdate = (updatedTask) => {
+    setLists(prevLists => {
+      const newLists = JSON.parse(JSON.stringify(prevLists));
+      const listIndex = newLists.findIndex(l => l._id === updatedTask.list);
+      if (listIndex !== -1) {
+        const taskIndex = newLists[listIndex].tasks.findIndex(t => t._id === updatedTask._id);
+        if (taskIndex !== -1) {
+          // Preserve and re-populate labels
+          const repopulatedLabels = (updatedTask.labels || []).map(labelId =>
+            projectLabels.find(l => l._id === labelId) || labelId
+          ).filter(Boolean);
+
+          newLists[listIndex].tasks[taskIndex] = { ...updatedTask, labels: repopulatedLabels };
+        }
+      }
+      return newLists;
+    });
+    // also update editing task so modal shows new state
+    setEditingTask(prev => ({...prev, ...updatedTask}));
+  };
+
   const handleUpdateBoard = async (updatedData) => {
     try {
       const token = localStorage.getItem('token');
@@ -377,6 +398,7 @@ const Board = () => {
         }}
         onSave={handleSaveTask}
         onDelete={handleDeleteTask}
+        onTaskUpdate={handleTaskUpdate}
         task={editingTask}
         listId={targetListId}
         projectLabels={projectLabels}
