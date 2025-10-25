@@ -7,8 +7,15 @@ import { CSS } from '@dnd-kit/utilities';
 import Card from '../../components/Board/Card';
 import CardModal from '../../components/Board/CardModal';
 import EditBoardModal from '../../components/Board/EditBoardModal';
+import { MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+
 
 const Board = () => {
+  const sensors = useSensors(
+  useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+  useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+);
+
   const { projectId, boardId } = useParams();
   const navigate = useNavigate();
   const [board, setBoard] = useState(null);
@@ -320,7 +327,7 @@ const Board = () => {
           <button onClick={handleDeleteBoard} className="px-3 py-1 bg-red-500 text-white rounded-md">Delete</button>
         </div>
       </div>
-      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={lists.map(l => l._id)} strategy={horizontalListSortingStrategy}>
           <div className="flex items-start space-x-4 overflow-x-auto">
             {lists.map(list => (
