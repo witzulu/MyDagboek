@@ -20,6 +20,7 @@ const Board = () => {
   const navigate = useNavigate();
   const [board, setBoard] = useState(null);
   const [lists, setLists] = useState([]);
+  const [projectLabels, setProjectLabels] = useState([]);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -37,19 +38,28 @@ const Board = () => {
           throw new Error("Authentication token not found.");
         }
 
-        const response = await fetch(`/api/boards/${boardId}`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          },
-        });
+        const [boardRes, labelsRes] = await Promise.all([
+          fetch(`/api/boards/${boardId}`, {
+            headers: { "Authorization": `Bearer ${token}` },
+          }),
+          fetch(`/api/projects/${projectId}/labels`, {
+            headers: { "Authorization": `Bearer ${token}` },
+          }),
+        ]);
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch board details: ${response.status}`);
+        if (!boardRes.ok) {
+          throw new Error(`Failed to fetch board details: ${boardRes.status}`);
+        }
+        if (!labelsRes.ok) {
+          throw new Error(`Failed to fetch labels: ${labelsRes.status}`);
         }
 
-        const data = await response.json();
-        setBoard(data.board);
-        setLists(data.lists);
+        const boardData = await boardRes.json();
+        const labelsData = await labelsRes.json();
+
+        setBoard(boardData.board);
+        setLists(boardData.lists);
+        setProjectLabels(labelsData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -60,7 +70,7 @@ const Board = () => {
     if (boardId) {
       fetchBoardDetails();
     }
-  }, [boardId]);
+  }, [boardId, projectId]);
 
   if (loading) return <div className="p-4">Loading board...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
@@ -221,7 +231,7 @@ const Board = () => {
     }
   };
 
-  const handleSaveTask = async ({ title, description, listId, taskId }) => {
+  const handleSaveTask = async ({ title, description, dueDate, labels, listId, taskId }) => {
     const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
     const method = taskId ? 'PUT' : 'POST';
 
@@ -233,7 +243,7 @@ const Board = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, listId }),
+        body: JSON.stringify({ title, description, dueDate, labels, listId }),
       });
 
       if (!response.ok) {
@@ -301,6 +311,54 @@ const Board = () => {
     }
   };
 
+  const handleDeleteTask = async (taskId) => {
+    if (window.confirm('Are you sure you want to delete this card?')) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/tasks/${taskId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete task');
+        }
+
+        setLists(prevLists => {
+          const newLists = JSON.parse(JSON.stringify(prevLists));
+          for (const list of newLists) {
+            const taskIndex = list.tasks.findIndex(t => t._id === taskId);
+            if (taskIndex !== -1) {
+              list.tasks.splice(taskIndex, 1);
+              break;
+            }
+          }
+          return newLists;
+        });
+        setIsCardModalOpen(false);
+        setEditingTask(null);
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+  };
+
+  const handleNewLabel = async (labelData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/projects/${projectId}/labels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(labelData),
+      });
+      if (!response.ok) throw new Error('Failed to create label');
+      const newLabel = await response.json();
+      setProjectLabels(prev => [...prev, newLabel]);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1">
       <CardModal
@@ -311,8 +369,11 @@ const Board = () => {
           setTargetListId(null);
         }}
         onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
         task={editingTask}
         listId={targetListId}
+        projectLabels={projectLabels}
+        onNewLabel={handleNewLabel}
       />
       <EditBoardModal
         isOpen={isEditBoardModalOpen}
@@ -396,10 +457,14 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHan
 
   return (
     <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg w-72 flex-shrink-0">
-      <div className="flex justify-between items-center mb-2" {...dragHandleProps}>
-        {!isRenaming ? (
-          <h2 className="font-semibold">{list.name}</h2>
-        ) : (
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center">
+          <div {...dragHandleProps} className="cursor-move p-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-grip-vertical"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+          </div>
+          {!isRenaming ? (
+            <h2 className="font-semibold ml-2">{list.name}</h2>
+          ) : (
           <form onSubmit={handleRenameSubmit} className="flex-grow">
             <input
               type="text"
@@ -411,6 +476,7 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHan
             />
           </form>
         )}
+        </div>
         <div className="relative">
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1">...</button>
           {isMenuOpen && (
