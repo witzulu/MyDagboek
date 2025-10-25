@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import UserManagementTable from './UserManagementTable';
+import UniversalLabelManagement from './UniversalLabelManagement';
 import { useSettings } from '../../context/SettingsContext';
 
 const AdminDashboard = () => {
@@ -81,6 +82,12 @@ const AdminDashboard = () => {
         >
           User Management
         </button>
+        <button
+          className={`py-2 px-4 ${activeTab === 'labelManagement' ? 'border-b-2 border-indigo-500 font-semibold' : ''}`}
+          onClick={() => setActiveTab('labelManagement')}
+        >
+          Universal Labels
+        </button>
       </div>
 
       {activeTab === 'siteSettings' && (
@@ -136,6 +143,13 @@ const AdminDashboard = () => {
         <div>
           <h2 className="text-xl font-semibold mb-4">User Management</h2>
           <UserManagementTable />
+        </div>
+      )}
+
+      {activeTab === 'labelManagement' && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Universal Label Management</h2>
+          <UniversalLabelManagement />
         </div>
       )}
     </div>
