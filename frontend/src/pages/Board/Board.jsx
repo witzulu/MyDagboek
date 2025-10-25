@@ -343,22 +343,6 @@ const Board = () => {
     }
   };
 
-  const handleNewLabel = async (labelData) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/projects/${projectId}/labels`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(labelData),
-      });
-      if (!response.ok) throw new Error('Failed to create label');
-      const newLabel = await response.json();
-      setProjectLabels(prev => [...prev, newLabel]);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   return (
     <div className="flex flex-col flex-1">
       <CardModal
