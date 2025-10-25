@@ -27,6 +27,19 @@ const checklistItemSchema = new mongoose.Schema({
   },
 });
 
+const commentSchema = new mongoose.Schema({
+  content: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+}, { timestamps: true });
+
 const taskSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -61,6 +74,7 @@ const taskSchema = new mongoose.Schema({
   }],
   attachments: [attachmentSchema],
   checklist: [checklistItemSchema],
+  comments: [commentSchema],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Task', taskSchema);
