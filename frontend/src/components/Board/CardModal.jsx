@@ -2,8 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import LabelManager from './LabelManager';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
-import { AuthContext } from '../../context/AuthContext';
 
+import { AuthContext } from '../../context/AuthContext';
 const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
