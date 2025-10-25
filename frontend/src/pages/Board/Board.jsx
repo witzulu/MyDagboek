@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   DndContext,
   closestCenter,
@@ -17,6 +17,7 @@ import CardModal from '../../components/Board/CardModal';
 
 export default function Board() {
   const { boardId } = useParams();
+  const navigate = useNavigate();
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -87,6 +88,21 @@ export default function Board() {
     closeModal();
   };
 
+  const handleDeleteBoard = async () => {
+    if (window.confirm('Are you sure you want to delete this board and all of its lists and tasks?')) {
+      try {
+        const response = await fetch(`/api/boards/${boardId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        if (!response.ok) throw new Error('Failed to delete board');
+        navigate(`/projects/${board.project}`);
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
   if (!board) return <div>Board not found.</div>;
@@ -97,9 +113,9 @@ export default function Board() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-3xl font-bold">{board.name}</h2>
           <div>
-            {/* TODO: Implement Edit and Delete Board functionality */}
+            {/* TODO: Implement Edit Board functionality */}
             <button className="p-2 bg-slate-200 dark:bg-slate-700 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">Edit Board</button>
-            <button className="p-2 ml-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">Delete Board</button>
+            <button onClick={handleDeleteBoard} className="p-2 ml-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">Delete Board</button>
           </div>
         </div>
         <div className="flex-1 overflow-x-auto">

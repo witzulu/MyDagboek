@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Card from './Card'; // Import the Card component
 
-const List = ({ list, tasks, onAddTask, onEditTask }) => {
+const List = ({ list, tasks = [], onAddTask, onEditTask }) => {
   const {
     setNodeRef,
     attributes,
