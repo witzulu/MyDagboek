@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CheckSquare } from 'lucide-react';
+import { CheckSquare, MessageSquare } from 'lucide-react';
 
 const Card = ({ task }) => {
   const {
@@ -23,6 +23,8 @@ const Card = ({ task }) => {
     completedItems = task.checklist.filter(item => item.done).length;
   }
 
+  const commentsExist = task.comments && task.comments.length > 0;
+
   return (
     <div
       ref={setNodeRef}
@@ -40,9 +42,18 @@ const Card = ({ task }) => {
       </div>
       <p className="text-sm">{task.title}</p>
       <div className="flex justify-between items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
+        <div>
         {task.dueDate && (
           <span>
             Due: {new Date(task.dueDate).toLocaleDateString()}
+          </span>
+        )}
+        </div>
+        <div className="flex items-center space-x-2">
+        {commentsExist && (
+          <span className="flex items-center space-x-1">
+            <MessageSquare size={14} />
+            <span>{task.comments.length}</span>
           </span>
         )}
         {checklistExists && (
@@ -51,6 +62,7 @@ const Card = ({ task }) => {
             <span>{completedItems}/{task.checklist.length}</span>
           </span>
         )}
+        </div>
       </div>
     </div>
   );

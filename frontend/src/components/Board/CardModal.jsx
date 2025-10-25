@@ -1,17 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import LabelManager from './LabelManager';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
+import MDEditor from '@uiw/react-md-editor';
+import { AuthContext } from '../../context/AuthContext';
 
 const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate }) => {
+  const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(null);
   const [assignedLabels, setAssignedLabels] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [checklist, setChecklist] = useState([]);
+  const [comments, setComments] = useState([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [editingChecklistItem, setEditingChecklistItem] = useState(null);
   const [editingText, setEditingText] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [editingComment, setEditingComment] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -22,6 +29,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setAssignedLabels(task.labels || []);
         setAttachments(task.attachments || []);
         setChecklist(task.checklist || []);
+        setComments(task.comments || []);
       } else {
         setTitle('');
         setDescription('');
@@ -29,10 +37,14 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setAssignedLabels([]);
         setAttachments([]);
         setChecklist([]);
+        setComments([]);
       }
       setNewChecklistItem('');
       setEditingChecklistItem(null);
       setEditingText('');
+      setNewComment('');
+      setEditingComment(null);
+      setEditingCommentText('');
     }
   }, [task, isOpen]);
 
@@ -179,6 +191,61 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
     }
   };
 
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify({ content: newComment }),
+      });
+      if (res.ok) {
+        const updatedComments = await res.json();
+        setComments(updatedComments);
+        setNewComment('');
+        onTaskUpdate({ ...task, comments: updatedComments });
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
+
+  const handleUpdateComment = async (commentId) => {
+    if (!editingCommentText.trim()) return;
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/comments/${commentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify({ content: editingCommentText }),
+      });
+      if (res.ok) {
+        const updatedComments = await res.json();
+        setComments(updatedComments);
+        setEditingComment(null);
+        setEditingCommentText('');
+        onTaskUpdate({ ...task, comments: updatedComments });
+      }
+    } catch (error) {
+      console.error('Error updating comment:', error);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        const updatedComments = await res.json();
+        setComments(updatedComments);
+        onTaskUpdate({ ...task, comments: updatedComments });
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
+  };
+
   const checklistProgress = checklist.length > 0 ? (checklist.filter(item => item.done).length / checklist.length) * 100 : 0;
 
   return (
@@ -285,6 +352,47 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                   className="w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
                 />
                 <button onClick={handleAddChecklistItem} className="ml-2 px-4 py-2 rounded bg-green-500 text-white"><Plus size={16}/></button>
+              </div>
+            </div>
+          )}
+
+          {/* Comments Section */}
+          {task && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Comments</h3>
+              <div data-color-mode="light">
+                <MDEditor
+                  value={newComment}
+                  onChange={setNewComment}
+                />
+              </div>
+              <button onClick={handleAddComment} className="px-4 py-2 rounded bg-blue-500 text-white">Comment</button>
+              <div className="space-y-4">
+                {comments.map(comment => (
+                  <div key={comment._id} className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold">{comment.user.name}</span>
+                      <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</span>
+                    </div>
+                    {editingComment === comment._id ? (
+                      <div>
+                        <MDEditor value={editingCommentText} onChange={setEditingCommentText} />
+                        <div className="flex justify-end space-x-2 mt-2">
+                           <button onClick={() => { setEditingComment(null); setEditingCommentText(''); }} className="px-3 py-1 rounded">Cancel</button>
+                           <button onClick={() => handleUpdateComment(comment._id)} className="px-3 py-1 rounded bg-blue-500 text-white">Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <MDEditor.Markdown source={comment.content} style={{ whiteSpace: 'pre-wrap' }} />
+                    )}
+                    {user && user.id === comment.user._id && editingComment !== comment._id && (
+                      <div className="flex justify-end space-x-2 mt-2">
+                        <button onClick={() => { setEditingComment(comment._id); setEditingCommentText(comment.content); }} className="text-xs text-gray-500 hover:underline">Edit</button>
+                        <button onClick={() => handleDeleteComment(comment._id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
