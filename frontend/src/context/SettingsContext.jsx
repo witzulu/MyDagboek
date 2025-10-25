@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import api from '../services/api';
 
 const SettingsContext = createContext();
@@ -37,4 +38,8 @@ export const SettingsProvider = ({ children }) => {
       {children}
     </SettingsContext.Provider>
   );
+};
+
+SettingsProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };

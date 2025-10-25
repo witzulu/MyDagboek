@@ -1,6 +1,6 @@
-import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import PropTypes from 'prop-types';
 
 const Card = ({ task }) => {
   const {
@@ -39,6 +39,19 @@ const Card = ({ task }) => {
       )}
     </div>
   );
+};
+
+Card.propTypes = {
+  task: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    dueDate: PropTypes.string,
+    labels: PropTypes.arrayOf(PropTypes.shape({
+      _id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      color: PropTypes.string.isRequired,
+    })),
+  }).isRequired,
 };
 
 export default Card;

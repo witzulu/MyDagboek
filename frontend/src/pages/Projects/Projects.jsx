@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, FolderKanban, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Plus, FolderKanban, Edit, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import NewProjectModal from '../../components/NewProjectModal';
 import api from '../../services/api';

@@ -6,7 +6,7 @@ import { Book, Layout, TrendingUp, Code, Clock, Users, AlertCircle, FolderKanban
 export default function Sidebar() {
   const location = useLocation();
   const { projectId } = useParams();
-  const { selectedProject } = useProject();
+  useProject();
 
   const projectNavItems = [
     { to: `/projects/${projectId}`, icon: Layout, label: 'Dashboard' },

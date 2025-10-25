@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 
 const LabelManager = ({ projectLabels, assignedLabels, onLabelToggle, onNewLabel }) => {
   const [showNewLabelForm, setShowNewLabelForm] = useState(false);
@@ -97,6 +98,13 @@ const LabelManager = ({ projectLabels, assignedLabels, onLabelToggle, onNewLabel
       </div>
     </div>
   );
+};
+
+LabelManager.propTypes = {
+  projectLabels: PropTypes.array.isRequired,
+  assignedLabels: PropTypes.array.isRequired,
+  onLabelToggle: PropTypes.func.isRequired,
+  onNewLabel: PropTypes.func.isRequired,
 };
 
 export default LabelManager;

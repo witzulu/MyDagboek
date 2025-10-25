@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../services/api';
 
 const UniversalLabelManagement = () => {
@@ -49,7 +49,7 @@ const UniversalLabelManagement = () => {
 
   const handleUpdate = async (labelId) => {
     try {
-      const updatedLabel = await api(`/admin/labels/${labelId}`, {
+      await api(`/admin/labels/${labelId}`, {
         method: 'PUT',
         body: { name: editingLabel.name, color: editingLabel.color },
       });

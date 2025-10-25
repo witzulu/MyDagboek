@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import UserManagementTable from './UserManagementTable';
 import UniversalLabelManagement from './UniversalLabelManagement';

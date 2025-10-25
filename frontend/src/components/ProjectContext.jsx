@@ -8,7 +8,7 @@ export const useProjects = () => {
 };
 
 export const ProjectProvider = ({ children }) => {
-  const [projects, setProjects] = useState([
+  const [projects] = useState([
     { id: '1', name: 'Dagboek Development' },
     { id: '2', name: 'Personal Website' },
   ]);

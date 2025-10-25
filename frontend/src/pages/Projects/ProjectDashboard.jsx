@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useProject } from '../../hooks/useProject';
 import api from '../../services/api';
-import { Book, Layout, AlertCircle, Code, TrendingUp } from 'lucide-react';
+import { Book, Layout, AlertCircle, Code } from 'lucide-react';
 
 const ProjectDashboard = () => {
   const { projectId } = useParams();

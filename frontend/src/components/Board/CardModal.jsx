@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import LabelManager from './LabelManager';
+import PropTypes from 'prop-types';
 
 const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel }) => {
   const [title, setTitle] = useState('');
@@ -93,6 +94,17 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       </div>
     </div>
   );
+};
+
+CardModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  task: PropTypes.object,
+  listId: PropTypes.string,
+  projectLabels: PropTypes.array.isRequired,
+  onNewLabel: PropTypes.func.isRequired,
 };
 
 export default CardModal;

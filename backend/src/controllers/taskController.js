@@ -32,7 +32,8 @@ exports.createTask = async (req, res, next) => {
       labels,
     });
 
-    res.status(201).json(task);
+    const populatedTask = await Task.findById(task._id).populate('labels');
+    res.status(201).json(populatedTask);
   } catch (error) {
     next(error);
   }
@@ -61,7 +62,8 @@ exports.updateTask = async (req, res, next) => {
     task.labels = labels ?? task.labels;
 
     await task.save();
-    res.status(200).json(task);
+    const populatedTask = await Task.findById(task._id).populate('labels');
+    res.status(200).json(populatedTask);
   } catch (error) {
     next(error);
   }

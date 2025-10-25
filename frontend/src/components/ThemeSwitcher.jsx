@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Palette, Check, Sun, Moon, Monitor, Sparkles, Zap, Leaf, Cloud } from 'lucide-react';
+import { Palette, Check } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { themes } from './ThemeContext';
 

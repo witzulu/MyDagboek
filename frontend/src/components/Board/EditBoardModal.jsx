@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 const EditBoardModal = ({ isOpen, onClose, onSave, board }) => {
   const [name, setName] = useState('');
@@ -44,6 +45,16 @@ const EditBoardModal = ({ isOpen, onClose, onSave, board }) => {
       </div>
     </div>
   );
+};
+
+EditBoardModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  board: PropTypes.shape({
+    name: PropTypes.string,
+    description: PropTypes.string,
+  }),
 };
 
 export default EditBoardModal;

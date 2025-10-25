@@ -30,7 +30,7 @@ export default function Notebook() {
   const { projectId } = useParams();
   const [notes, setNotes] = useState([]);
   const [currentNote, setCurrentNote] = useState(null);
-  const [loading, setLoading] = useState(true);
+  useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState(null);
@@ -52,7 +52,6 @@ export default function Notebook() {
     
     const fetchNotes = async () => {
       try {
-        setLoading(true);
         setError(null);
         const response = await fetch(`/api/projects/${currentProjectId}/notes`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -67,8 +66,6 @@ export default function Notebook() {
       } catch (err) {
         console.error("Error fetching notes:", err);
         setError(err.message);
-      } finally {
-        setLoading(false);
       }
     };
     
