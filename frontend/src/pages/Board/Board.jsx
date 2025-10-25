@@ -302,7 +302,7 @@ const Board = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div className="flex flex-col flex-1">
       <CardModal
         isOpen={isCardModalOpen}
         onClose={() => {
@@ -327,25 +327,27 @@ const Board = () => {
           <button onClick={handleDeleteBoard} className="px-3 py-1 bg-red-500 text-white rounded-md">Delete</button>
         </div>
       </div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={lists.map(l => l._id)} strategy={horizontalListSortingStrategy}>
-          <div className="flex items-start space-x-4 overflow-x-auto">
-            {lists.map(list => (
-              <SortableList
-                key={list._id}
-                list={list}
-                onUpdateList={handleUpdateList}
-                onDeleteList={handleDeleteList}
-                onAddTask={() => { setTargetListId(list._id); setIsCardModalOpen(true); }}
-                onEditTask={(task) => { setEditingTask(task); setIsCardModalOpen(true); }}
-              />
-            ))}
-            <div className="w-72 flex-shrink-0">
-              <AddListForm onCreateList={handleCreateList} />
+      <div className="flex-1 overflow-x-auto">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={lists.map(l => l._id)} strategy={horizontalListSortingStrategy}>
+            <div className="inline-flex h-full items-start space-x-4 pb-4">
+              {lists.map(list => (
+                <SortableList
+                  key={list._id}
+                  list={list}
+                  onUpdateList={handleUpdateList}
+                  onDeleteList={handleDeleteList}
+                  onAddTask={() => { setTargetListId(list._id); setIsCardModalOpen(true); }}
+                  onEditTask={(task) => { setEditingTask(task); setIsCardModalOpen(true); }}
+                />
+              ))}
+              <div className="w-72 flex-shrink-0">
+                <AddListForm onCreateList={handleCreateList} />
+              </div>
             </div>
-          </div>
-        </SortableContext>
-      </DndContext>
+          </SortableContext>
+        </DndContext>
+      </div>
     </div>
   );
 };
