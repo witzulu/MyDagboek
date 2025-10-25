@@ -250,7 +250,14 @@ const Board = () => {
         throw new Error(`Failed to save task: ${await response.text()}`);
       }
 
-      const savedTask = await response.json();
+      let savedTask = await response.json();
+
+      // Manually populate labels on the client-side to avoid a crash
+      if (savedTask.labels && projectLabels.length > 0) {
+        savedTask.labels = savedTask.labels.map(labelId =>
+          projectLabels.find(l => l._id === labelId)
+        ).filter(Boolean); // Filter out any nulls if a label wasn't found
+      }
 
       setLists(prevLists => {
         const newLists = JSON.parse(JSON.stringify(prevLists));
@@ -340,6 +347,22 @@ const Board = () => {
       } catch (err) {
         setError(err.message);
       }
+    }
+  };
+
+  const handleNewLabel = async (labelData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/projects/${projectId}/labels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(labelData),
+      });
+      if (!response.ok) throw new Error('Failed to create label');
+      const newLabel = await response.json();
+      setProjectLabels(prev => [...prev, newLabel]);
+    } catch (err) {
+      setError(err.message);
     }
   };
 
