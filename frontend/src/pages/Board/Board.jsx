@@ -301,6 +301,38 @@ const Board = () => {
     }
   };
 
+  const handleDeleteTask = async (taskId) => {
+    if (window.confirm('Are you sure you want to delete this card?')) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/tasks/${taskId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete task');
+        }
+
+        setLists(prevLists => {
+          const newLists = JSON.parse(JSON.stringify(prevLists));
+          for (const list of newLists) {
+            const taskIndex = list.tasks.findIndex(t => t._id === taskId);
+            if (taskIndex !== -1) {
+              list.tasks.splice(taskIndex, 1);
+              break;
+            }
+          }
+          return newLists;
+        });
+        setIsCardModalOpen(false);
+        setEditingTask(null);
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1">
       <CardModal
@@ -311,6 +343,7 @@ const Board = () => {
           setTargetListId(null);
         }}
         onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
         task={editingTask}
         listId={targetListId}
       />
@@ -396,10 +429,14 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHan
 
   return (
     <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg w-72 flex-shrink-0">
-      <div className="flex justify-between items-center mb-2" {...dragHandleProps}>
-        {!isRenaming ? (
-          <h2 className="font-semibold">{list.name}</h2>
-        ) : (
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center">
+          <div {...dragHandleProps} className="cursor-move p-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-grip-vertical"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+          </div>
+          {!isRenaming ? (
+            <h2 className="font-semibold ml-2">{list.name}</h2>
+          ) : (
           <form onSubmit={handleRenameSubmit} className="flex-grow">
             <input
               type="text"
@@ -411,6 +448,7 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHan
             />
           </form>
         )}
+        </div>
         <div className="relative">
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1">...</button>
           {isMenuOpen && (

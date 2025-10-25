@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const CardModal = ({ isOpen, onClose, onSave, task, listId }) => {
+const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
@@ -47,9 +47,18 @@ const CardModal = ({ isOpen, onClose, onSave, task, listId }) => {
             className="w-full p-2 rounded border h-32"
           />
         </div>
-        <div className="mt-6 flex justify-end space-x-4">
-          <button onClick={onClose} className="px-4 py-2 rounded">Cancel</button>
-          <button onClick={handleSubmit} className="px-4 py-2 rounded bg-blue-500 text-white">Save</button>
+        <div className="mt-6 flex justify-between items-center">
+          <div>
+            {task && (
+              <button onClick={() => onDelete(task._id)} className="px-4 py-2 rounded bg-red-500 text-white">
+                Delete
+              </button>
+            )}
+          </div>
+          <div className="flex space-x-4">
+            <button onClick={onClose} className="px-4 py-2 rounded">Cancel</button>
+            <button onClick={handleSubmit} className="px-4 py-2 rounded bg-blue-500 text-white">Save</button>
+          </div>
         </div>
       </div>
     </div>
