@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LabelManager from './LabelManager';
 
-const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId }) => {
+const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(null);
