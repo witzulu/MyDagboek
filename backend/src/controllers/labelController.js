@@ -11,7 +11,9 @@ exports.getLabels = async (req, res, next) => {
     if (!project || project.user.toString() !== req.user.id) {
       return res.status(401).json({ message: 'Not authorized' });
     }
-    const labels = await Label.find({ project: req.params.projectId });
+    const projectLabels = await Label.find({ project: req.params.projectId });
+    const universalLabels = await Label.find({ project: { $exists: false } });
+    const labels = [...projectLabels, ...universalLabels];
     res.status(200).json(labels);
   } catch (error) {
     next(error);
