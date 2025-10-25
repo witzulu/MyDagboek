@@ -24,7 +24,19 @@ const Card = ({ task }) => {
       {...listeners}
       className="bg-white dark:bg-gray-700 p-2 rounded-md shadow-sm mb-2 cursor-pointer hover:shadow-md"
     >
+      <div className="flex flex-wrap gap-1 mb-2">
+        {task.labels?.map(label => (
+          <span key={label._id} style={{ backgroundColor: label.color }} className="px-2 py-0.5 rounded text-white text-xs">
+            {label.name}
+          </span>
+        ))}
+      </div>
       <p>{task.title}</p>
+      {task.dueDate && (
+        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Due: {new Date(task.dueDate).toLocaleDateString()}
+        </div>
+      )}
     </div>
   );
 };

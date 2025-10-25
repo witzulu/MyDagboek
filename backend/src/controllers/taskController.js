@@ -7,7 +7,7 @@ const Board = require('../models/Board');
 // @access  Private
 exports.createTask = async (req, res, next) => {
   try {
-    const { title, description, listId } = req.body;
+    const { title, description, listId, dueDate, labels } = req.body;
 
     const list = await List.findById(listId);
     if (!list) {
@@ -28,6 +28,8 @@ exports.createTask = async (req, res, next) => {
       list: listId,
       board: list.board,
       position: newPosition,
+      dueDate,
+      labels,
     });
 
     res.status(201).json(task);
@@ -41,7 +43,7 @@ exports.createTask = async (req, res, next) => {
 // @access  Private
 exports.updateTask = async (req, res, next) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, dueDate, labels } = req.body;
     const task = await Task.findById(req.params.id);
 
     if (!task) {
@@ -55,6 +57,8 @@ exports.updateTask = async (req, res, next) => {
 
     task.title = title ?? task.title;
     task.description = description ?? task.description;
+    task.dueDate = dueDate ?? task.dueDate;
+    task.labels = labels ?? task.labels;
 
     await task.save();
     res.status(200).json(task);

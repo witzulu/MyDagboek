@@ -20,6 +20,7 @@ const Board = () => {
   const navigate = useNavigate();
   const [board, setBoard] = useState(null);
   const [lists, setLists] = useState([]);
+  const [projectLabels, setProjectLabels] = useState([]);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -37,19 +38,28 @@ const Board = () => {
           throw new Error("Authentication token not found.");
         }
 
-        const response = await fetch(`/api/boards/${boardId}`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          },
-        });
+        const [boardRes, labelsRes] = await Promise.all([
+          fetch(`/api/boards/${boardId}`, {
+            headers: { "Authorization": `Bearer ${token}` },
+          }),
+          fetch(`/api/projects/${projectId}/labels`, {
+            headers: { "Authorization": `Bearer ${token}` },
+          }),
+        ]);
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch board details: ${response.status}`);
+        if (!boardRes.ok) {
+          throw new Error(`Failed to fetch board details: ${boardRes.status}`);
+        }
+        if (!labelsRes.ok) {
+          throw new Error(`Failed to fetch labels: ${labelsRes.status}`);
         }
 
-        const data = await response.json();
-        setBoard(data.board);
-        setLists(data.lists);
+        const boardData = await boardRes.json();
+        const labelsData = await labelsRes.json();
+
+        setBoard(boardData.board);
+        setLists(boardData.lists);
+        setProjectLabels(labelsData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -60,7 +70,7 @@ const Board = () => {
     if (boardId) {
       fetchBoardDetails();
     }
-  }, [boardId]);
+  }, [boardId, projectId]);
 
   if (loading) return <div className="p-4">Loading board...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
@@ -221,7 +231,7 @@ const Board = () => {
     }
   };
 
-  const handleSaveTask = async ({ title, description, listId, taskId }) => {
+  const handleSaveTask = async ({ title, description, dueDate, labels, listId, taskId }) => {
     const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
     const method = taskId ? 'PUT' : 'POST';
 
@@ -233,7 +243,7 @@ const Board = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, listId }),
+        body: JSON.stringify({ title, description, dueDate, labels, listId }),
       });
 
       if (!response.ok) {
@@ -346,6 +356,8 @@ const Board = () => {
         onDelete={handleDeleteTask}
         task={editingTask}
         listId={targetListId}
+        projectLabels={projectLabels}
+        onNewLabel={handleNewLabel}
       />
       <EditBoardModal
         isOpen={isEditBoardModalOpen}
