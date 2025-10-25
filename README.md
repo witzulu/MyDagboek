@@ -66,6 +66,10 @@ I am currently working on.
     > List enchancement
     > task enhancement
     
+    # Note
+    For now it is recomended to use the Light theme. the other themes have not been tested 
+    and might have clashes (default is dark so please swithc to light before use)
+    
 ## Features (currently implemented)
 1. Projects
     Projects allow you to group notebooks, boards, error reports,codesnippets, etc into one project.
