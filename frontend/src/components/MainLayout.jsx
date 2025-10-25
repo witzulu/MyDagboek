@@ -9,20 +9,20 @@ const MainLayout = () => {
   const { user, logout } = useAuth();
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Header
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         currentUser={user}
         handleLogout={logout}
       />
-      <div className="flex">
+      <div className="flex flex-1">
         {sidebarOpen && <Sidebar />}
-        <main className="flex-1 p-6 overflow-x-auto">
+        <main className="flex-1 flex">
           <Outlet />
         </main>
       </div>
-    </>
+    </div>
   );
 };
 
