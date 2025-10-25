@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+export const AuthContext = createContext();
 
 // Self-contained JWT decoding function
 const decodeJwt = (token) => {
@@ -18,7 +19,7 @@ const decodeJwt = (token) => {
 };
 
 
-const AuthContext = createContext();
+
 
 export const useAuth = () => {
   return useContext(AuthContext);
