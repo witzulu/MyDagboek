@@ -72,7 +72,13 @@ I am currently working on.
 2. Site Admin
 3. User Admin
 4. Dashboard for each project
-6. initial boards (create boards and add list and tasks)
+6. Boards
+    - Cards
+    - Lists
+    - Drag and drop Card and list
+    - Labels on Card
+    - Checklist on Card
+    - Duedate on Card
    
 7. Notebooks
    - A rich-text Markdown editor with a toolbar for creating and editing notes.
@@ -85,7 +91,7 @@ I am currently working on.
 
 - [x] Add a backend to persist data
 - [x] Implement user authentication
-- [ ] Add more features to the notebook and boards
+- [x] Add more features to the notebook and boards
 - [ ] Add a CI/CD pipeline
 - [ ] Add a testing suite
 - [ ] Add a documentation site
