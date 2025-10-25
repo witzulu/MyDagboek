@@ -160,23 +160,43 @@ export default function Notebook() {
     const { imageUrl } = await res.json();
     return imageUrl;
   };
+const handleSelectNote = async (note) => {
+  if (currentNote && currentNote._id !== note._id) {
+    // Optional: detect unsaved changes
+    const hasChanges =
+      currentNote.title !== notes.find(n => n._id === currentNote._id)?.title ||
+      currentNote.content !== notes.find(n => n._id === currentNote._id)?.content;
+
+    if (hasChanges) {
+      // Save the current note before switching
+      await updateNote(currentNote._id, {
+        title: currentNote.title,
+        content: currentNote.content,
+        tags: currentNote.tags
+      });
+    }
+  }
+
+  setCurrentNote(note);
+};
 
   // Debounced update for editor changes
-  useEffect(() => {
-    if (!currentNote) return;
-    const handler = setTimeout(() => {
-      updateNote(currentNote._id, { title: currentNote.title, content: currentNote.content });
-    }, 1000); // Auto-save after 1 second of inactivity
-    return () => clearTimeout(handler);
-  }, [currentNote?.title, currentNote?.content, updateNote]);
+ useEffect(() => {
+  const handleBeforeUnload = (e) => {
+    if (currentNote) {
+      updateNote(currentNote._id, {
+        title: currentNote.title,
+        content: currentNote.content,
+        tags: currentNote.tags
+      });
+      e.preventDefault();
+      e.returnValue = ''; // required for Chrome to show the "are you sure?" dialog
+    }
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-slate-500">Loading notes...</div>
-      </div>
-    );
-  }
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+}, [currentNote, updateNote]);
 
   if (error) {
     return (
@@ -226,7 +246,7 @@ export default function Notebook() {
               filteredNotes.map((note) => (
                 <div
                   key={note._id}
-                  onClick={() => setCurrentNote(note)}
+                  onClick={() => handleSelectNote(note)}
                   className={`p-3 rounded-lg cursor-pointer transition-colors ${
                     currentNote?._id === note._id
                       ? "bg-purple-600 text-white"
@@ -317,41 +337,43 @@ export default function Notebook() {
                 </div>
               </div>
               <MDXEditor
-                markdown={currentNote.content}
-                onChange={(newContent) =>
-                  setCurrentNote(prev => ({ ...prev, content: newContent }))
-                }
-                plugins={[
-                    headingsPlugin(),
-                    listsPlugin(),
-                    quotePlugin(),
-                    thematicBreakPlugin(),
-                    linkPlugin(),
-                    tablePlugin(),
-                    codeBlockPlugin(),
-                    imagePlugin({ imageUploadHandler: handleImageUpload }),
-                    toolbarPlugin({
-                        toolbarContents: () => (
-                        <>
-                            <UndoRedo />
-                            <Separator />
-                            <BoldItalicUnderlineToggles />
-                            <Separator />
-                            <ListsToggle />
-                            <Separator />
-                            <BlockTypeSelect blockTypes={['paragraph', 'h1', 'h2', 'h3', 'quote', 'code']} />
-                            <Separator />
-                            <CreateLink />
-                            <InsertImage />
-                            <Separator />
-                            <InsertTable />
-                            <InsertThematicBreak />
-                        </>
-                        )
-                    })
-                ]}
-                contentEditableClassName="prose"
-              />
+  key={currentNote._id} // 👈 force re-render when note changes
+  markdown={currentNote.content}
+  onChange={(newContent) =>
+    setCurrentNote(prev => ({ ...prev, content: newContent }))
+  }
+  plugins={[
+    headingsPlugin(),
+    listsPlugin(),
+    quotePlugin(),
+    thematicBreakPlugin(),
+    linkPlugin(),
+    tablePlugin(),
+    codeBlockPlugin(),
+    imagePlugin({ imageUploadHandler: handleImageUpload }),
+    toolbarPlugin({
+      toolbarContents: () => (
+        <>
+          <UndoRedo />
+          <Separator />
+          <BoldItalicUnderlineToggles />
+          <Separator />
+          <ListsToggle />
+          <Separator />
+          <BlockTypeSelect blockTypes={['paragraph', 'h1', 'h2', 'h3', 'quote', 'code']} />
+          <Separator />
+          <CreateLink />
+          <InsertImage />
+          <Separator />
+          <InsertTable />
+          <InsertThematicBreak />
+        </>
+      )
+    })
+  ]}
+  contentEditableClassName="prose"
+/>
+
             </div>
           ) : (
             <div className="flex items-center justify-center h-96 text-slate-500 dark:text-slate-500">
