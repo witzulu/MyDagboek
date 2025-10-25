@@ -23,7 +23,7 @@ exports.getBoardById = async (req, res) => {
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
     }
-    const lists = await List.find({ board: board._id }).populate('tasks');
+    const lists = await List.find({ board: board._id }).populate('tasks').lean();
     const boardObject = board.toObject();
     boardObject.lists = lists;
     res.json(boardObject);
@@ -77,15 +77,26 @@ exports.updateBoard = async (req, res) => {
 // @access  Private
 exports.deleteBoard = async (req, res) => {
   try {
-    // TODO: Ensure user has permission to delete this board
     const board = await Board.findById(req.params.id);
 
     if (!board) {
       return res.status(404).json({ message: 'Board not found' });
     }
-    // TODO: Add cascading delete for lists and tasks
+
+    // Find all lists associated with the board
+    const lists = await List.find({ board: board._id });
+    const listIds = lists.map(list => list._id);
+
+    // Delete all tasks in those lists
+    await Task.deleteMany({ list: { $in: listIds } });
+
+    // Delete all lists
+    await List.deleteMany({ board: board._id });
+
+    // Delete the board
     await board.deleteOne();
-    res.json({ message: 'Board deleted successfully' });
+
+    res.json({ message: 'Board and associated lists and tasks deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

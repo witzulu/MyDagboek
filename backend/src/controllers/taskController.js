@@ -4,6 +4,7 @@ const List = require('../models/List');
 // @desc    Create a new task in a list
 // @route   POST /api/lists/:listId/tasks
 // @access  Private
+const Board = require('../models/Board');
 exports.createTask = async (req, res) => {
   try {
     const { title, description } = req.body;
@@ -11,10 +12,18 @@ exports.createTask = async (req, res) => {
     if (!list) {
       return res.status(404).json({ message: 'List not found' });
     }
+
+    const board = await Board.findById(list.board);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
     const newTask = new Task({
       title,
       description,
       list: req.params.listId,
+      project: board.project,
+      user: req.user.id,
     });
     const savedTask = await newTask.save();
     list.tasks.push(savedTask._id);
