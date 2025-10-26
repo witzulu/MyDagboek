@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@playwright/test": "^1.56.1"
+    "@playwright/test": "^1.56.1",
+    "@replit/codemirror-lang-csharp": "^6.2.0"
   }
 }

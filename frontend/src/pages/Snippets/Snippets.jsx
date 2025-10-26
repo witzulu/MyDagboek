@@ -8,16 +8,19 @@ import { okaidia } from '@uiw/codemirror-theme-okaidia';
 import SnippetEditorModal from './SnippetEditorModal';
 
 const getLanguageExtension = (language) => {
-    switch (language.toLowerCase()) {
-        case 'python':
-            return python();
-        case 'html':
-            return html();
-        case 'javascript':
-        default:
-            return javascript({ jsx: true });
-    }
+  if (!language || typeof language !== 'string') return javascript({ jsx: true }); // default fallback
+
+  switch (language.toLowerCase()) {
+    case 'python':
+      return python();
+    case 'html':
+      return html();
+    case 'javascript':
+    default:
+      return javascript({ jsx: true });
+  }
 };
+
 
 const Snippets = () => {
   const { projectId } = useParams();
@@ -39,7 +42,7 @@ const Snippets = () => {
           throw new Error('Failed to fetch snippets');
         }
         const data = await res.json();
-        setSnippets(data);
+       setSnippets(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -142,7 +145,11 @@ const Snippets = () => {
               readOnly
             />
             <div className="mt-2 flex flex-wrap gap-2">
-                {snippet.tags.map(tag => <span key={tag} className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-xs">{tag}</span>)}
+              {Array.isArray(snippet.tags) && snippet.tags.map(tag => (
+  <span key={tag} className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-xs">
+    {tag}
+  </span>
+))}
             </div>
           </div>
         ))}
