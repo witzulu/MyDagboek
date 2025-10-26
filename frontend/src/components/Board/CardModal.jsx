@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import LabelManager from './LabelManager';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
-import MDEditor from '@uiw/react-md-editor';
-
+import { MDXEditor, UndoRedo, BoldItalicUnderlineToggles, ListsToggles, linkPlugin, BlockTypeSelect, codeBlockPlugin, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin, toolbarPlugin, diffSourcePlugin } from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
 import { AuthContext } from '../../context/AuthContext';
+
 const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
@@ -360,12 +361,28 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
           {task && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Comments</h3>
-              <div data-color-mode="light">
-                <MDEditor
-                  value={newComment}
-                  onChange={setNewComment}
-                />
-              </div>
+              <MDXEditor
+                markdown={newComment}
+                onChange={setNewComment}
+                plugins={[
+                  toolbarPlugin({
+                    toolbarContents: () => (
+                      <>
+                        <UndoRedo />
+                        <BoldItalicUnderlineToggles />
+                        <ListsToggles />
+                        <diffSourcePlugin.DiffSourceToggle />
+                      </>
+                    )
+                  }),
+                  listsPlugin(),
+                  quotePlugin(),
+                  headingsPlugin(),
+                  linkPlugin(),
+                  thematicBreakPlugin(),
+                  diffSourcePlugin()
+                ]}
+              />
               <button onClick={handleAddComment} className="px-4 py-2 rounded bg-blue-500 text-white">Comment</button>
               <div className="space-y-4">
                 {comments.map(comment => (
@@ -376,14 +393,35 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                     </div>
                     {editingComment === comment._id ? (
                       <div>
-                        <MDEditor value={editingCommentText} onChange={setEditingCommentText} />
+                        <MDXEditor
+                          markdown={editingCommentText}
+                          onChange={setEditingCommentText}
+                           plugins={[
+                              toolbarPlugin({
+                                toolbarContents: () => (
+                                  <>
+                                    <UndoRedo />
+                                    <BoldItalicUnderlineToggles />
+                                    <ListsToggles />
+                                    <diffSourcePlugin.DiffSourceToggle />
+                                  </>
+                                )
+                              }),
+                              listsPlugin(),
+                              quotePlugin(),
+                              headingsPlugin(),
+                              linkPlugin(),
+                              thematicBreakPlugin(),
+                              diffSourcePlugin()
+                            ]}
+                        />
                         <div className="flex justify-end space-x-2 mt-2">
                            <button onClick={() => { setEditingComment(null); setEditingCommentText(''); }} className="px-3 py-1 rounded">Cancel</button>
                            <button onClick={() => handleUpdateComment(comment._id)} className="px-3 py-1 rounded bg-blue-500 text-white">Save</button>
                         </div>
                       </div>
                     ) : (
-                      <MDEditor.Markdown source={comment.content} style={{ whiteSpace: 'pre-wrap' }} />
+                      <MDXEditor markdown={comment.content} readOnly className="prose dark:prose-invert max-w-none"/>
                     )}
                     {user && user.id === comment.user._id && editingComment !== comment._id && (
                       <div className="flex justify-end space-x-2 mt-2">

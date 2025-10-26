@@ -62,7 +62,7 @@ exports.createBoard = async (req, res, next) => {
   }
 };
 
-// @desc    Get a single board by ID with its lists
+// @desc    Get a single board by ID with its lists and tasks
 // @route   GET /api/boards/:id
 // @access  Private
 exports.getBoardById = async (req, res, next) => {
@@ -75,13 +75,27 @@ exports.getBoardById = async (req, res, next) => {
 
     const lists = await List.find({ board: board._id })
       .sort({ position: 'asc' })
-      .populate('tasks');
+      .populate({
+        path: 'tasks',
+        populate: [
+          {
+            path: 'labels',
+            model: 'Label'
+          },
+          {
+            path: 'comments.user',
+            model: 'User',
+            select: 'name email'
+          }
+        ]
+      });
 
     res.status(200).json({ board, lists });
   } catch (error) {
     next(error);
   }
 };
+
 
 // @desc    Update a board
 // @route   PUT /api/boards/:id
