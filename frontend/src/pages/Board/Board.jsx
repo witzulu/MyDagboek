@@ -21,7 +21,6 @@ const Board = () => {
   const [board, setBoard] = useState(null);
   const [lists, setLists] = useState([]);
   const [projectLabels, setProjectLabels] = useState([]);
-  const [projectMembers, setProjectMembers] = useState([]);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -39,14 +38,11 @@ const Board = () => {
           throw new Error("Authentication token not found.");
         }
 
-        const [boardRes, labelsRes, membersRes] = await Promise.all([
+        const [boardRes, labelsRes] = await Promise.all([
           fetch(`/api/boards/${boardId}`, {
             headers: { "Authorization": `Bearer ${token}` },
           }),
           fetch(`/api/projects/${projectId}/labels`, {
-            headers: { "Authorization": `Bearer ${token}` },
-          }),
-          fetch(`/api/projects/${projectId}/members`, {
             headers: { "Authorization": `Bearer ${token}` },
           }),
         ]);
@@ -58,18 +54,12 @@ const Board = () => {
           throw new Error(`Failed to fetch labels: ${labelsRes.status}`);
         }
 
-        if (!membersRes.ok) {
-          throw new Error(`Failed to fetch project members: ${membersRes.status}`);
-        }
-
         const boardData = await boardRes.json();
         const labelsData = await labelsRes.json();
-        const membersData = await membersRes.json();
 
         setBoard(boardData.board);
         setLists(boardData.lists);
         setProjectLabels(labelsData);
-        setProjectMembers(membersData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -412,7 +402,6 @@ const Board = () => {
         task={editingTask}
         listId={targetListId}
         projectLabels={projectLabels}
-        projectMembers={projectMembers}
         onNewLabel={handleNewLabel}
       />
       <EditBoardModal
