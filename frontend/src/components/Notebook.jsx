@@ -22,7 +22,9 @@ import {
   InsertThematicBreak,
   ListsToggle,
   Separator,
-  diffSourcePlugin
+  CodeToggle,
+  diffSourcePlugin,
+  DiffSourceToggleWrapper 
 } from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
 
@@ -338,45 +340,50 @@ const handleSelectNote = async (note) => {
                 </div>
               </div>
               <MDXEditor
-                key={currentNote._id} // 👈 force re-render when note changes
-                markdown={currentNote.content}
-                onChange={(newContent) =>
-                  setCurrentNote(prev => ({ ...prev, content: newContent }))
-                }
-                plugins={[
-                  headingsPlugin(),
-                  listsPlugin(),
-                  quotePlugin(),
-                  thematicBreakPlugin(),
-                  linkPlugin(),
-                  tablePlugin(),
-                  codeBlockPlugin(),
-                  imagePlugin({ imageUploadHandler: handleImageUpload }),
-                  diffSourcePlugin(),
-                  toolbarPlugin({
-                    toolbarContents: () => (
-                      <>
-                        <UndoRedo />
-                        <Separator />
-                        <BoldItalicUnderlineToggles />
-                        <Separator />
-                        <ListsToggle />
-                        <Separator />
-                        <BlockTypeSelect blockTypes={['paragraph', 'h1', 'h2', 'h3', 'quote', 'code']} />
-                        <Separator />
-                        <CreateLink />
-                        <InsertImage />
-                        <Separator />
-                        <InsertTable />
-                        <InsertThematicBreak />
-                        <Separator />
-                        <diffSourcePlugin.DiffSourceToggle />
-                      </>
-                    )
-                  })
-                ]}
-                contentEditableClassName="prose"
-              />
+  key={currentNote._id} // 👈 force re-render when note changes
+  markdown={currentNote.content}
+  onChange={(newContent) =>
+    setCurrentNote(prev => ({ ...prev, content: newContent }))
+  }
+  plugins={[
+    
+    headingsPlugin(),
+    listsPlugin(),
+    quotePlugin(),
+    thematicBreakPlugin(),
+    linkPlugin(),
+    tablePlugin(),
+    codeBlockPlugin(),
+    imagePlugin({ imageUploadHandler: handleImageUpload }),
+     diffSourcePlugin(),
+    toolbarPlugin({
+      
+      toolbarContents: () => (
+        <>
+          <UndoRedo />
+          <Separator />
+          <BoldItalicUnderlineToggles />
+          <Separator />
+          <ListsToggle />
+          <Separator />
+          <BlockTypeSelect blockTypes={['paragraph', 'h1', 'h2', 'h3', 'quote', 'code']} />
+          <Separator />
+          <CreateLink />
+          <InsertImage />
+          <Separator />
+          <InsertTable />
+          <InsertThematicBreak />
+          <Separator />
+          <CodeToggle />
+          <Separator />
+           <DiffSourceToggleWrapper />
+          
+        </>
+      )
+    })
+  ]}
+  contentEditableClassName="prose"
+/>
 
             </div>
           ) : (

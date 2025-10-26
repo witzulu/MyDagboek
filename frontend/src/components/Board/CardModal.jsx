@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useContext } from 'react';
 import LabelManager from './LabelManager';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
-import { MDXEditor, UndoRedo, BoldItalicUnderlineToggles, ListsToggles, linkPlugin, BlockTypeSelect, codeBlockPlugin, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin, toolbarPlugin, diffSourcePlugin } from '@mdxeditor/editor';
+import { 
+  MDXEditor, 
+  UndoRedo, 
+  BoldItalicUnderlineToggles, 
+  linkPlugin, 
+  headingsPlugin, 
+  listsPlugin, 
+  quotePlugin, 
+  thematicBreakPlugin,
+  diffSourcePlugin,
+   DiffSourceToggleWrapper, 
+  toolbarPlugin
+} from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -365,13 +377,13 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                 markdown={newComment}
                 onChange={setNewComment}
                 plugins={[
+                 
                   toolbarPlugin({
                     toolbarContents: () => (
                       <>
                         <UndoRedo />
                         <BoldItalicUnderlineToggles />
-                        <ListsToggles />
-                        <diffSourcePlugin.DiffSourceToggle />
+                        <DiffSourceToggleWrapper />
                       </>
                     )
                   }),
@@ -380,7 +392,8 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                   headingsPlugin(),
                   linkPlugin(),
                   thematicBreakPlugin(),
-                  diffSourcePlugin()
+                   diffSourcePlugin(),
+                 
                 ]}
               />
               <button onClick={handleAddComment} className="px-4 py-2 rounded bg-blue-500 text-white">Comment</button>
