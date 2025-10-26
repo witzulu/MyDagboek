@@ -62,9 +62,9 @@ To get a local copy up and running, follow these simple steps.
 Currently this app is not working the frontend shows and the authentication is setup but i have not implemented all the features yet.
 I am currently working on.
 
-    > Board enhancement
-    > List enchancement
-    > task enhancement
+    > Code Snippets
+    
+    
     
 ## Features (currently implemented)
 1. Projects
@@ -86,6 +86,9 @@ I am currently working on.
    - A tagging system to organize notes by topic.
    - A pinning feature to highlight important notes.
    - A search functionality to easily find notes by title, content, or tags.
+8. Code Snippets
+   - Dashboard for snippets (will change apearance later. posibly simular to notes)
+   - can create a snippet in various languages (C#,javascript,html, Will add more as needed or requested)
      
 ## Roadmap
 
