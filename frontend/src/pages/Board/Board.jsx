@@ -231,7 +231,7 @@ const Board = () => {
     }
   };
 
-  const handleSaveTask = async ({ title, description, dueDate, labels, listId, taskId }) => {
+  const handleSaveTask = async ({ title, description, dueDate, priority, labels, listId, taskId }) => {
     const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
     const method = taskId ? 'PUT' : 'POST';
 
@@ -243,7 +243,7 @@ const Board = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, dueDate, labels, listId }),
+        body: JSON.stringify({ title, description, dueDate, priority, labels, listId }),
       });
 
       if (!response.ok) {
