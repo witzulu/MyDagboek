@@ -19,8 +19,9 @@ import UserSettings from './pages/Settings/UserSettings';
 import Projects from './pages/Projects/Projects';
 import ProjectDashboard from './pages/Projects/ProjectDashboard';
 import Notebook from './components/Notebook';
-import Boards from './pages/Boards/Boards';
+import Boards from './pages-s/Boards/Boards';
 import Board from './pages/Board/Board';
+import Snippets from './pages/Snippets/Snippets';
 
 // Auth Components
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="projects/:projectId/notebook" element={<Notebook />} />
               <Route path="projects/:projectId/boards" element={<Boards />} />
               <Route path="projects/:projectId/boards/:boardId" element={<Board />} />
+              <Route path="projects/:projectId/snippets" element={<Snippets />} />
               <Route path="settings" element={<UserSettings />} />
             </Route>
           </Route>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CheckSquare, MessageSquare, ChevronUp, ChevronDown, Minus } from 'lucide-react';
+import { CheckSquare, MessageSquare } from 'lucide-react';
 
 const Card = ({ task }) => {
   const {
@@ -62,25 +62,6 @@ const Card = ({ task }) => {
             <span>{completedItems}/{task.checklist.length}</span>
           </span>
         )}
-        {task.priority && (
-            <span className="flex items-center space-x-1">
-              {task.priority === 'High' && <ChevronUp size={16} className="text-red-500" />}
-              {task.priority === 'Medium' && <Minus size={16} className="text-yellow-500" />}
-              {task.priority === 'Low' && <ChevronDown size={16} className="text-green-500" />}
-            </span>
-          )}
-        </div>
-        <div className="flex -space-x-2">
-            {(task.assignees || []).map(user => (
-               <div key={user._id} className="relative group">
-                  <span className="h-6 w-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-gray-700">
-                     {user.name ? user.name.charAt(0).toUpperCase() : '?'}
-                  </span>
-                   <span className="absolute bottom-full mb-2 w-max px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                    {user.name}
-                  </span>
-                </div>
-            ))}
         </div>
       </div>
     </div>

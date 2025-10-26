@@ -68,18 +68,9 @@ const taskSchema = new mongoose.Schema({
   dueDate: {
     type: Date,
   },
-  priority: {
-    type: String,
-    enum: ['Low', 'Medium', 'High'],
-    default: 'Medium',
-  },
   labels: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Label'
-  }],
-  assignees: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
   }],
   attachments: [attachmentSchema],
   checklist: [checklistItemSchema],
