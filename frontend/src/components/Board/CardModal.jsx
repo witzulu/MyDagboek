@@ -17,12 +17,13 @@ import {
 import '@mdxeditor/editor/style.css';
 import { AuthContext } from '../../context/AuthContext';
 
-const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate }) => {
+const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectMembers, projectLabels, onNewLabel, onTaskUpdate }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(null);
   const [assignedLabels, setAssignedLabels] = useState([]);
+  const [assignedUsers, setAssignedUsers] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [comments, setComments] = useState([]);
@@ -40,6 +41,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
         setAssignedLabels(task.labels || []);
+        setAssignedUsers(task.assignees || []);
         setAttachments(task.attachments || []);
         setChecklist(task.checklist || []);
         setComments(task.comments || []);
@@ -48,6 +50,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setDescription('');
         setDueDate(null);
         setAssignedLabels([]);
+        setAssignedUsers([]);
         setAttachments([]);
         setChecklist([]);
         setComments([]);
@@ -71,6 +74,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       description,
       dueDate,
       labels: assignedLabels.map(l => l._id || l),
+      assignees: assignedUsers.map(u => u._id || u),
       listId: task ? task.list : listId,
       taskId: task ? task._id : null
     });
@@ -84,6 +88,18 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
     } else {
         const labelToAdd = projectLabels.find(l => l._id === labelId);
         if(labelToAdd) setAssignedLabels(prev => [...prev, labelToAdd]);
+    }
+  };
+
+  const handleAssigneeToggle = (userId) => {
+    const isAssigned = assignedUsers.some(u => u._id === userId);
+    if (isAssigned) {
+      setAssignedUsers(prev => prev.filter(u => u._id !== userId));
+    } else {
+      const userToAdd = (projectMembers || []).find(m => m._id === userId);
+      if (userToAdd) {
+        setAssignedUsers(prev => [...prev, userToAdd]);
+      }
     }
   };
 
@@ -294,6 +310,38 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             onLabelToggle={handleLabelToggle}
             onNewLabel={onNewLabel}
           />
+
+          {/* Assignees Section */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Assignees</h3>
+            <div className="flex items-center space-x-2">
+              {(assignedUsers || []).map(user => (
+                <div key={user._id} className="relative group">
+                  <span className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold">
+                     {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                  </span>
+                   <span className="absolute bottom-full mb-2 w-max px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                    {user.name}
+                  </span>
+                </div>
+              ))}
+              <div className="relative">
+                <select
+                  onChange={(e) => handleAssigneeToggle(e.target.value)}
+                  className="appearance-none h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center cursor-pointer"
+                  value=""
+                >
+                  <option value="" disabled>+/-</option>
+                  {(projectMembers || []).map(member => (
+                    <option key={member._id} value={member._id}>
+                       {assignedUsers.some(u => u._id === member._id) ? '✓' : ''} {member.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
 
           {/* Attachments Section */}
           <div className="space-y-2">

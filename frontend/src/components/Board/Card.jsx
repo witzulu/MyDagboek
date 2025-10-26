@@ -63,6 +63,18 @@ const Card = ({ task }) => {
           </span>
         )}
         </div>
+        <div className="flex -space-x-2">
+            {(task.assignees || []).map(user => (
+               <div key={user._id} className="relative group">
+                  <span className="h-6 w-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-gray-700">
+                     {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                  </span>
+                   <span className="absolute bottom-full mb-2 w-max px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                    {user.name}
+                  </span>
+                </div>
+            ))}
+        </div>
       </div>
     </div>
   );
