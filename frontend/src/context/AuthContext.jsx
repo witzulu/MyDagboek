@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
+import api from '../services/api';
+
 export const AuthContext = createContext();
 
-// Self-contained JWT decoding function
 const decodeJwt = (token) => {
   try {
     const base64Url = token.split('.')[1];
@@ -18,9 +19,6 @@ const decodeJwt = (token) => {
   }
 };
 
-
-
-
 export const useAuth = () => {
   return useContext(AuthContext);
 };
@@ -29,13 +27,24 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+
+  const fetchNotifications = useCallback(async () => {
+    if (!token) return;
+    try {
+      const data = await api('/notifications');
+      setNotifications(data);
+    } catch (error) {
+      console.error('Failed to fetch notifications', error);
+    }
+  }, [token]);
 
   useEffect(() => {
     try {
       if (token) {
         const decodedToken = decodeJwt(token);
-        // Add expiration check if needed
         setUser(decodedToken.user);
+        fetchNotifications();
       }
     } catch (error) {
       console.error("Failed to decode token:", error);
@@ -45,7 +54,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, fetchNotifications]);
 
   const login = (newToken) => {
     localStorage.setItem('token', newToken);
@@ -56,6 +65,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    setNotifications([]);
   };
 
   const value = {
@@ -64,6 +74,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated: !!token,
+    notifications,
+    fetchNotifications,
   };
 
   return (

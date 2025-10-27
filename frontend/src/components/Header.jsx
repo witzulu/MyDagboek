@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import { Book, Menu, X, Shield, Settings } from 'lucide-react';
+import { Book, Menu, X, Shield, Settings, Bell } from 'lucide-react';
 import ThemeSwitcher from './ThemeSwitcher';
 import { useTheme } from './ThemeContext';
 import { useSettings } from '../context/SettingsContext';
+import { useAuth } from '../context/AuthContext';
+import NotificationsPanel from './NotificationsPanel';
+import api from '../services/api';
 
 export default function Header({
   sidebarOpen,
@@ -13,6 +17,31 @@ export default function Header({
 }) {
   const { theme, setTheme } = useTheme();
   const { settings } = useSettings();
+  const { notifications, fetchNotifications } = useAuth();
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleRespond = async (notificationId, response) => {
+    try {
+        await api(`/notifications/respond/${notificationId}`, {
+            method: 'PUT',
+            body: { response },
+        });
+        fetchNotifications(); // Refresh notifications from global state
+    } catch (error) {
+        console.error('Failed to respond to invitation', error);
+    }
+  };
+
+  const handleMarkAsRead = async () => {
+    try {
+        await api('/notifications/read', { method: 'PUT' });
+        fetchNotifications(); // Refresh notifications from global state
+    } catch (error) {
+        console.error('Failed to mark notifications as read', error);
+    }
+  };
+
+  const unreadCount = (notifications || []).filter(n => n.status === 'unread').length;
 
   return (
     <header className="bg-background border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-40">
@@ -33,9 +62,9 @@ export default function Header({
    
          <div className="flex items-center gap-4">
           <ThemeSwitcher 
-        currentTheme={theme} 
-        onThemeChange={setTheme} 
-      />
+            currentTheme={theme}
+            onThemeChange={setTheme}
+          />
            
            <div className="text-right">
              <p className="text-sm font-medium text-foreground">{currentUser.name}</p>
@@ -51,6 +80,30 @@ export default function Header({
               <Shield className="w-5 h-5 text-foreground" />
             </Link>
            )}
+
+           <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    if (!showNotifications) {
+                      fetchNotifications(); // Refresh on open
+                    }
+                  }}
+                  className="p-2 hover:bg-secondary rounded-lg transition-colors relative"
+                >
+                    <Bell className="w-5 h-5 text-foreground" />
+                    {unreadCount > 0 && (
+                        <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                    )}
+                </button>
+                {showNotifications && (
+                    <NotificationsPanel
+                        notifications={notifications || []}
+                        onRespond={handleRespond}
+                        onMarkAsRead={handleMarkAsRead}
+                    />
+                )}
+            </div>
 
            <button
              onClick={handleLogout}
