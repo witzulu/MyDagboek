@@ -14,6 +14,36 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
+// @desc    Update a user's role
+// @route   PUT /api/users/:id/role
+// @access  Private/Admin
+exports.updateUserRole = async (req, res, next) => {
+  try {
+    const { role } = req.body;
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Ensure the role is valid
+    const validRoles = User.schema.path('role').enumValues;
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ msg: 'Invalid role' });
+    }
+
+    user.role = role;
+    await user.save();
+
+    const users = await User.find().populate('projects', 'name').select('-password');
+    res.json(users);
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
 // @desc    Update user profile
 // @route   PUT /api/users/profile
 // @access  Private

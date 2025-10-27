@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, approveUser, blockUser, unblockUser, updateUserProfile } = require('../controllers/userController');
+const { getUsers, approveUser, blockUser, unblockUser, updateUserProfile, updateUserRole } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const { admin } = require('../middleware/adminMiddleware');
+
+// @route   PUT api/users/:id/role
+// @desc    Update a user's role
+// @access  Private/Admin
+router.put('/:id/role', [protect, admin], updateUserRole);
 
 // @route   GET api/users
 // @desc    Get all users
