@@ -46,7 +46,7 @@ export default function Header({
              <Settings className="w-5 h-5 text-foreground" />
            </Link>
 
-           {currentUser.role === 'admin' && (
+           {currentUser.role === 'system_admin' && (
             <Link to="/admin" className="p-2 hover:bg-secondary rounded-lg transition-colors">
               <Shield className="w-5 h-5 text-foreground" />
             </Link>
