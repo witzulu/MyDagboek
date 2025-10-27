@@ -1,6 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { getProjects, getProjectById, createProject, updateProject, deleteProject, getProjectMembers, addProjectMember } = require('../controllers/projectController');
+const {
+  getProjects,
+  getProjectById,
+  createProject,
+  updateProject,
+  deleteProject,
+  getProjectMembers,
+  addProjectMember,
+  updateProjectMemberRole,
+  removeProjectMember
+} = require('../controllers/projectController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/').get(protect, getProjects).post(protect, createProject);
@@ -8,6 +18,7 @@ router.route('/:id').get(protect, getProjectById).put(protect, updateProject).de
 
 // Member routes
 router.route('/:id/members').get(protect, getProjectMembers).post(protect, addProjectMember);
+router.route('/:id/members/:memberId').put(protect, updateProjectMemberRole).delete(protect, removeProjectMember);
 
 // Nested snippet routes
 const snippetRoutes = require('./snippets');
