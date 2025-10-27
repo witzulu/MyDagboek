@@ -54,7 +54,8 @@ require('./src/models/Board');
 require('./src/models/List');
 require('./src/models/Task');
 
-    seedAdminUser();
+    await seedAdminUser();
+    await migrateProjects();
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);
     process.exit(1);
@@ -93,6 +94,28 @@ const seedAdminUser = async () => {
         }
     } catch (error) {
         console.error('❌ Error seeding admin user:', error);
+    }
+};
+
+const migrateProjects = async () => {
+    const Project = require('./src/models/Project');
+    try {
+        const projectsToMigrate = await Project.find({ 'members.role': { $ne: 'owner' } });
+
+        if (projectsToMigrate.length > 0) {
+            console.log(`Found ${projectsToMigrate.length} projects to migrate...`);
+            for (const project of projectsToMigrate) {
+                const ownerExists = project.members.some(m => m.role === 'owner');
+                if (!ownerExists && project.user) {
+                    project.members.push({ user: project.user, role: 'owner' });
+                    await project.save();
+                    console.log(`Project ${project.name} migrated.`);
+                }
+            }
+            console.log('✅ Project migration complete.');
+        }
+    } catch (error) {
+        console.error('❌ Error migrating projects:', error);
     }
 };
 
