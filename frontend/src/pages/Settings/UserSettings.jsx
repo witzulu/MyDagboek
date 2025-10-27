@@ -50,6 +50,17 @@ const UserSettings = () => {
       <h1 className="text-2xl font-bold mb-4">Your Settings</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
+          <label htmlFor="username" className="block text-sm font-medium">Username</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            value={user?.username || ''}
+            readOnly
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100"
+          />
+        </div>
+        <div>
           <label htmlFor="name" className="block text-sm font-medium">Name</label>
           <input
             type="text"

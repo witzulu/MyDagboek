@@ -269,7 +269,7 @@ exports.getProjectMembers = async (req, res) => {
 // @access  Private
 exports.addProjectMember = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { identifier } = req.body; // Can be email or username
     const project = await Project.findById(req.params.id);
 
     if (!project) {
@@ -283,7 +283,10 @@ exports.addProjectMember = async (req, res) => {
         }
     }
 
-    const userToInvite = await User.findOne({ email });
+    const userToInvite = await User.findOne({
+        $or: [{ email: identifier }, { username: identifier }]
+    });
+
     if (!userToInvite) {
       return res.status(404).json({ msg: 'User not found' });
     }

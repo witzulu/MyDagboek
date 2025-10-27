@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { UserPlus, Shield, Trash2, Crown } from 'lucide-react';
+import debounce from 'lodash.debounce';
 
 const Team = () => {
   const { projectId } = useParams();
@@ -10,9 +11,13 @@ const Team = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [email, setEmail] = useState('');
 
-  const fetchMembers = async () => {
+  // State for autocomplete
+  const [searchTerm, setSearchTerm] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const fetchMembers = useCallback(async () => {
     try {
       setLoading(true);
       const data = await api(`/projects/${projectId}/members`);
@@ -28,13 +33,34 @@ const Team = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
-    if (projectId) {
-      fetchMembers();
+    fetchMembers();
+  }, [fetchMembers]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSearch = useCallback(debounce(async (query) => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      setIsSearching(false);
+      return;
     }
-  }, [projectId]);
+    setIsSearching(true);
+    try {
+      const results = await api(`/users/search?q=${query}`);
+      setSuggestions(results);
+    } catch (err) {
+      console.error('Failed to search users', err);
+    } finally {
+      setIsSearching(false);
+    }
+  }, 300), []);
+
+  useEffect(() => {
+    debouncedSearch(searchTerm);
+  }, [searchTerm, debouncedSearch]);
+
 
   const userPermissionRole = (() => {
     if (currentUser?.role === 'system_admin') return 'owner';
@@ -44,18 +70,17 @@ const Team = () => {
 
   const canManage = ['owner', 'admin'].includes(userPermissionRole);
 
-  const handleAddMember = async (e) => {
-    e.preventDefault();
-    if (!email) return alert('Please enter an email.');
+  const handleInvite = async (identifier) => {
     try {
-      const updatedMembers = await api(`/projects/${projectId}/members`, {
+      await api(`/projects/${projectId}/members`, {
         method: 'POST',
-        body: { email, role: 'member' },
+        body: { identifier },
       });
-      setMembers(updatedMembers);
-      setEmail('');
+      alert('Invitation sent successfully!');
+      setSearchTerm('');
+      setSuggestions([]);
     } catch (err) {
-      alert(err.message || 'Failed to add member. The user may not exist or is already in the project.');
+      alert(err.message || 'Failed to send invitation. The user may not exist or is already in the project.');
     }
   };
 
@@ -94,19 +119,29 @@ const Team = () => {
       {canManage && (
         <div className="bg-background-alt p-6 rounded-lg border border-border mb-8 shadow-sm">
           <h2 className="text-xl font-semibold mb-4 flex items-center"><UserPlus className="mr-2 h-6 w-6"/>Invite New Member</h2>
-          <form onSubmit={handleAddMember} className="flex flex-col sm:flex-row gap-2">
+          <div className="relative">
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter user's email to add them"
-              className="flex-grow p-2 rounded-md border bg-transparent border-border focus:ring-2 focus:ring-primary"
-              required
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Enter username or email to invite"
+              className="w-full p-2 rounded-md border bg-transparent border-border focus:ring-2 focus:ring-primary"
             />
-            <button type="submit" className="btn btn-primary flex items-center justify-center">
-              <UserPlus className="w-5 h-5 mr-2" /> Add Member
-            </button>
-          </form>
+            {isSearching && <div className="p-2 text-muted">Searching...</div>}
+            {suggestions.length > 0 && (
+              <ul className="absolute z-10 w-full bg-background-alt border border-border rounded-md mt-1 shadow-lg">
+                {suggestions.map(user => (
+                  <li
+                    key={user._id}
+                    className="p-2 hover:bg-secondary cursor-pointer"
+                    onClick={() => handleInvite(user.username)}
+                  >
+                    {user.name} (@{user.username})
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
 
@@ -128,7 +163,7 @@ const Team = () => {
                 <tr key={member.user?._id || index}>
                   <td className="p-4">
                     <div className="font-medium">{member.user?.name || <span className="text-muted">Deleted User</span>}</div>
-                    <div className="text-muted">{member.user?.email || 'N/A'}</div>
+                    <div className="text-muted">@{member.user?.username || 'N/A'}</div>
                   </td>
                   <td className="p-4 capitalize flex items-center">
                     {member.role === 'owner' && <Crown className="w-4 h-4 mr-2 text-yellow-500"/>}
