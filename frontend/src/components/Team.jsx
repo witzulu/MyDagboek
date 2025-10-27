@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 import { UserPlus, Shield, Trash2, Crown } from 'lucide-react';
 
 const Team = () => {
