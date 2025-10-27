@@ -66,7 +66,7 @@ const seedAdminUser = async () => {
     const bcrypt = require('bcryptjs');
 
     try {
-        const adminExists = await User.findOne({ role: 'admin' });
+        const adminExists = await User.findOne({ role: 'system_admin' });
         if (!adminExists) {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash('password', salt);
@@ -75,7 +75,7 @@ const seedAdminUser = async () => {
                 name: 'Admin User',
                 email: 'admin@dagboek.com',
                 password: hashedPassword,
-                role: 'admin',
+                role: 'system_admin',
                 status: 'approved'
             });
 

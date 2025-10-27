@@ -44,6 +44,18 @@ const UserManagementTable = () => {
     }
   };
 
+  const handleRoleChange = async (userId, role) => {
+    try {
+      const updatedUsers = await api(`/users/${userId}/role`, {
+        method: 'PUT',
+        body: { role },
+      });
+      setUsers(updatedUsers);
+    } catch (error) {
+      console.error('Failed to update role', error);
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -62,7 +74,16 @@ const UserManagementTable = () => {
               <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.name}</td>
               <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
               <td className="px-6 py-4 text-sm text-gray-500">{user.status}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">{user.role}</td>
+              <td className="px-6 py-4 text-sm text-gray-500">
+                <select
+                  value={user.role}
+                  onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                >
+                  <option value="user">User</option>
+                  <option value="system_admin">System Admin</option>
+                </select>
+              </td>
               <td className="px-6 py-4 text-right text-sm font-medium">
                 {user.status === 'pending' && (
                   <button onClick={() => handleApprove(user._id)} className="text-indigo-600 hover:text-indigo-900 mr-4">Approve</button>

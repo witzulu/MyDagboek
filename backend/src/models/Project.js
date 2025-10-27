@@ -19,7 +19,18 @@ const ProjectSchema = new mongoose.Schema({
     type: String,
     enum: ['active', 'deleted'],
     default: 'active'
-  }
+  },
+  members: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    role: {
+      type: String,
+      enum: ['owner', 'admin', 'member'],
+      default: 'member'
+    }
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Project', ProjectSchema);
