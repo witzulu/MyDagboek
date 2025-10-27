@@ -16,7 +16,6 @@ const Team = () => {
     try {
       setLoading(true);
       const data = await api(`/projects/${projectId}/members`);
-      // Sort members with owner first, then admins, then members
       data.sort((a, b) => {
         const roles = { owner: 0, admin: 1, member: 2 };
         return roles[a.role] - roles[b.role];
@@ -125,11 +124,11 @@ const Team = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {members.map((member) => (
-                <tr key={member.user?._id}>
+              {members.map((member, index) => (
+                <tr key={member.user?._id || index}>
                   <td className="p-4">
-                    <div className="font-medium">{member.user?.name}</div>
-                    <div className="text-muted">{member.user?.email}</div>
+                    <div className="font-medium">{member.user?.name || <span className="text-muted">Deleted User</span>}</div>
+                    <div className="text-muted">{member.user?.email || 'N/A'}</div>
                   </td>
                   <td className="p-4 capitalize flex items-center">
                     {member.role === 'owner' && <Crown className="w-4 h-4 mr-2 text-yellow-500"/>}
@@ -142,7 +141,7 @@ const Team = () => {
                         <select
                           value={member.role}
                           onChange={(e) => handleRoleChange(member.user._id, e.target.value)}
-                          disabled={member.role === 'owner' || member.user._id === currentUser._id}
+                          disabled={!member.user || member.role === 'owner' || member.user?._id === currentUser._id}
                           className="p-2 rounded-md border bg-transparent border-border disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <option value="admin">Admin</option>
@@ -150,7 +149,7 @@ const Team = () => {
                         </select>
                         <button
                           onClick={() => handleRemoveMember(member.user._id)}
-                          disabled={member.role === 'owner' || member.user._id === currentUser._id}
+                          disabled={!member.user || member.role === 'owner' || member.user?._id === currentUser._id}
                           className="btn btn-danger p-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Remove member"
                         >
