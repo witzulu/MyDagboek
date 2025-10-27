@@ -14,6 +14,30 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
+// @desc    Search for users by username or name
+// @route   GET /api/users/search
+// @access  Private
+exports.searchUsers = async (req, res, next) => {
+    try {
+        const query = req.query.q;
+        if (!query) {
+            return res.json([]);
+        }
+
+        const users = await User.find({
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { username: { $regex: query, $options: 'i' } }
+            ]
+        }).select('name username').limit(10);
+
+        res.json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+};
+
 // @desc    Update a user's role
 // @route   PUT /api/users/:id/role
 // @access  Private/Admin

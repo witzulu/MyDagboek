@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, approveUser, blockUser, unblockUser, updateUserProfile, updateUserRole } = require('../controllers/userController');
+const { getUsers, approveUser, blockUser, unblockUser, updateUserProfile, updateUserRole, searchUsers } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const { admin } = require('../middleware/adminMiddleware');
+
+// @route   GET api/users/search
+// @desc    Search for users
+// @access  Private
+router.get('/search', protect, searchUsers);
 
 // @route   PUT api/users/:id/role
 // @desc    Update a user's role
