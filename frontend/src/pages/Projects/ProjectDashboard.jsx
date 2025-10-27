@@ -84,9 +84,9 @@ const ProjectDashboard = () => {
               <Users className="w-6 h-6 mr-2" /> Team
             </h3>
             <ul className="space-y-2">
-              {members.slice(0, 5).map(member => (
-                <li key={member.user._id} className="flex justify-between items-center text-sm">
-                  <span>{member.user.name}</span>
+              {members.slice(0, 5).map((member, index) => (
+                <li key={member.user?._id || index} className="flex justify-between items-center text-sm">
+                  <span>{member.user?.name || 'User not found'}</span>
                   <span className="text-muted capitalize">{member.role}</span>
                 </li>
               ))}

@@ -49,9 +49,16 @@ exports.updateProjectMemberRole = async (req, res) => {
     memberToUpdate.role = role;
     await project.save();
 
-    const updatedProject = await Project.findById(req.params.id).populate('members.user', 'name email');
+    const updatedProject = await Project.findById(req.params.id);
+    const members = await Promise.all(updatedProject.members.map(async (member) => {
+        const user = await User.findById(member.user).select('name email');
+        return {
+            ...member.toObject(),
+            user
+        };
+    }));
 
-    res.json(updatedProject.members);
+    res.json(members);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server Error');
@@ -88,9 +95,16 @@ exports.removeProjectMember = async (req, res) => {
         project.members = project.members.filter(m => m.user.toString() !== req.params.memberId);
         await project.save();
 
-        const updatedProject = await Project.findById(req.params.id).populate('members.user', 'name email');
+        const updatedProject = await Project.findById(req.params.id);
+        const members = await Promise.all(updatedProject.members.map(async (member) => {
+            const user = await User.findById(member.user).select('name email');
+            return {
+                ...member.toObject(),
+                user
+            };
+        }));
 
-        res.json(updatedProject.members);
+        res.json(members);
     } catch (error) {
         console.error(error);
         res.status(500).send('Server Error');
@@ -221,7 +235,7 @@ exports.deleteProject = async (req, res, next) => {
 // @access  Private
 exports.getProjectMembers = async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id).populate('members.user', 'name email role status');
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ msg: 'Project not found' });
@@ -234,7 +248,15 @@ exports.getProjectMembers = async (req, res) => {
         }
     }
 
-    res.json(project.members);
+    const members = await Promise.all(project.members.map(async (member) => {
+        const user = await User.findById(member.user).select('name email');
+        return {
+            ...member.toObject(),
+            user
+        };
+    }));
+
+    res.json(members);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server Error');
@@ -272,9 +294,17 @@ exports.addProjectMember = async (req, res) => {
     project.members.push({ user: userToAdd.id, role: role || 'member' });
     await project.save();
 
-    const updatedProject = await Project.findById(req.params.id).populate('members.user', 'name email');
+    // Repopulate members to return full user objects
+    const updatedProject = await Project.findById(req.params.id);
+    const members = await Promise.all(updatedProject.members.map(async (member) => {
+        const user = await User.findById(member.user).select('name email');
+        return {
+            ...member.toObject(),
+            user
+        };
+    }));
 
-    res.json(updatedProject.members);
+    res.json(members);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server Error');
