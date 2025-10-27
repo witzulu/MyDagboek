@@ -18,6 +18,85 @@ exports.getProjects = async (req, res, next) => {
   }
 };
 
+// @desc    Update a project member's role
+// @route   PUT /api/projects/:id/members/:memberId
+// @access  Private
+exports.updateProjectMemberRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ msg: 'Project not found' });
+    }
+
+    // Authorization: only owner/admin can update roles
+    const requester = project.members.find(m => m.user.toString() === req.user.id);
+    if (req.user.role !== 'system_admin' && (!requester || !['owner', 'admin'].includes(requester.role))) {
+      return res.status(403).json({ msg: 'Access denied: You do not have permission to update roles.' });
+    }
+
+    const memberToUpdate = project.members.find(m => m.user.toString() === req.params.memberId);
+    if (!memberToUpdate) {
+      return res.status(404).json({ msg: 'Member not found in this project' });
+    }
+
+    // Prevent changing owner's role or assigning new owner
+    if (memberToUpdate.role === 'owner' || role === 'owner') {
+        return res.status(400).json({ msg: 'Cannot change or assign owner role' });
+    }
+
+    memberToUpdate.role = role;
+    await project.save();
+
+    const updatedProject = await Project.findById(req.params.id).populate('members.user', 'name email');
+
+    res.json(updatedProject.members);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Remove a project member
+// @route   DELETE /api/projects/:id/members/:memberId
+// @access  Private
+exports.removeProjectMember = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+
+        if (!project) {
+            return res.status(404).json({ msg: 'Project not found' });
+        }
+
+        // Authorization: only owner/admin can remove members
+        const requester = project.members.find(m => m.user.toString() === req.user.id);
+        if (req.user.role !== 'system_admin' && (!requester || !['owner', 'admin'].includes(requester.role))) {
+            return res.status(403).json({ msg: 'Access denied: You do not have permission to remove members.' });
+        }
+
+        const memberToRemove = project.members.find(m => m.user.toString() === req.params.memberId);
+        if (!memberToRemove) {
+            return res.status(404).json({ msg: 'Member not found in this project' });
+        }
+
+        // Prevent removing the owner
+        if (memberToRemove.role === 'owner') {
+            return res.status(400).json({ msg: 'Cannot remove the project owner' });
+        }
+
+        project.members = project.members.filter(m => m.user.toString() !== req.params.memberId);
+        await project.save();
+
+        const updatedProject = await Project.findById(req.params.id).populate('members.user', 'name email');
+
+        res.json(updatedProject.members);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Server Error');
+    }
+};
+
 // @desc    Get a single project by ID
 // @route   GET /api/projects/:id
 // @access  Private
