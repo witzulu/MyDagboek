@@ -30,26 +30,26 @@ const Snippets = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSnippet, setEditingSnippet] = useState(null);
 
-  useEffect(() => {
-    const fetchSnippets = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        const res = await fetch(`/api/projects/${projectId}/snippets`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) {
-          throw new Error('Failed to fetch snippets');
-        }
-        const data = await res.json();
-       setSnippets(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const fetchSnippets = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/projects/${projectId}/snippets`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        throw new Error('Failed to fetch snippets');
       }
-    };
+      const data = await res.json();
+      setSnippets(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSnippets();
   }, [projectId]);
 
@@ -75,13 +75,7 @@ const Snippets = () => {
         throw new Error('Failed to save snippet');
       }
 
-      const savedSnippet = await response.json();
-
-      if (snippetId) {
-        setSnippets(snippets.map(s => s._id === snippetId ? savedSnippet : s));
-      } else {
-        setSnippets([...snippets, savedSnippet]);
-      }
+      fetchSnippets(); // Refetch snippets to ensure UI is up-to-date
     } catch (err) {
       setError(err.message);
     }
@@ -124,33 +118,38 @@ const Snippets = () => {
             snippet={editingSnippet}
         />
 
-      <div className="space-y-4">
-        {snippets.map((snippet, index) => (
-           <div key={snippet._id || index} className="bg-gray-800 rounded-lg p-4">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h2 className="text-xl font-semibold text-white">{snippet.title}</h2>
-                    <p className="text-gray-400 mb-2">{snippet.description}</p>
-                </div>
-                <div className="flex space-x-2">
-                    <button onClick={() => { setEditingSnippet(snippet); setIsModalOpen(true); }} className="text-gray-400 hover:text-white">Edit</button>
-                    <button onClick={() => handleDeleteSnippet(snippet._id)} className="text-gray-400 hover:text-white">Delete</button>
-                    <button onClick={() => navigator.clipboard.writeText(snippet.code)} className="text-gray-400 hover:text-white">Copy</button>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {snippets.map((snippet) => (
+          <div key={snippet._id} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-start mb-2">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{snippet.title}</h2>
+                <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full text-xs capitalize">{snippet.language}</span>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">{snippet.description}</p>
+              <div className="bg-gray-100 dark:bg-gray-900 rounded-md overflow-hidden max-h-48">
+                <CodeMirror
+                  value={snippet.code}
+                  theme={okaidia}
+                  extensions={[getLanguageExtension(snippet.language)]}
+                  readOnly
+                  className="text-sm"
+                />
+              </div>
             </div>
-            <CodeMirror
-              value={snippet.code}
-              theme={okaidia}
-              extensions={[getLanguageExtension(snippet.language)]}
-              readOnly
-            />
-            <div className="mt-2 flex flex-wrap gap-2">
-             {Array.isArray(snippet.tags) && snippet.tags.map((tag, index) => (
-  <span key={`${snippet._id}-${tag}-${index}`} className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-xs">
-    {tag}
-  </span>
-))}
-
+            <div className="mt-4">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {(snippet.tags || []).map((tag, index) => (
+                  <span key={index} className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button onClick={() => navigator.clipboard.writeText(snippet.code)} className="text-gray-500 hover:text-gray-700 dark:hover:text-white">Copy</button>
+                <button onClick={() => { setEditingSnippet(snippet); setIsModalOpen(true); }} className="text-gray-500 hover:text-gray-700 dark:hover:text-white">Edit</button>
+                <button onClick={() => handleDeleteSnippet(snippet._id)} className="text-red-500 hover:text-red-700 dark:hover:text-red-400">Delete</button>
+              </div>
             </div>
           </div>
         ))}
