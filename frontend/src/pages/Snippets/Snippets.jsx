@@ -125,8 +125,8 @@ const Snippets = () => {
         />
 
       <div className="space-y-4">
-        {snippets.map((snippet) => (
-          <div key={snippet._id} className="bg-gray-800 rounded-lg p-4">
+        {snippets.map((snippet, index) => (
+           <div key={snippet._id || index} className="bg-gray-800 rounded-lg p-4">
             <div className="flex justify-between items-start">
                 <div>
                     <h2 className="text-xl font-semibold text-white">{snippet.title}</h2>
@@ -145,11 +145,12 @@ const Snippets = () => {
               readOnly
             />
             <div className="mt-2 flex flex-wrap gap-2">
-              {Array.isArray(snippet.tags) && snippet.tags.map(tag => (
-  <span key={tag} className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-xs">
+             {Array.isArray(snippet.tags) && snippet.tags.map((tag, index) => (
+  <span key={`${snippet._id}-${tag}-${index}`} className="bg-gray-700 text-gray-300 px-2 py-1 rounded-full text-xs">
     {tag}
   </span>
 ))}
+
             </div>
           </div>
         ))}
