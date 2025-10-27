@@ -9,7 +9,7 @@ const ProtectedRoute = ({ adminOnly = false }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (adminOnly && user?.role !== 'admin') {
+  if (adminOnly && user?.role !== 'system_admin') {
     return <Navigate to="/projects" replace />; // Or a custom "Unauthorized" page
   }
 
