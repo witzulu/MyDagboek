@@ -1,5 +1,6 @@
 const Project = require('../models/Project');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // @desc    Get all projects for a user
 // @route   GET /api/projects
@@ -263,12 +264,12 @@ exports.getProjectMembers = async (req, res) => {
   }
 };
 
-// @desc    Add a project member
+// @desc    Invite a user to a project
 // @route   POST /api/projects/:id/members
 // @access  Private
 exports.addProjectMember = async (req, res) => {
   try {
-    const { email, role } = req.body;
+    const { email } = req.body;
     const project = await Project.findById(req.params.id);
 
     if (!project) {
@@ -278,33 +279,29 @@ exports.addProjectMember = async (req, res) => {
     if (req.user.role !== 'system_admin') {
         const requester = project.members.find(m => m.user.toString() === req.user.id);
         if (!requester || !['owner', 'admin'].includes(requester.role)) {
-          return res.status(403).json({ msg: 'Access denied: You do not have permission to add members.' });
+          return res.status(403).json({ msg: 'Access denied: You do not have permission to invite members.' });
         }
     }
 
-    const userToAdd = await User.findOne({ email });
-    if (!userToAdd) {
+    const userToInvite = await User.findOne({ email });
+    if (!userToInvite) {
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    if (project.members.some(member => member.user.toString() === userToAdd.id)) {
+    if (project.members.some(member => member.user.toString() === userToInvite.id)) {
         return res.status(400).json({ msg: 'User is already a member of this project' });
     }
 
-    project.members.push({ user: userToAdd.id, role: role || 'member' });
-    await project.save();
+    // Create a notification for the user
+    const notification = new Notification({
+      recipient: userToInvite._id,
+      sender: req.user.id,
+      type: 'project_invitation',
+      project: project._id,
+    });
+    await notification.save();
 
-    // Repopulate members to return full user objects
-    const updatedProject = await Project.findById(req.params.id);
-    const members = await Promise.all(updatedProject.members.map(async (member) => {
-        const user = await User.findById(member.user).select('name email');
-        return {
-            ...member.toObject(),
-            user
-        };
-    }));
-
-    res.json(members);
+    res.json({ msg: 'Invitation sent successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).send('Server Error');

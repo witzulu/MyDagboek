@@ -11,6 +11,7 @@ dotenv.config();
 // Route files
 const authRoutes = require('./src/routes/auth');
 const userRoutes = require('./src/routes/users');
+const notificationRoutes = require('./src/routes/notifications');
 const projectRoutes = require('./src/routes/projects');
 const { projectBoardsRouter, boardRouter } = require('./src/routes/boards');
 const listRoutes = require('./src/routes/lists');
@@ -56,6 +57,7 @@ require('./src/models/Task');
 
     await seedAdminUser();
     await migrateProjects();
+    await migrateUsers();
   } catch (err) {
     console.error('❌ MongoDB connection error:', err);
     process.exit(1);
@@ -119,11 +121,39 @@ const migrateProjects = async () => {
     }
 };
 
+const migrateUsers = async () => {
+    const User = require('./src/models/User');
+    try {
+        const usersToMigrate = await User.find({ username: { $exists: false } });
+
+        if (usersToMigrate.length > 0) {
+            console.log(`Found ${usersToMigrate.length} users to migrate...`);
+            for (const user of usersToMigrate) {
+                // Generate a unique username from the email
+                const username = user.email.split('@')[0];
+                let potentialUsername = username;
+                let counter = 1;
+                while (await User.findOne({ username: potentialUsername })) {
+                    potentialUsername = `${username}${counter}`;
+                    counter++;
+                }
+                user.username = potentialUsername;
+                await user.save();
+                console.log(`User ${user.email} migrated with username ${user.username}.`);
+            }
+            console.log('✅ User migration complete.');
+        }
+    } catch (error) {
+        console.error('❌ Error migrating users:', error);
+    }
+};
+
 connectDB();
 
 // Mount routers
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/projects/:projectId/boards', projectBoardsRouter);
 app.use('/api/boards', boardRouter);
