@@ -82,13 +82,15 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
             height="300px"
           />
           <div className="flex space-x-4">
-            <input
-              type="text"
-              placeholder="Language"
+            <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               className="w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
-            />
+            >
+              {['javascript', 'python', 'c++', 'c#', 'html', 'css'].map(lang => (
+                <option key={lang} value={lang}>{lang}</option>
+              ))}
+            </select>
             <input
               type="text"
               placeholder="Tags (comma-separated)"
