@@ -10,12 +10,14 @@ const ProjectDashboard = () => {
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProjectData = async () => {
       try {
         setLoading(true);
+        setError(null);
         const projectData = await api(`/projects/${projectId}`);
         setProject(projectData);
         setSelectedProject(projectData);
@@ -25,6 +27,7 @@ const ProjectDashboard = () => {
 
       } catch (error) {
         console.error('Failed to fetch project details', error);
+        setError('Failed to load project dashboard. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -39,14 +42,14 @@ const ProjectDashboard = () => {
     return <div className="text-center p-8">Loading dashboard...</div>;
   }
 
-  if (!project) {
-    return <div className="text-center p-8 text-red-500">Project not found</div>;
+  if (error) {
+    return <div className="text-center p-8 text-red-500">{error}</div>;
   }
 
   return (
     <div>
-      <h2 className="text-3xl font-bold mb-6">{project.name} Dashboard</h2>
-      <p className="text-muted mb-8">{project.description}</p>
+      <h2 className="text-3xl font-bold mb-6">{project?.name || 'Project'} Dashboard</h2>
+      <p className="text-muted mb-8">{project?.description || 'No description available.'}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {/* Placeholder Stats */}
@@ -84,14 +87,14 @@ const ProjectDashboard = () => {
               <Users className="w-6 h-6 mr-2" /> Team
             </h3>
             <ul className="space-y-2">
-              {members.slice(0, 5).map((member, index) => (
+              {(members || []).slice(0, 5).map((member, index) => (
                 <li key={member.user?._id || index} className="flex justify-between items-center text-sm">
                   <span>{member.user?.name || 'User not found'}</span>
                   <span className="text-muted capitalize">{member.role}</span>
                 </li>
               ))}
             </ul>
-            {members.length > 5 && <p className="text-xs text-muted mt-2">...and {members.length - 5} more</p>}
+            {(members || []).length > 5 && <p className="text-xs text-muted mt-2">...and {members.length - 5} more</p>}
           </div>
           <div className="bg-secondary p-6 rounded-xl border border-border">
             <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
