@@ -11,6 +11,9 @@ const NoteSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  drawing: {
+    type: Object,
+  },
   project: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
