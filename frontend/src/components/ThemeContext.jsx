@@ -3,36 +3,36 @@ import PropTypes from 'prop-types';
 import { Moon, Sun, Cloud, Sparkles, Leaf, Zap } from 'lucide-react';
 
 export const themes = [
-  {
-    id: 'dark',
-    name: 'Dark',
-    icon: Moon,
-    description: 'Classic dark theme for late-night coding',
-    colors: {
-      background: '240 10% 3.9%',
-      foreground: '0 0% 98%',
-      primary: '262.1 83.3% 57.8%',
-      primaryForeground: '262.1 83.3% 100%',
-      secondary: '240 3.7% 15.9%',
-      accent: '217.2 91.2% 59.8%',
-      muted: '240 5% 64.9%'
-    }
-  },
+  // daisyUI themes
   {
     id: 'light',
     name: 'Light',
     icon: Sun,
-    description: 'Clean light theme for daytime work',
-    colors: {
-      background: '0 0% 100%',
-      foreground: '240 10% 3.9%',
-      primary: '262.1 83.3% 57.8%',
-      primaryForeground: '262.1 83.3% 100%',
-      secondary: '240 4.8% 95.9%',
-      accent: '217.2 91.2% 59.8%',
-      muted: '240 3.8% 46.1%'
-    }
+    description: 'Default light theme from daisyUI',
+    isDaisyUI: true,
   },
+  {
+    id: 'dark',
+    name: 'Dark',
+    icon: Moon,
+    description: 'Default dark theme from daisyUI',
+    isDaisyUI: true,
+  },
+  {
+    id: 'cupcake',
+    name: 'Cupcake',
+    icon: Sun,
+    description: 'A light, sweet theme from daisyUI',
+    isDaisyUI: true,
+  },
+  {
+    id: 'dracula',
+    name: 'Dracula',
+    icon: Moon,
+    description: 'A dark, spooky theme from daisyUI',
+    isDaisyUI: true,
+  },
+  // Original custom themes
   {
     id: 'blue',
     name: 'Ocean',
@@ -108,6 +108,36 @@ export const useTheme = () => {
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('dark');
 
+  const applyTheme = useCallback((themeId) => {
+    const themeData = themes.find(t => t.id === themeId);
+    if (!themeData) {
+      console.warn(`Theme "${themeId}" not found. Falling back to "dark".`);
+      applyTheme('dark');
+      return;
+    }
+
+    const root = document.documentElement;
+
+    // Clear styles from other theme systems
+    root.removeAttribute('style');
+    root.classList.remove(...themes.filter(t => !t.isDaisyUI).map(t => `${t.id}-theme`));
+
+    if (themeData.isDaisyUI) {
+      // Handle daisyUI themes
+      root.setAttribute('data-theme', themeId);
+    } else {
+      // Handle original custom themes
+      root.removeAttribute('data-theme');
+      root.classList.add(`${themeId}-theme`);
+      Object.entries(themeData.colors).forEach(([key, value]) => {
+        root.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
+      });
+    }
+
+    localStorage.setItem('theme', themeId);
+    window.dispatchEvent(new CustomEvent('themeChange', { detail: themeId }));
+  }, []);
+
   useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('theme');
@@ -116,32 +146,8 @@ export function ThemeProvider({ children }) {
       setTheme(initialTheme);
     } catch (error) {
       console.error('Error in theme initialization:', error);
+      setTheme('dark'); // Fallback
     }
-  }, []);
-
-  const applyTheme = useCallback((themeId) => {
-    const themeData = themes.find(t => t.id === themeId);
-    if (!themeData) return;
-
-    // FIXED: Apply to document.documentElement instead of document.body
-    const root = document.documentElement;
-
-    // Remove all theme classes
-    themes.forEach(t => root.classList.remove(`${t.id}-theme`));
-
-    // Add new theme class
-    root.classList.add(`${themeId}-theme`);
-
-    // Update CSS variables on root element
-    Object.entries(themeData.colors).forEach(([key, value]) => {
-      root.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
-    });
-
-    // Save to localStorage
-    localStorage.setItem('theme', themeId);
-
-    // Dispatch custom event for other components
-    window.dispatchEvent(new CustomEvent('themeChange', { detail: themeId }));
   }, []);
 
   useEffect(() => {
@@ -155,6 +161,7 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = (e) => {
+      // Only change theme if user hasn't set one manually
       if (!localStorage.getItem('theme')) {
         setTheme(e.matches ? 'dark' : 'light');
       }
