@@ -97,6 +97,30 @@ exports.getProgressReport = async (req, res, next) => {
       });
     }
 
+    // --- New Bar Chart Logic ---
+    let barChartData = [];
+    if (startDate && endDate) {
+      barChartData = await Task.aggregate([
+        {
+          $match: {
+            ...baseQuery,
+            completedAt: {
+              $gte: new Date(startDate),
+              $lte: new Date(endDate),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$completedAt" } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+        { $project: { date: "$_id", count: 1, _id: 0 } },
+      ]);
+    }
+
 
     console.log('✅ Report generated successfully');
 
@@ -106,6 +130,7 @@ exports.getProgressReport = async (req, res, next) => {
       tasksOverdue,
       tasksInProgress,
       pieChartData,
+      barChartData,
     });
 
   } catch (error) {
