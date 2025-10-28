@@ -1,0 +1,13 @@
+.prose pre {
+    background-color: var(--background);
+    color: var(--foreground) !important;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+
+.mxEditor {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  border-color: var(--border) !important;
+}

@@ -388,7 +388,8 @@ const Board = () => {
   };
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="p-6 min-h-screen bg-base-200 text-base-content">
+
       <CardModal
         isOpen={isCardModalOpen}
         onClose={() => {
@@ -413,8 +414,8 @@ const Board = () => {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">{board.name}</h1>
         <div className="flex space-x-2">
-          <button onClick={() => setIsEditBoardModalOpen(true)} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md">Edit</button>
-          <button onClick={handleDeleteBoard} className="px-3 py-1 bg-red-500 text-white rounded-md">Delete</button>
+          <button onClick={() => setIsEditBoardModalOpen(true)} className="btn  btn-primary rounded-md">Edit</button>
+          <button onClick={handleDeleteBoard} className="btn btn-error rounded-md">Delete</button>
         </div>
       </div>
       <div className="flex-1 overflow-x-auto">
@@ -485,7 +486,7 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHan
   };
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg w-72 flex-shrink-0">
+    <div className=" card bg-base-100 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all border border-base-300 w-72 flex-shrink-0">
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center">
           <div {...dragHandleProps} className="cursor-move p-1">
@@ -509,16 +510,16 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHan
         <div className="relative">
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-1">...</button>
           {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-md shadow-lg z-10">
+            <div className="absolute right-0 mt-2 w-48 bg-base-100  rounded-md shadow-lg z-10">
               <button
                 onClick={() => { setIsRenaming(true); setIsMenuOpen(false); }}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"
               >
                 Rename
               </button>
               <button
                 onClick={() => onDeleteList(list._id)}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"
               >
                 Delete
               </button>
@@ -536,7 +537,7 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHan
         </div>
       </SortableContext>
       <div className="mt-3">
-        <button onClick={onAddTask} className="w-full text-left p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700">
+        <button onClick={onAddTask} className="w-full text-left p-2 rounded-md hover:bg-accent">
           + Add a card
         </button>
       </div>
@@ -561,7 +562,7 @@ const AddListForm = ({ onCreateList }) => {
     return (
       <button
         onClick={() => setIsEditing(true)}
-        className="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-left p-2 rounded-lg"
+        className="w-full text-left p-2 rounded-lg"
       >
         + Add another list
       </button>
@@ -569,23 +570,23 @@ const AddListForm = ({ onCreateList }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg">
+    <form onSubmit={handleSubmit} className="p-2 rounded-lg">
       <input
         type="text"
         value={listName}
         onChange={(e) => setListName(e.target.value)}
         placeholder="Enter list title..."
         autoFocus
-        className="w-full p-2 rounded border-blue-500 border-2"
+        className="w-full p-2 rounded border-2"
       />
       <div className="mt-2">
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+        <button type="submit" className="  px-4 py-2 rounded">
           Add List
         </button>
         <button
           type="button"
           onClick={() => setIsEditing(false)}
-          className="ml-2 text-gray-600 dark:text-gray-400"
+          className="ml-2"
         >
           ✕
         </button>

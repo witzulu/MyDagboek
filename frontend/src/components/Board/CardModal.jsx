@@ -14,7 +14,7 @@ import {
    DiffSourceToggleWrapper, 
   toolbarPlugin
 } from '@mdxeditor/editor';
-import '@mdxeditor/editor/style.css';
+import '../../mdxeditor.css'
 import { AuthContext } from '../../context/AuthContext';
 
 const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate }) => {
@@ -262,8 +262,8 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const checklistProgress = checklist.length > 0 ? (checklist.filter(item => item.done).length / checklist.length) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-base-200/50 flex justify-center items-center z-50">
+      <div className="bg-base-300  p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto  border border-accent/50 shadow-lg">
         <h2 className="text-2xl font-bold mb-4">{task ? 'Edit Card' : 'Create Card'}</h2>
         <div className="space-y-4">
           <input
@@ -271,21 +271,21 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             placeholder="Card title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+            className="w-full p-2 rounded border bg-base-100 "
           />
           <textarea
             placeholder="Card description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 rounded border h-32 bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+            className="w-full p-2 rounded border h-32 bg-base-300"
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
+            <label className="block text-sm font-medium ">Due Date</label>
             <input
               type="date"
               value={dueDate || ''}
               onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1 block w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+              className="mt-1 block w-full p-2 rounded border bg-base-300"
             />
           </div>
           <LabelManager
@@ -300,16 +300,16 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             <h3 className="text-lg font-semibold">Attachments</h3>
             <div className="space-y-2">
               {attachments.map(file => (
-                <div key={file._id} className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                <div key={file._id} className="flex items-center justify-between p-2 rounded">
                   <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
-                  <button onClick={() => handleDeleteAttachment(file._id)} className="text-red-500 hover:text-red-700">
+                  <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
                     <Trash2 size={16} />
                   </button>
                 </div>
               ))}
             </div>
             <div className="mt-2">
-              <label className="w-full flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-blue-500 hover:text-white">
+              <label className="w-full flex items-center px-4 py-2  rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
                 <span className="text-base leading-normal">Select a file</span>
                 <input type='file' className="hidden" onChange={handleFileChange} />
               </label>
@@ -321,8 +321,8 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">Checklist</h3>
               {checklist.length > 0 && (
-                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                  <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${checklistProgress}%` }}></div>
+                <div className="w-full rounded-full h-2.5">
+                  <div className=" h-2.5 rounded-full" style={{ width: `${checklistProgress}%` }}></div>
                 </div>
               )}
               <div className="space-y-1">
@@ -332,7 +332,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                       type="checkbox"
                       checked={item.done}
                       onChange={() => handleToggleChecklistItem(item._id, item.done)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded"
                     />
                     {editingChecklistItem === item._id ? (
                       <input
@@ -341,16 +341,16 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                         onChange={(e) => setEditingText(e.target.value)}
                         onBlur={() => handleUpdateChecklistItem(item._id)}
                         onKeyDown={(e) => e.key === 'Enter' && handleUpdateChecklistItem(item._id)}
-                        className="ml-2 flex-grow p-1 rounded border bg-white dark:bg-gray-600"
+                        className="ml-2 flex-grow p-1 rounded border "
                         autoFocus
                       />
                     ) : (
-                      <span className={`ml-2 flex-grow ${item.done ? 'line-through text-gray-500' : ''}`}>{item.text}</span>
+                      <span className={`ml-2 flex-grow ${item.done ? 'line-through' : ''}`}>{item.text}</span>
                     )}
-                    <button onClick={() => { setEditingChecklistItem(item._id); setEditingText(item.text); }} className="ml-2 text-gray-500 opacity-0 group-hover:opacity-100">
+                    <button onClick={() => { setEditingChecklistItem(item._id); setEditingText(item.text); }} className="ml-2 opacity-0 group-hover:opacity-100">
                       <Edit2 size={16} />
                     </button>
-                    <button onClick={() => handleDeleteChecklistItem(item._id)} className="ml-2 text-red-500 opacity-0 group-hover:opacity-100">
+                    <button onClick={() => handleDeleteChecklistItem(item._id)} className="ml-2 text-error opacity-0 group-hover:opacity-100">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -362,9 +362,9 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                   value={newChecklistItem}
                   onChange={(e) => setNewChecklistItem(e.target.value)}
                   placeholder="Add an item"
-                  className="w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full p-2 rounded border"
                 />
-                <button onClick={handleAddChecklistItem} className="ml-2 px-4 py-2 rounded bg-green-500 text-white"><Plus size={16}/></button>
+                <button onClick={handleAddChecklistItem} className="ml-2 px-4 py-3 rounded bg-accent"><Plus size={18}/></button>
               </div>
             </div>
           )}
@@ -373,7 +373,9 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
           {task && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Comments</h3>
-              <MDXEditor
+              <div className="bg-base-100/90 p-3 rounded-lg text-2xl ">
+              <MDXEditor 
+              contentEditableClassName="mxEditor"
                 markdown={newComment}
                 onChange={setNewComment}
                 plugins={[
@@ -396,19 +398,22 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                  
                 ]}
               />
-              <button onClick={handleAddComment} className="px-4 py-2 rounded bg-blue-500 text-white">Comment</button>
-              <div className="space-y-4">
+              </div>
+              <button onClick={handleAddComment} className="px-4 py-2 rounded bg-accent ">Comment</button>
+              <div className="space-y-4 ">
                 {comments.map(comment => (
-                  <div key={comment._id} className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+                  <div key={comment._id} className=" p-3 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-semibold">{comment.user.name}</span>
-                      <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleString()}</span>
+                      <span className="text-xs ">{new Date(comment.createdAt).toLocaleString()}</span>
                     </div>
                     {editingComment === comment._id ? (
-                      <div>
+                      <div >
                         <MDXEditor
+                           contentEditableClassName="mxEditor"
                           markdown={editingCommentText}
                           onChange={setEditingCommentText}
+                          className="mxEditor"
                            plugins={[
                               toolbarPlugin({
                                 toolbarContents: () => (
@@ -417,6 +422,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                                     <BoldItalicUnderlineToggles />
                                     <ListsToggles />
                                     <diffSourcePlugin.DiffSourceToggle />
+                                    
                                   </>
                                 )
                               }),
@@ -429,12 +435,12 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                             ]}
                         />
                         <div className="flex justify-end space-x-2 mt-2">
-                           <button onClick={() => { setEditingComment(null); setEditingCommentText(''); }} className="px-3 py-1 rounded">Cancel</button>
-                           <button onClick={() => handleUpdateComment(comment._id)} className="px-3 py-1 rounded bg-blue-500 text-white">Save</button>
+                           <button onClick={() => { setEditingComment(null); setEditingCommentText(''); }} className="px-3 py-1 rounded ">Cancel</button>
+                           <button onClick={() => handleUpdateComment(comment._id)} className="px-3 py-1 rounded bg-accent">Save</button>
                         </div>
                       </div>
                     ) : (
-                      <MDXEditor markdown={comment.content} readOnly className="prose dark:prose-invert max-w-none"/>
+                      <MDXEditor contentEditableClassName="mxEditor" markdown={comment.content} readOnly className="prose dark:prose-invert max-w-none"/>
                     )}
                     {user && user.id === comment.user._id && editingComment !== comment._id && (
                       <div className="flex justify-end space-x-2 mt-2">

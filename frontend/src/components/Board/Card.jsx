@@ -31,17 +31,19 @@ const Card = ({ task }) => {
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white dark:bg-gray-700 p-3 rounded-md shadow-sm mb-2 cursor-pointer hover:shadow-md"
+      className=" p-3 btn-accent rounded-md shadow-sm mb-2 cursor-pointer hover:shadow-md m-2  bg-accent-content/10 "
     >
+  
+
       <div className="flex flex-wrap gap-1 mb-2">
         {task.labels?.map(label => (
-          <span key={label._id} style={{ backgroundColor: label.color }} className="px-2 py-0.5 rounded text-white text-xs">
+          <span key={label._id} style={{ backgroundColor: label.color }} className="px-2 py-0.5 rounded text-xs text-accent-content">
             {label.name}
           </span>
         ))}
       </div>
-      <p className="text-sm">{task.title}</p>
-      <div className="flex justify-between items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
+      <p className="text-sm text-primary/">{task.title}</p>
+      <div className="flex justify-between items-center mt-2 text-xs  text-secondary">
         <div>
         {task.dueDate && (
           <span>

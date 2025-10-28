@@ -19,8 +19,8 @@ const EditBoardModal = ({ isOpen, onClose, onSave, board }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-lg">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="card bg-base-100 shadow-xl w-full max-w-lg border border-base-300 animate-fadeIn p-6">
         <h2 className="text-2xl font-bold mb-4">Edit Board</h2>
         <div className="space-y-4">
           <input

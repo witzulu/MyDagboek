@@ -1,57 +1,84 @@
-import { useState } from 'react';
-import PropTypes from 'prop-types';
+import { useState } from "react";
+import PropTypes from "prop-types";
 
 const CreateBoardModal = ({ isOpen, onClose, onSave }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({ name, description });
+    setName("");
+    setDescription("");
     onClose();
-    setName('');
-    setDescription('');
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-lg">
-        <h2 className="text-2xl font-bold mb-4">New Board</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Board Name</label>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="card bg-base-100 shadow-xl w-full max-w-lg border border-base-300 animate-fadeIn">
+        <div className="card-body">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="card-title text-xl font-semibold text-base-content">
+              Create New Board
+            </h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-ghost btn-sm text-base-content/70 hover:text-base-content"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-base-content">Board Name</span>
+              </label>
               <input
                 type="text"
-                name="name"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                placeholder="Enter board name"
+                className="input input-bordered w-full"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-base-content">
+                  Description
+                </span>
+              </label>
               <textarea
-                name="description"
-                rows="3"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-              ></textarea>
+                placeholder="Add a short description..."
+                className="textarea textarea-bordered w-full"
+                rows={3}
+              />
             </div>
-          </div>
-          <div className="mt-6 flex justify-end gap-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-sm transition-colors">
-              Cancel
-            </button>
-            <button type="submit" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm text-white transition-colors">
-              Create Board
-            </button>
-          </div>
-        </form>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn-ghost text-base-content/70 hover:text-base-content"
+              >
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary">
+                Create
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

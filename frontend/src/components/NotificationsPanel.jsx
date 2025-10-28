@@ -5,7 +5,7 @@ const NotificationsPanel = ({ notifications, onRespond, onMarkAsRead }) => {
   const unreadCount = notifications.filter(n => n.status === 'unread').length;
 
   return (
-    <div className="absolute right-0 mt-2 w-80 bg-background-alt border border-border rounded-lg shadow-lg z-50">
+    <div className="absolute right-0 mt-2 w-80 bg-base-100 border border-border rounded-lg shadow-lg z-50">
       <div className="p-4 border-b border-border">
         <h3 className="font-semibold">Notifications</h3>
       </div>
