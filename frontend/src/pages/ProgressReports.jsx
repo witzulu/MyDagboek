@@ -123,19 +123,25 @@ const ProgressReports = () => {
               </div>
             )}
 
-            {report.barChartData && report.barChartData.length > 0 && (
+            {report.barChartData && (
               <div className="bg-base-200 p-6 rounded-lg shadow-md">
                 <h3 className="text-xl font-bold mb-4">Tasks Completed Per Day</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={report.barChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" fill="#8884d8" name="Tasks Completed" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {report.barChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={report.barChartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="count" fill="#8884d8" name="Tasks Completed" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <p className="text-base-content-secondary">No tasks were completed in this period.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
