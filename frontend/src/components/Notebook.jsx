@@ -27,6 +27,10 @@ import {
   DiffSourceToggleWrapper
 } from "@mdxeditor/editor";
 import "@mdxeditor/editor/style.css";
+import { Tldraw } from '@tldraw/tldraw'
+import '@tldraw/tldraw/tldraw.css'
+import debounce from 'lodash.debounce';
+
 
 export default function Notebook() {
   const { selectedProject } = useProject();
@@ -37,6 +41,7 @@ export default function Notebook() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState(null);
+  const [activeView, setActiveView] = useState('text');
 
   const filteredNotes = notes
     .filter(
@@ -136,6 +141,15 @@ export default function Notebook() {
     },
     [currentNote]
   );
+
+  const debouncedUpdateNote = useCallback(debounce(updateNote, 1000), [updateNote]);
+
+  const handleDrawingChange = (snapshot) => {
+    if (currentNote) {
+      setCurrentNote(prev => ({...prev, drawing: snapshot}));
+      debouncedUpdateNote(currentNote._id, { drawing: snapshot });
+    }
+  };
 
   const deleteNote = async (id) => {
     try {
@@ -344,58 +358,75 @@ export default function Notebook() {
                 />
               </div>
 
+              {/* View Toggles */}
+              <div className="tabs tabs-boxed mb-4">
+                <a className={`tab ${activeView === 'text' ? 'tab-active' : ''}`} onClick={() => setActiveView('text')}>Text</a>
+                <a className={`tab ${activeView === 'drawing' ? 'tab-active' : ''}`} onClick={() => setActiveView('drawing')}>Drawing</a>
+              </div>
+
               {/* MDX Editor */}
-              <MDXEditor
-                key={currentNote._id}
-                markdown={currentNote.content}
-                onChange={(newContent) =>
-                  setCurrentNote((prev) => ({ ...prev, content: newContent }))
-                }
-                plugins={[
-                  headingsPlugin(),
-                  listsPlugin(),
-                  quotePlugin(),
-                  thematicBreakPlugin(),
-                  linkPlugin(),
-                  tablePlugin(),
-                  codeBlockPlugin(),
-                  imagePlugin({ imageUploadHandler: handleImageUpload }),
-                  diffSourcePlugin(),
-                  toolbarPlugin({
-                    toolbarContents: () => (
-                      <>
-                        <UndoRedo />
-                        <Separator />
-                        <BoldItalicUnderlineToggles />
-                        <Separator />
-                        <ListsToggle />
-                        <Separator />
-                        <BlockTypeSelect
-                          blockTypes={[
-                            "paragraph",
-                            "h1",
-                            "h2",
-                            "h3",
-                            "quote",
-                            "code",
-                          ]}
-                        />
-                        <Separator />
-                        <CreateLink />
-                        <InsertImage />
-                        <Separator />
-                        <InsertTable />
-                        <InsertThematicBreak />
-                        <Separator />
-                        <CodeToggle />
-                        <Separator />
-                        <DiffSourceToggleWrapper />
-                      </>
-                    ),
-                  }),
-                ]}
-                contentEditableClassName="prose max-w-none"
-              />
+              {activeView === 'text' && (
+                <MDXEditor
+                  key={currentNote._id}
+                  markdown={currentNote.content}
+                  onChange={(newContent) =>
+                    setCurrentNote((prev) => ({ ...prev, content: newContent }))
+                  }
+                  plugins={[
+                    headingsPlugin(),
+                    listsPlugin(),
+                    quotePlugin(),
+                    thematicBreakPlugin(),
+                    linkPlugin(),
+                    tablePlugin(),
+                    codeBlockPlugin(),
+                    imagePlugin({ imageUploadHandler: handleImageUpload }),
+                    diffSourcePlugin(),
+                    toolbarPlugin({
+                      toolbarContents: () => (
+                        <>
+                          <UndoRedo />
+                          <Separator />
+                          <BoldItalicUnderlineToggles />
+                          <Separator />
+                          <ListsToggle />
+                          <Separator />
+                          <BlockTypeSelect
+                            blockTypes={[
+                              "paragraph",
+                              "h1",
+                              "h2",
+                              "h3",
+                              "quote",
+                              "code",
+                            ]}
+                          />
+                          <Separator />
+                          <CreateLink />
+                          <InsertImage />
+                          <Separator />
+                          <InsertTable />
+                          <InsertThematicBreak />
+                          <Separator />
+                          <CodeToggle />
+                          <Separator />
+                          <DiffSourceToggleWrapper />
+                        </>
+                      ),
+                    }),
+                  ]}
+                  contentEditableClassName="prose max-w-none"
+                />
+              )}
+
+              {activeView === 'drawing' && (
+                <div style={{ position: 'relative', height: '600px' }}>
+                  <Tldraw
+                    snapshot={currentNote.drawing}
+                    onSnapshot={handleDrawingChange}
+                  />
+                </div>
+              )}
             </>
           ) : (
             <div className="flex items-center justify-center h-96 text-base-content/60">

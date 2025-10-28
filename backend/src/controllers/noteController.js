@@ -83,7 +83,7 @@ exports.getNoteById = async (req, res, next) => {
 };
 
 exports.createNote = async (req, res, next) => {
-  const { title, content, tags, isPinned } = req.body;
+  const { title, content, tags, isPinned, drawing } = req.body;
   try {
     const project = await Project.findById(req.params.projectId);
     if (!project || project.user.toString() !== req.user.id) {
@@ -94,6 +94,7 @@ exports.createNote = async (req, res, next) => {
       content,
       tags,
       isPinned,
+      drawing,
       project: req.params.projectId,
       user: req.user.id
     });
