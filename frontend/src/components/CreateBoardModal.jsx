@@ -16,7 +16,7 @@ const CreateBoardModal = ({ isOpen, onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-base-100 bg-opacity-50 flex justify-center items-center z-50">
       <div className="card bg-base-100 shadow-xl w-full max-w-lg border border-base-300 animate-fadeIn">
         <div className="card-body">
           {/* Header */}

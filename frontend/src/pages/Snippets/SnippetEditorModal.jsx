@@ -57,8 +57,8 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-base-100/75  flex justify-center items-center z-50">
+      <div className="card bg-base-100 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
         <h2 className="text-2xl font-bold mb-4">{snippet ? 'Edit Snippet' : 'Create Snippet'}</h2>
         <div className="space-y-4 flex-grow overflow-y-auto">
           <input
@@ -66,13 +66,13 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
             placeholder="Snippet title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+            className="w-full p-2 rounded border"
           />
           <textarea
             placeholder="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 rounded border h-24 bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+            className="w-full p-2 rounded border h-24"
           />
           <CodeMirror
             value={code}
@@ -85,7 +85,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+              className="w-full p-2 rounded border select"
             >
               {['javascript', 'python', 'c++', 'c#', 'html', 'css'].map(lang => (
                 <option key={lang} value={lang}>{lang}</option>
@@ -96,7 +96,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
               placeholder="Tags (comma-separated)"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="w-full p-2 rounded border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+              className="w-full p-2 rounded border"
             />
           </div>
         </div>

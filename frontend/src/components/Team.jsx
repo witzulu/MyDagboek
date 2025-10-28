@@ -125,15 +125,15 @@ const Team = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Enter username or email to invite"
-              className="w-full p-2 rounded-md border bg-transparent border-border focus:ring-2 focus:ring-primary"
+              className="w-full p-2 rounded-md border bg-base-100/20 border-border focus:ring-2 focus:ring-primary"
             />
             {isSearching && <div className="p-2 text-muted">Searching...</div>}
             {suggestions.length > 0 && (
-              <ul className="absolute z-10 w-full bg-background-alt border border-border rounded-md mt-1 shadow-lg">
+              <ul className="absolute z-10 w-full bg-base-100  border border-border rounded-md mt-1 shadow-lg">
                 {suggestions.map(user => (
                   <li
                     key={user._id}
-                    className="p-2 hover:bg-secondary cursor-pointer"
+                    className="p-2 hover:bg-accent cursor-pointer"
                     onClick={() => handleInvite(user.username)}
                   >
                     {user.name} (@{user.username})
@@ -177,7 +177,7 @@ const Team = () => {
                           value={member.role}
                           onChange={(e) => handleRoleChange(member.user._id, e.target.value)}
                           disabled={!member.user || member.role === 'owner' || member.user?._id === currentUser._id}
-                          className="p-2 rounded-md border bg-transparent border-border disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="p-2 rounded-md border select border-border disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <option value="admin">Admin</option>
                           <option value="member">Member</option>
@@ -185,7 +185,7 @@ const Team = () => {
                         <button
                           onClick={() => handleRemoveMember(member.user._id)}
                           disabled={!member.user || member.role === 'owner' || member.user?._id === currentUser._id}
-                          className="btn btn-danger p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="btn btn-error   p-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Remove member"
                         >
                           <Trash2 className="w-5 h-5" />

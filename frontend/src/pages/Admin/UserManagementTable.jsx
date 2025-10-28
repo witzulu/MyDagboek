@@ -57,9 +57,9 @@ const UserManagementTable = () => {
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="overflow-x-auto ">
+      <table className="min-w-full divide-y table">
+        <thead className="table-header-group">
           <tr>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
@@ -68,31 +68,31 @@ const UserManagementTable = () => {
             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className=" ">
           {users.map((user) => (
-            <tr key={user._id}>
-              <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.name}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">{user.status}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">
+            <tr key={user._id} className="table-row">
+              <td className="table-cell px-6 py-4 ">{user.name}</td>
+              <td className="table-cell px-6 py-4">{user.email}</td>
+              <td className="table-cell px-6 py-4">{user.status}</td>
+              <td className="table-cell px-6 py-4">
                 <select
                   value={user.role}
                   onChange={(e) => handleRoleChange(user._id, e.target.value)}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  className="select mt-1 block w-full pl-3 pr-10 py-2 text-base "
                 >
                   <option value="user">User</option>
                   <option value="system_admin">System Admin</option>
                 </select>
               </td>
-              <td className="px-6 py-4 text-right text-sm font-medium">
+              <td className="table-cell px-6 py-4">
                 {user.status === 'pending' && (
-                  <button onClick={() => handleApprove(user._id)} className="text-indigo-600 hover:text-indigo-900 mr-4">Approve</button>
+                  <button onClick={() => handleApprove(user._id)} className="text-accent hover:text-accent-content mr-4">Approve</button>
                 )}
                 {user.status === 'approved' && (
-                  <button onClick={() => handleBlock(user._id)} className="text-red-600 hover:text-red-900">Block</button>
+                  <button onClick={() => handleBlock(user._id)} className="text-error hover:text-error-content mr-4">Block</button>
                 )}
                 {user.status === 'blocked' && (
-                  <button onClick={() => handleUnblock(user._id)} className="text-green-600 hover:text-green-900">Unblock</button>
+                  <button onClick={() => handleUnblock(user._id)} className="text-green-600 hover:text-green-900 ">Unblock</button>
                 )}
               </td>
             </tr>
