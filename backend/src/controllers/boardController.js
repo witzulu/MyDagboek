@@ -52,6 +52,7 @@ exports.createBoard = async (req, res, next) => {
       { name: 'To-Do', board: board._id, position: 0 },
       { name: 'In Progress', board: board._id, position: 1 },
       { name: 'Done', board: board._id, position: 2 },
+      { name: 'Optional', board: board._id, position: 3 },
     ];
 
     await List.insertMany(defaultLists);

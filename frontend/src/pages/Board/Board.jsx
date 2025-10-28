@@ -371,6 +371,63 @@ const Board = () => {
     }
   };
 
+  const handleCompleteTask = async (taskId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/tasks/${taskId}/complete`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to complete task');
+      }
+
+      const updatedTask = await response.json();
+
+      // Manually repopulate labels on the client-side
+      if (updatedTask.labels && projectLabels.length > 0) {
+        updatedTask.labels = updatedTask.labels.map(labelId =>
+          projectLabels.find(l => l._id === labelId)
+        ).filter(Boolean);
+      }
+
+      // Find the source list and destination list ('Done')
+      const sourceListId = findList(updatedTask._id)?._id;
+      const doneList = lists.find(l => l.name === 'Done');
+
+      setLists(prevLists => {
+        const newLists = JSON.parse(JSON.stringify(prevLists));
+
+        // Remove from old list
+        if (sourceListId) {
+          const sourceListIndex = newLists.findIndex(l => l._id === sourceListId);
+          if (sourceListIndex !== -1) {
+            const taskIndex = newLists[sourceListIndex].tasks.findIndex(t => t._id === taskId);
+            if (taskIndex !== -1) {
+              newLists[sourceListIndex].tasks.splice(taskIndex, 1);
+            }
+          }
+        }
+
+        // Add to 'Done' list
+        if (doneList) {
+          const doneListIndex = newLists.findIndex(l => l._id === doneList._id);
+          if (doneListIndex !== -1) {
+             if (!newLists[doneListIndex].tasks) {
+                newLists[doneListIndex].tasks = [];
+            }
+            newLists[doneListIndex].tasks.push(updatedTask);
+          }
+        }
+        return newLists;
+      });
+
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleNewLabel = async (labelData) => {
     try {
       const token = localStorage.getItem('token');
@@ -430,6 +487,7 @@ const Board = () => {
                   onDeleteList={handleDeleteList}
                   onAddTask={() => { setTargetListId(list._id); setIsCardModalOpen(true); }}
                   onEditTask={(task) => { setEditingTask(task); setIsCardModalOpen(true); }}
+                  onCompleteTask={handleCompleteTask}
                 />
               ))}
               <div className="w-72 flex-shrink-0">
@@ -443,7 +501,7 @@ const Board = () => {
   );
 };
 
-const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask }) => {
+const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask }) => {
   const {
     attributes,
     listeners,
@@ -465,13 +523,14 @@ const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask 
         onDeleteList={onDeleteList}
         onAddTask={onAddTask}
         onEditTask={onEditTask}
+        onCompleteTask={onCompleteTask}
         dragHandleProps={{...attributes, ...listeners}}
       />
     </div>
   );
 };
 
-const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHandleProps }) => {
+const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, dragHandleProps }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(list.name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -530,8 +589,8 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, dragHan
       <SortableContext items={list.tasks?.map(t => t._id) || []}>
         <div className="mt-2 space-y-2">
           {list.tasks && list.tasks.map(task => (
-            <div key={task._id} onClick={() => onEditTask(task)}>
-              <Card task={task} />
+            <div key={task._id}>
+              <Card task={task} onEditTask={onEditTask} onCompleteTask={onCompleteTask}/>
             </div>
           ))}
         </div>
