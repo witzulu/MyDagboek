@@ -30,8 +30,10 @@ export default function Sidebar() {
       <li>
         <NavLinkComponent
           to={disabled ? undefined : item.to}
-          className={({ isActive }) =>
-            `flex items-center gap-3 ${isActive ? 'active' : ''} ${disabled ? 'disabled' : ''}`
+          className={
+            disabled
+              ? 'flex items-center gap-3 disabled'
+              : ({ isActive }) => `flex items-center gap-3 ${isActive ? 'active' : ''}`
           }
           onClick={(e) => disabled && e.preventDefault()}
         >
