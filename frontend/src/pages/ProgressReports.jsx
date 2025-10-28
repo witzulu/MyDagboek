@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 
 const ProgressReports = () => {
   const { projectId } = useParams();
@@ -145,6 +145,22 @@ const ProgressReports = () => {
               </div>
             )}
           </div>
+
+          {report.burndownChartData && report.burndownChartData.length > 0 && (
+            <div className="bg-base-200 p-6 rounded-lg shadow-md mt-8">
+              <h3 className="text-xl font-bold mb-4">Burndown Chart</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={report.burndownChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="remaining" stroke="#8884d8" name="Remaining Tasks" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       )}
     </div>
