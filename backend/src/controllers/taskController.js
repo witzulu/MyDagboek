@@ -114,7 +114,9 @@ exports.moveTask = async (req, res, next) => {
 
   try {
     const task = await Task.findById(taskId);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
 
     const authCheck = await checkProjectMembership(task.board, req.user.id, req.user.role);
     if (authCheck.error) {
