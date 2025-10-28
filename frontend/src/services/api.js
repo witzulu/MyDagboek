@@ -1,5 +1,3 @@
-const BASE_URL = 'http://localhost:5000/api';
-
 const api = async (endpoint, options = {}) => {
   const { body, ...customConfig } = options;
   const token = localStorage.getItem('token');
@@ -30,7 +28,8 @@ const api = async (endpoint, options = {}) => {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+    // Use relative path to leverage Vite's proxy
+    const response = await fetch(`/api${endpoint}`, config);
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || 'Something went wrong');

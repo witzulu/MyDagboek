@@ -15,7 +15,6 @@ export default function Header({
   currentUser,
   handleLogout,
 }) {
-  const { theme, setTheme } = useTheme();
   const { settings } = useSettings();
   const { notifications, fetchNotifications } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -61,10 +60,7 @@ export default function Header({
       </div>
    
          <div className="flex items-center gap-4">
-          <ThemeSwitcher 
-            currentTheme={theme}
-            onThemeChange={setTheme}
-          />
+          <ThemeSwitcher />
            
            <div className="text-right">
              <p className="text-sm font-medium text-foreground">{currentUser.name}</p>
