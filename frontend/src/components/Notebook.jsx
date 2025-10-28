@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, Save } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
 import {
@@ -113,6 +113,13 @@ export default function Notebook() {
     }
   };
 
+  const handleSave = () => {
+    if (currentNote) {
+      const { _id, title, content, tags, drawing } = currentNote;
+      updateNote(_id, { title, content, tags, drawing });
+    }
+  };
+
   const updateNote = useCallback(
     async (id, fields) => {
       try {
@@ -130,16 +137,21 @@ export default function Notebook() {
         }
 
         const updated = await response.json();
-        setNotes((prev) => prev.map((n) => (n._id === id ? updated : n)));
-        if (currentNote?._id === id) {
-          setCurrentNote((prev) => ({ ...prev, ...fields }));
-        }
+        setNotes((prevNotes) =>
+          prevNotes.map((n) => (n._id === id ? updated : n))
+        );
+        setCurrentNote((prevCurrentNote) => {
+          if (prevCurrentNote?._id === id) {
+            return updated;
+          }
+          return prevCurrentNote;
+        });
       } catch (err) {
         console.error("Error updating note:", err);
         alert("Failed to save note. Please try again.");
       }
     },
-    [currentNote]
+    []
   );
 
   const debouncedUpdateNote = useCallback(debounce(updateNote, 1000), [updateNote]);
@@ -308,12 +320,20 @@ export default function Notebook() {
                   }
                   className="text-2xl font-bold bg-transparent border-none outline-none text-base-content w-full"
                 />
-                <button
-                  onClick={() => deleteNote(currentNote._id)}
-                  className="btn btn-error btn-sm btn-square"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSave}
+                    className="btn btn-success btn-sm btn-square"
+                  >
+                    <Save className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deleteNote(currentNote._id)}
+                    className="btn btn-error btn-sm btn-square"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Tags */}
@@ -369,9 +389,10 @@ export default function Notebook() {
                 <MDXEditor
                   key={currentNote._id}
                   markdown={currentNote.content}
-                  onChange={(newContent) =>
-                    setCurrentNote((prev) => ({ ...prev, content: newContent }))
-                  }
+                  onChange={(newContent) => {
+                    setCurrentNote((prev) => ({ ...prev, content: newContent }));
+                    debouncedUpdateNote(currentNote._id, { content: newContent });
+                  }}
                   plugins={[
                     headingsPlugin(),
                     listsPlugin(),
