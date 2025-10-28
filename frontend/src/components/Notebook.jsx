@@ -2,6 +2,11 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Plus, Trash2, X, Save } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
+import { Tldraw } from "@tldraw/tldraw";
+import "@tldraw/tldraw/tldraw.css";
+import debounce from "lodash.debounce";
+import "@mdxeditor/editor/style.css";
+import '../mdxeditor.css'
 import {
   MDXEditor,
   headingsPlugin,
@@ -24,13 +29,8 @@ import {
   Separator,
   CodeToggle,
   diffSourcePlugin,
-  DiffSourceToggleWrapper
+  DiffSourceToggleWrapper,
 } from "@mdxeditor/editor";
-import "@mdxeditor/editor/style.css";
-import { Tldraw } from '@tldraw/tldraw'
-import '@tldraw/tldraw/tldraw.css'
-import debounce from 'lodash.debounce';
-
 
 export default function Notebook() {
   const { selectedProject } = useProject();
@@ -40,53 +40,36 @@ export default function Notebook() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState(null);
-  const [activeView, setActiveView] = useState('text');
+  const [activeView, setActiveView] = useState("text");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("saved");
+  const [lastSaved, setLastSaved] = useState(null);
+
   const editorRef = useRef(null);
-
-  const filteredNotes = notes
-    .filter(
-      (note) =>
-        note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter(
-      (note) =>
-        !selectedTag || (note.tags && note.tags.includes(selectedTag))
-    );
-
+  const isEditorReady = useRef(false);
+  const lastDrawingSnapshot = useRef(null);
   const currentProjectId = selectedProject?._id || projectId;
 
+  // --- Fetch notes for project ---
   useEffect(() => {
-    if (!currentProjectId) return;
-
     const fetchNotes = async () => {
       try {
-        setError(null);
         const response = await fetch(`/api/projects/${currentProjectId}/notes`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-
-        if (!response.ok) {
-          throw new Error(`Failed to load notes: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error("Failed to fetch notes");
         const data = await response.json();
         setNotes(data);
       } catch (err) {
-        console.error("Error fetching notes:", err);
         setError(err.message);
       }
     };
-
-    fetchNotes();
+    if (currentProjectId) fetchNotes();
   }, [currentProjectId]);
 
+  // --- Add Note ---
   const addNote = async () => {
-    if (!currentProjectId) {
-      alert("Please select a project first");
-      return;
-    }
-
+    if (!currentProjectId) return alert("Please select a project first");
     try {
       const response = await fetch(`/api/projects/${currentProjectId}/notes`, {
         method: "POST",
@@ -96,11 +79,7 @@ export default function Notebook() {
         },
         body: JSON.stringify({ title: "New Note", content: "" }),
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create note: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`Failed to create note: ${response.status}`);
       const newNote = await response.json();
       setNotes((prev) => [newNote, ...prev]);
       setCurrentNote(newNote);
@@ -110,66 +89,163 @@ export default function Notebook() {
     }
   };
 
-  const handleSave = async () => {
-    if (currentNote) {
-      const { _id, title, content, tags, drawing } = currentNote;
-      await updateNote(_id, { title, content, tags, drawing });
-      setActiveView('text');
+  // --- Update Note ---
+  const updateNote = useCallback(async (id, fields) => {
+    try {
+      const response = await fetch(`/api/notes/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(fields),
+      });
+
+      if (!response.ok) throw new Error(`Failed to update note: ${response.status}`);
+
+      const updated = await response.json();
+      setNotes((prev) => prev.map((n) => (n._id === id ? updated : n)));
+      setCurrentNote((prev) => (prev?._id === id ? updated : prev));
+    } catch (err) {
+      console.error("Error updating note:", err);
+      alert("Failed to save note. Please try again.");
     }
-  };
+  }, []);
 
-  const updateNote = useCallback(
-    async (id, fields) => {
-      try {
-        const response = await fetch(`/api/notes/${id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify(fields),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to update note: ${response.status}`);
-        }
-
-        const updated = await response.json();
-        setNotes((prevNotes) =>
-          prevNotes.map((n) => (n._id === id ? updated : n))
-        );
-        setCurrentNote((prevCurrentNote) => {
-          if (prevCurrentNote?._id === id) {
-            return updated;
-          }
-          return prevCurrentNote;
-        });
-      } catch (err) {
-        console.error("Error updating note:", err);
-        alert("Failed to save note. Please try again.");
-      }
-    },
-    []
-  );
-
+  // --- Debounced text save ---
   const debouncedUpdateNote = useMemo(
-    () => debounce((id, fields) => updateNote(id, fields), 1000),
+    () => debounce(async (id, fields) => {
+      setSaveStatus("saving");
+      try {
+        await updateNote(id, fields);
+        setSaveStatus("saved");
+        setLastSaved(new Date());
+      } catch {
+        setSaveStatus("error");
+      }
+    }, 1000),
     [updateNote]
   );
 
-  useEffect(() => {
-    if (editorRef.current && currentNote) {
-      editorRef.current.loadSnapshot(currentNote.drawing || {});
-    }
-  }, [currentNote]);
-
-  const handleDrawingChange = (snapshot) => {
-    if (currentNote) {
-      setCurrentNote(prev => ({...prev, drawing: snapshot}));
-      debouncedUpdateNote(currentNote._id, { drawing: snapshot });
+  // --- Helper: Check if editor is ready ---
+  const isEditorInitialized = (editor) => {
+    if (!editor) return false;
+    try {
+      // Check if store exists and has necessary properties
+      if (!editor.store) return false;
+      // Try to access currentPageId safely
+      const pageId = editor.getCurrentPageId?.();
+      return !!pageId;
+    } catch (e) {
+      return false;
     }
   };
 
+  // --- Helper: Get snapshot safely ---
+  const getDrawingSnapshot = (editor) => {
+    if (!editor || !isEditorInitialized(editor)) {
+      console.warn("Editor not ready for snapshot");
+      return null;
+    }
+    
+    try {
+      // Get all shape records (drawings) - this is what we want to save
+      const allShapes = editor.getCurrentPageShapes();
+      const shapesData = allShapes.map(shape => editor.getShape(shape.id));
+      
+      // Store it for comparison
+      lastDrawingSnapshot.current = shapesData;
+      console.log("Got snapshot with", shapesData.length, "shapes");
+      return shapesData;
+    } catch (e) {
+      console.warn("Snapshot read failed:", e);
+      return null;
+    }
+  };
+
+  // --- Helper: Load snapshot safely ---
+  const loadDrawingSnapshot = (editor, snapshot) => {
+    if (!editor || !snapshot || !isEditorInitialized(editor)) {
+      console.warn("Cannot load snapshot - editor not ready");
+      return false;
+    }
+    
+    try {
+      // Clear only the shapes on the current page, not the entire store
+      const currentShapes = editor.getCurrentPageShapes();
+      if (currentShapes.length > 0) {
+        editor.deleteShapes(currentShapes.map(s => s.id));
+      }
+      
+      // Create the shapes from the snapshot
+      if (snapshot && snapshot.length > 0) {
+        editor.createShapes(snapshot);
+        console.log("Loaded", snapshot.length, "shapes from snapshot");
+      }
+      
+      return true;
+    } catch (e) {
+      console.warn("Snapshot load failed:", e);
+      return false;
+    }
+  };
+
+  // --- Manual Save Button ---
+  const handleManualSave = async () => {
+    if (!currentNote?._id) return;
+    try {
+      setIsSaving(true);
+      setSaveStatus("saving");
+
+      let drawingSnapshot = null;
+      
+      // If we're in drawing view and editor is ready, get fresh snapshot
+      if (activeView === "drawing" && editorRef.current && isEditorReady.current) {
+        drawingSnapshot = getDrawingSnapshot(editorRef.current);
+        console.log("Manual save - got drawing snapshot:", !!drawingSnapshot);
+      } else if (lastDrawingSnapshot.current) {
+        // Use last known snapshot if not in drawing view
+        drawingSnapshot = lastDrawingSnapshot.current;
+        console.log("Manual save - using cached snapshot");
+      }
+
+      await updateNote(currentNote._id, {
+        title: currentNote.title,
+        content: currentNote.content,
+        drawing: drawingSnapshot || currentNote.drawing || null,
+      });
+
+      setSaveStatus("saved");
+      setLastSaved(new Date());
+    } catch (err) {
+      console.error("Manual save failed:", err);
+      setSaveStatus("error");
+    } finally {
+      setTimeout(() => setIsSaving(false), 800);
+    }
+  };
+
+  // --- Auto Save Drawings ---
+  const handleDrawingChange = useCallback(
+    debounce(async () => {
+      if (!currentNote?._id || !editorRef.current) return;
+      
+      const snapshot = getDrawingSnapshot(editorRef.current);
+      if (!snapshot) return;
+
+      setSaveStatus("saving");
+      try {
+        await updateNote(currentNote._id, { drawing: snapshot });
+        setSaveStatus("saved");
+        setLastSaved(new Date());
+      } catch {
+        setSaveStatus("error");
+      }
+    }, 1500),
+    [currentNote?._id, updateNote]
+  );
+
+  // --- Delete Note ---
   const deleteNote = async (id) => {
     try {
       const response = await fetch(`/api/notes/${id}`, {
@@ -177,10 +253,7 @@ export default function Notebook() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to delete note: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`Failed to delete note: ${response.status}`);
       setNotes((prev) => prev.filter((n) => n._id !== id));
       if (currentNote?._id === id) setCurrentNote(null);
     } catch (err) {
@@ -189,6 +262,27 @@ export default function Notebook() {
     }
   };
 
+  // --- Select Note ---
+  const handleSelectNote = async (note) => {
+    if (currentNote && currentNote._id !== note._id) {
+      const originalNote = notes.find((n) => n._id === currentNote._id);
+      const hasChanges =
+        currentNote.title !== originalNote?.title ||
+        currentNote.content !== originalNote?.content ||
+        JSON.stringify(currentNote.drawing) !== JSON.stringify(originalNote?.drawing);
+
+      if (hasChanges) await handleManualSave();
+    }
+    
+    // Reset editor state
+    isEditorReady.current = false;
+    lastDrawingSnapshot.current = null;
+    setSaveStatus("saved");
+    setCurrentNote(note);
+    setActiveView("text");
+  };
+
+  // --- Image Upload ---
   const handleImageUpload = async (image) => {
     const formData = new FormData();
     formData.append("image", image);
@@ -201,26 +295,24 @@ export default function Notebook() {
     return imageUrl;
   };
 
-  const handleSelectNote = async (note) => {
-    if (currentNote && currentNote._id !== note._id) {
-      const originalNote = notes.find((n) => n._id === currentNote._id);
-      const hasChanges =
-        currentNote.title !== originalNote?.title ||
-        currentNote.content !== originalNote?.content ||
-        JSON.stringify(currentNote.drawing) !== JSON.stringify(originalNote?.drawing);
+  // --- Handle Save Button (reuses manual save) ---
+  const handleSave = async () => {
+    await handleManualSave();
+    setActiveView("text");
+  };
 
-      if (hasChanges) {
-        await updateNote(currentNote._id, {
-          title: currentNote.title,
-          content: currentNote.content,
-          tags: currentNote.tags,
-          drawing: currentNote.drawing,
-        });
-      }
-    }
+  // --- UI ---
 
-    setCurrentNote(note);
-    setActiveView('text');
+  // Format last saved time
+  const formatLastSaved = () => {
+    if (!lastSaved) return "";
+    const now = new Date();
+    const diff = Math.floor((now - lastSaved) / 1000); // seconds
+    
+    if (diff < 10) return "just now";
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    return lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   if (error) {
@@ -239,14 +331,19 @@ export default function Notebook() {
     );
   }
 
+  const filteredNotes = notes
+    .filter(
+      (note) =>
+        note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter((note) => !selectedTag || (note.tags && note.tags.includes(selectedTag)));
+
   return (
     <div className="p-6 min-h-screen bg-base-200 text-base-content">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-bold text-primary mb-2">
-          {selectedProject
-            ? `${selectedProject.name}: Notebook`
-            : "Notebook"}
+          {selectedProject ? `${selectedProject.name}: Notebook` : "Notebook"}
         </h2>
         <button onClick={addNote} className="btn btn-primary btn-sm">
           <Plus className="w-4 h-4" />
@@ -274,14 +371,10 @@ export default function Notebook() {
                   key={note._id}
                   onClick={() => handleSelectNote(note)}
                   className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    currentNote?._id === note._id
-                      ? "bg-primary text-primary-content"
-                      : "hover:bg-base-200"
+                    currentNote?._id === note._id ? "bg-primary text-primary-content" : "hover:bg-base-200"
                   }`}
                 >
-                  <p className="font-medium text-sm">
-                    {note.title || "Untitled"}
-                  </p>
+                  <p className="font-medium text-sm">{note.title || "Untitled"}</p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {note.tags?.map((tag, index) => (
                       <button
@@ -296,17 +389,12 @@ export default function Notebook() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs opacity-60 mt-1">
-                    {new Date(note.updatedAt).toLocaleDateString()}
-                  </p>
+                  <p className="text-xs opacity-60 mt-1">{new Date(note.updatedAt).toLocaleDateString()}</p>
                 </div>
               ))
             )}
             {selectedTag && (
-              <button
-                onClick={() => setSelectedTag(null)}
-                className="btn btn-ghost btn-xs w-full text-primary mt-2"
-              >
+              <button onClick={() => setSelectedTag(null)} className="btn btn-ghost btn-xs w-full text-primary mt-2">
                 Clear Tag Filter
               </button>
             )}
@@ -317,29 +405,19 @@ export default function Notebook() {
         <div className="lg:col-span-2 card bg-base-100 shadow border border-base-300 p-6">
           {currentNote ? (
             <>
+              {/* Title + Save/Delete */}
               <div className="flex items-center justify-between mb-4">
                 <input
                   type="text"
                   value={currentNote.title}
-                  onChange={(e) =>
-                    setCurrentNote((prev) => ({
-                      ...prev,
-                      title: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setCurrentNote((prev) => ({ ...prev, title: e.target.value }))}
                   className="text-2xl font-bold bg-transparent border-none outline-none text-base-content w-full"
                 />
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleSave}
-                    className="btn btn-success btn-sm btn-square"
-                  >
-                    <Save className="w-4 h-4" />
+                  <button onClick={handleSave} className="btn btn-success btn-sm btn-square" disabled={isSaving}>
+                    {isSaving ? <span className="loading loading-spinner w-4 h-4" /> : <Save className="w-4 h-4" />}
                   </button>
-                  <button
-                    onClick={() => deleteNote(currentNote._id)}
-                    className="btn btn-error btn-sm btn-square"
-                  >
+                  <button onClick={() => deleteNote(currentNote._id)} className="btn btn-error btn-sm btn-square">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -348,16 +426,11 @@ export default function Notebook() {
               {/* Tags */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 {currentNote.tags?.map((tag, index) => (
-                  <div
-                    key={index}
-                    className="badge badge-primary gap-1 py-3 px-4"
-                  >
+                  <div key={index} className="badge badge-primary gap-1 py-3 px-4">
                     {tag}
                     <button
                       onClick={() => {
-                        const newTags = currentNote.tags.filter(
-                          (_, i) => i !== index
-                        );
+                        const newTags = currentNote.tags.filter((_, i) => i !== index);
                         setCurrentNote((prev) => ({ ...prev, tags: newTags }));
                         updateNote(currentNote._id, { tags: newTags });
                       }}
@@ -371,14 +444,8 @@ export default function Notebook() {
                   placeholder="Add a tag..."
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && e.target.value.trim() !== "") {
-                      const newTags = [
-                        ...(currentNote.tags || []),
-                        e.target.value.trim(),
-                      ];
-                      setCurrentNote((prev) => ({
-                        ...prev,
-                        tags: newTags,
-                      }));
+                      const newTags = [...(currentNote.tags || []), e.target.value.trim()];
+                      setCurrentNote((prev) => ({ ...prev, tags: newTags }));
                       updateNote(currentNote._id, { tags: newTags });
                       e.target.value = "";
                     }
@@ -387,15 +454,23 @@ export default function Notebook() {
                 />
               </div>
 
-              {/* View Toggles */}
+              {/* Tabs */}
               <div className="tabs tabs-boxed mb-4">
-                <a className={`tab ${activeView === 'text' ? 'tab-active' : ''}`} onClick={() => setActiveView('text')}>Text</a>
-                <a className={`tab ${activeView === 'drawing' ? 'tab-active' : ''}`} onClick={() => setActiveView('drawing')}>Drawing</a>
+                <a className={`tab ${activeView === "text" ? "tab-active" : ""}`} onClick={() => setActiveView("text")}>
+                  Text
+                </a>
+                <a
+                  className={`tab ${activeView === "drawing" ? "tab-active" : ""}`}
+                  onClick={() => setActiveView("drawing")}
+                >
+                  Drawing
+                </a>
               </div>
-
-              {/* MDX Editor */}
-              {activeView === 'text' && (
+              <div className="bg-white p-3 rounded-lg text-2xl ">
+              {/* Text Editor */}
+              {activeView === "text" && (
                 <MDXEditor
+                  contentEditableClassName="mxEditor"
                   key={currentNote._id}
                   markdown={currentNote.content}
                   onChange={(newContent) => {
@@ -421,16 +496,7 @@ export default function Notebook() {
                           <Separator />
                           <ListsToggle />
                           <Separator />
-                          <BlockTypeSelect
-                            blockTypes={[
-                              "paragraph",
-                              "h1",
-                              "h2",
-                              "h3",
-                              "quote",
-                              "code",
-                            ]}
-                          />
+                          <BlockTypeSelect blockTypes={["paragraph", "h1", "h2", "h3", "quote", "code"]} />
                           <Separator />
                           <CreateLink />
                           <InsertImage />
@@ -445,25 +511,100 @@ export default function Notebook() {
                       ),
                     }),
                   ]}
-                  contentEditableClassName="prose max-w-none"
+                  
                 />
               )}
 
-              {activeView === 'drawing' && (
-                <div style={{ position: 'relative', height: '600px' }}>
+              {/* Drawing Editor */}
+              {activeView === "drawing" && (
+                <div className="relative h-[600px] border rounded-lg overflow-hidden">
                   <Tldraw
-                    snapshot={currentNote.drawing}
-                    onMount={(editor) => (editorRef.current = editor)}
-                    onSnapshot={handleDrawingChange}
+                    key={`tldraw-${currentNote?._id}`}
+                    onMount={(editor) => {
+                      editorRef.current = editor;
+                      
+                      // Wait for editor to be fully ready
+                      const initializeEditor = () => {
+                        if (!isEditorInitialized(editor)) {
+                          console.log("Editor not ready, waiting...");
+                          setTimeout(initializeEditor, 100);
+                          return;
+                        }
+
+                        isEditorReady.current = true;
+                        console.log("Editor ready, loading snapshot");
+
+                        // Load drawing if it exists
+                        if (currentNote?.drawing) {
+                          const loaded = loadDrawingSnapshot(editor, currentNote.drawing);
+                          if (loaded) {
+                            console.log("Snapshot loaded successfully");
+                          }
+                        }
+
+                        // Zoom to fit after a short delay
+                        setTimeout(() => {
+                          try {
+                            editor.zoomToFit();
+                          } catch (err) {
+                            console.warn("Zoom to fit failed:", err);
+                          }
+                        }, 100);
+                      };
+
+                      // Start initialization
+                      initializeEditor();
+                    }}
+                    onChange={() => {
+                      // Only trigger save if editor is ready
+                      if (isEditorReady.current) {
+                        handleDrawingChange();
+                      }
+                    }}
                   />
                 </div>
               )}
+            </div>
+            
+            {/* Google Docs-style save indicator */}
+            <div className="fixed bottom-4 right-4 z-50">
+              <div className={`
+                flex items-center gap-2 px-4 py-2 rounded-full shadow-lg
+                transition-all duration-300 ease-in-out
+                ${saveStatus === "saving" ? "bg-blue-500 text-white" : ""}
+                ${saveStatus === "saved" ? "bg-green-500 text-white" : ""}
+                ${saveStatus === "error" ? "bg-red-500 text-white" : ""}
+              `}>
+                {saveStatus === "saving" && (
+                  <>
+                    <span className="loading loading-spinner loading-xs"></span>
+                    <span className="text-sm font-medium">Saving...</span>
+                  </>
+                )}
+                {saveStatus === "saved" && (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm font-medium">
+                      Saved {formatLastSaved()}
+                    </span>
+                  </>
+                )}
+                {saveStatus === "error" && (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span className="text-sm font-medium">Save failed</span>
+                  </>
+                )}
+              </div>
+            </div>
             </>
           ) : (
             <div className="flex items-center justify-center h-96 text-base-content/60">
-              {notes.length === 0
-                ? "Create your first note to get started"
-                : "Select a note to edit"}
+              {notes.length === 0 ? "Create your first note to get started" : "Select a note to edit"}
             </div>
           )}
         </div>
