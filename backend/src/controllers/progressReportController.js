@@ -1,6 +1,7 @@
 const Task = require('../models/Task');
 const List = require('../models/List');
 const Project = require('../models/Project');
+const Board = require('../models/Board');
 
 // @desc    Get progress report for a project
 // @route   GET /api/projects/:projectId/progress-report
@@ -22,7 +23,7 @@ exports.getProgressReport = async (req, res, next) => {
     }
 
     // Find boards associated with the project
-    const boards = await require('../models/Board').find({ project: projectId });
+    const boards = await Board.find({ project: projectId });
     const boardIds = boards.map(b => b._id);
 
     // Find the ID of any list named "Optional"
