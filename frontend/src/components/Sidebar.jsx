@@ -12,7 +12,7 @@ export default function Sidebar() {
     { to: `/projects/${projectId}/notebook`, icon: Book, label: 'Notebook' },
     { to: `/projects/${projectId}/boards`, icon: FolderKanban, label: 'Boards' },
     { to: `/projects/${projectId}/errors`, icon: AlertCircle, label: 'Error Reports' },
-    { to: `/projects/${projectId}/progress`, icon: TrendingUp, label: 'Progress Reports' },
+    { to: `/projects/${projectId}/progress-reports`, icon: TrendingUp, label: 'Progress Reports' },
     { to: `/projects/${projectId}/snippets`, icon: Code, label: 'Code Snippets' },
     { to: `/projects/${projectId}/time`, icon: Clock, label: 'Time Tracking' },
     { to: `/projects/${projectId}/team`, icon: Users, label: 'Team' }
