@@ -86,6 +86,7 @@ const seedAdminUser = async () => {
             adminUser = new User({
                 name: 'Admin User',
                 email: 'admin@dagboek.com',
+                username: 'admin',
                 password: hashedPassword,
                 role: 'system_admin',
                 status: 'approved'
@@ -124,12 +125,24 @@ const migrateProjects = async () => {
 const migrateUsers = async () => {
     const User = require('./src/models/User');
     try {
+        // First, handle role migration for any legacy 'admin' users
+        const legacyAdmins = await User.find({ role: 'admin' });
+        if (legacyAdmins.length > 0) {
+            console.log(`Found ${legacyAdmins.length} legacy admin users to migrate...`);
+            for (const admin of legacyAdmins) {
+                admin.role = 'system_admin';
+                await admin.save({ validateBeforeSave: false }); // Bypass other validators
+                 console.log(`User ${admin.email} role migrated to system_admin.`);
+            }
+            console.log('✅ Admin role migration complete.');
+        }
+
+        // Second, handle username migration
         const usersToMigrate = await User.find({ username: { $exists: false } });
 
         if (usersToMigrate.length > 0) {
-            console.log(`Found ${usersToMigrate.length} users to migrate...`);
+            console.log(`Found ${usersToMigrate.length} users to migrate for username...`);
             for (const user of usersToMigrate) {
-                // Generate a unique username from the email
                 const username = user.email.split('@')[0];
                 let potentialUsername = username;
                 let counter = 1;
@@ -141,7 +154,7 @@ const migrateUsers = async () => {
                 await user.save();
                 console.log(`User ${user.email} migrated with username ${user.username}.`);
             }
-            console.log('✅ User migration complete.');
+            console.log('✅ User username migration complete.');
         }
     } catch (error) {
         console.error('❌ Error migrating users:', error);

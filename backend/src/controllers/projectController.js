@@ -32,12 +32,12 @@ exports.updateProjectMemberRole = async (req, res) => {
     }
 
     // Authorization: only owner/admin can update roles
-    const requester = project.members.find(m => m.user.toString() === req.user.id);
+    const requester = project.members.find(m => m.user && m.user.toString() === req.user.id);
     if (req.user.role !== 'system_admin' && (!requester || !['owner', 'admin'].includes(requester.role))) {
       return res.status(403).json({ msg: 'Access denied: You do not have permission to update roles.' });
     }
 
-    const memberToUpdate = project.members.find(m => m.user.toString() === req.params.memberId);
+    const memberToUpdate = project.members.find(m => m.user && m.user.toString() === req.params.memberId);
     if (!memberToUpdate) {
       return res.status(404).json({ msg: 'Member not found in this project' });
     }
@@ -52,6 +52,7 @@ exports.updateProjectMemberRole = async (req, res) => {
 
     const updatedProject = await Project.findById(req.params.id);
     const members = await Promise.all(updatedProject.members.map(async (member) => {
+        if (!member.user) return null;
         const user = await User.findById(member.user).select('name email');
         return {
             ...member.toObject(),
@@ -59,7 +60,7 @@ exports.updateProjectMemberRole = async (req, res) => {
         };
     }));
 
-    res.json(members);
+    res.json(members.filter(Boolean));
   } catch (error) {
     console.error(error);
     res.status(500).send('Server Error');
@@ -78,12 +79,12 @@ exports.removeProjectMember = async (req, res) => {
         }
 
         // Authorization: only owner/admin can remove members
-        const requester = project.members.find(m => m.user.toString() === req.user.id);
+        const requester = project.members.find(m => m.user && m.user.toString() === req.user.id);
         if (req.user.role !== 'system_admin' && (!requester || !['owner', 'admin'].includes(requester.role))) {
             return res.status(403).json({ msg: 'Access denied: You do not have permission to remove members.' });
         }
 
-        const memberToRemove = project.members.find(m => m.user.toString() === req.params.memberId);
+        const memberToRemove = project.members.find(m => m.user && m.user.toString() === req.params.memberId);
         if (!memberToRemove) {
             return res.status(404).json({ msg: 'Member not found in this project' });
         }
@@ -93,11 +94,12 @@ exports.removeProjectMember = async (req, res) => {
             return res.status(400).json({ msg: 'Cannot remove the project owner' });
         }
 
-        project.members = project.members.filter(m => m.user.toString() !== req.params.memberId);
+        project.members = project.members.filter(m => m.user && m.user.toString() !== req.params.memberId);
         await project.save();
 
         const updatedProject = await Project.findById(req.params.id);
         const members = await Promise.all(updatedProject.members.map(async (member) => {
+            if (!member.user) return null;
             const user = await User.findById(member.user).select('name email');
             return {
                 ...member.toObject(),
@@ -105,7 +107,7 @@ exports.removeProjectMember = async (req, res) => {
             };
         }));
 
-        res.json(members);
+        res.json(members.filter(Boolean));
     } catch (error) {
         console.error(error);
         res.status(500).send('Server Error');
@@ -277,7 +279,7 @@ exports.addProjectMember = async (req, res) => {
     }
 
     if (req.user.role !== 'system_admin') {
-        const requester = project.members.find(m => m.user.toString() === req.user.id);
+        const requester = project.members.find(m => m.user && m.user.toString() === req.user.id);
         if (!requester || !['owner', 'admin'].includes(requester.role)) {
           return res.status(403).json({ msg: 'Access denied: You do not have permission to invite members.' });
         }
@@ -291,7 +293,7 @@ exports.addProjectMember = async (req, res) => {
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    if (project.members.some(member => member.user.toString() === userToInvite.id)) {
+    if (project.members.some(member => member.user && member.user.toString() === userToInvite.id)) {
         return res.status(400).json({ msg: 'User is already a member of this project' });
     }
 
