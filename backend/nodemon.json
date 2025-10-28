@@ -1,3 +1,3 @@
 {
-  "ignore": ["*.log", "uploads/*", "frontend/jules-scratch/*", "jules-scratch/*"]
+  "ignore": ["*.log", "uploads/*", "./jules-scratch/*"]
 }
