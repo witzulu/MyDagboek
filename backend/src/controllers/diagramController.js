@@ -11,7 +11,7 @@ exports.getDiagrams = async (req, res) => {
     if (!project) {
       return res.status(404).json({ msg: 'Project not found' });
     }
-    const isMember = project.members.some(member => member.user.toString() === req.user.id);
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
     if (!isMember && req.user.role !== 'system_admin') {
       return res.status(401).json({ msg: 'User not authorized for this project' });
     }
@@ -36,7 +36,7 @@ exports.createDiagram = async (req, res) => {
     if (!project) {
       return res.status(404).json({ msg: 'Project not found' });
     }
-    const isMember = project.members.some(member => member.user.toString() === req.user.id);
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
     if (!isMember && req.user.role !== 'system_admin') {
       return res.status(401).json({ msg: 'User not authorized to create a diagram in this project' });
     }
@@ -67,7 +67,7 @@ exports.getDiagramById = async (req, res) => {
     }
 
     // Check if user is a member of the project associated with the diagram
-    const isMember = diagram.project.members.some(member => member.user.toString() === req.user.id);
+    const isMember = diagram.project.members.some(member => member && member.user && member.user.toString() === req.user.id);
     if (!isMember && req.user.role !== 'system_admin') {
         return res.status(401).json({ msg: 'User not authorized to view this diagram' });
     }
@@ -93,7 +93,7 @@ exports.updateDiagram = async (req, res) => {
     }
 
     // Check if user is a member of the project
-    const isMember = diagram.project.members.some(member => member.user.toString() === req.user.id);
+    const isMember = diagram.project.members.some(member => member && member.user && member.user.toString() === req.user.id);
     if (!isMember && req.user.role !== 'system_admin') {
         return res.status(401).json({ msg: 'User not authorized to update this diagram' });
     }
@@ -121,7 +121,7 @@ exports.deleteDiagram = async (req, res) => {
     }
 
     // Check if user is a member of the project
-    const isMember = diagram.project.members.some(member => member.user.toString() === req.user.id);
+    const isMember = diagram.project.members.some(member => member && member.user && member.user.toString() === req.user.id);
     if (!isMember && req.user.role !== 'system_admin') {
         return res.status(401).json({ msg: 'User not authorized to delete this diagram' });
     }
