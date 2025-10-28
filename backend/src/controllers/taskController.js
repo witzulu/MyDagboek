@@ -10,7 +10,8 @@ const checkProjectMembership = async (boardId, userId, userRole) => {
   const project = await Project.findById(board.project);
   if (!project) return { error: true, status: 404, message: 'Project not found for this board' };
 
-  const isMember = project.members.some(member => member.user.toString() === userId);
+  const isMember = project.members.some(member => member.user && member.user.toString() === userId);
+
   if (!isMember && userRole !== 'system_admin') {
     return { error: true, status: 401, message: 'User not authorized for this project' };
   }
@@ -194,12 +195,18 @@ exports.moveTask = async (req, res, next) => {
 // @desc    Mark a task as complete
 // @route   PUT /api/tasks/:id/complete
 // @access  Private
-exports.completeTask = async (req, res, next) => {
+exports.completeTask = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    console.log('Completing task:', req.params.id);
 
-    if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    console.log('Task found:', task.title);
+
+    if (!task.board) {
+      console.error('Task has no board field');
+      return res.status(400).json({ message: 'Task missing board reference' });
     }
 
     const authCheck = await checkProjectMembership(task.board, req.user.id, req.user.role);
@@ -207,23 +214,26 @@ exports.completeTask = async (req, res, next) => {
       return res.status(authCheck.status).json({ message: authCheck.message });
     }
 
-    // Find the 'Done' list for the board
     const doneList = await List.findOne({ board: task.board, name: 'Done' });
-
-    if (doneList && task.list.toString() !== doneList._id.toString()) {
-      // Move task to 'Done' list
-      const lastTaskInDoneList = await Task.findOne({ list: doneList._id }).sort({ position: -1 });
-      const newPosition = lastTaskInDoneList ? lastTaskInDoneList.position + 1 : 0;
-      task.list = doneList._id;
-      task.position = newPosition;
+    if (!doneList) {
+      console.error('No "Done" list found for board:', task.board);
+      return res.status(404).json({ message: 'No Done list found for this board' });
     }
 
-    task.completedAt = new Date();
-    await task.save();
+    const lastTaskInDoneList = await Task.findOne({ list: doneList._id }).sort({ position: -1 });
+    const newPosition = lastTaskInDoneList ? lastTaskInDoneList.position + 1 : 0;
 
+    task.list = doneList._id;
+    task.position = newPosition;
+    task.completedAt = new Date();
+
+    await task.save();
+    console.log('Task completed successfully');
     res.status(200).json(task);
+
   } catch (error) {
-    next(error);
+    console.error('Error completing task:', error);
+    res.status(500).json({ message: 'Server error completing task', error: error.message });
   }
 };
 

@@ -11,23 +11,29 @@ exports.getProgressReport = async (req, res, next) => {
     const { projectId } = req.params;
     const { startDate, endDate } = req.query;
 
+    console.log(`🧭 Generating progress report for project ${projectId}`);
+    console.log(`Dates: ${startDate || 'none'} → ${endDate || 'none'}`);
+    console.log(`User: ${req.user ? req.user.id : 'no user found'}`);
+
     const project = await Project.findById(projectId);
     if (!project) {
+      console.error('❌ Project not found');
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Authorization check: Ensure user is a member of the project
-    const isMember = project.members.some(member => member.user.toString() === req.user.id);
+    // Authorization check
+    const isMember = project.members.some(member => member.user && member.user.toString() === req.user.id);
     if (!isMember && req.user.role !== 'system_admin') {
+      console.error('❌ Unauthorized: not a member or admin');
       return res.status(401).json({ message: 'User not authorized' });
     }
 
-    // Find boards associated with the project
     const boards = await Board.find({ project: projectId });
+    console.log(`📋 Found ${boards.length} boards`);
     const boardIds = boards.map(b => b._id);
 
-    // Find the ID of any list named "Optional"
     const optionalLists = await List.find({ board: { $in: boardIds }, name: 'Optional' });
+    console.log(`📋 Found ${optionalLists.length} optional lists`);
     const optionalListIds = optionalLists.map(l => l._id);
 
     const baseQuery = { board: { $in: boardIds } };
@@ -56,6 +62,8 @@ exports.getProgressReport = async (req, res, next) => {
       completedAt: null,
     });
 
+    console.log('✅ Report generated successfully');
+
     res.status(200).json({
       tasksCreated,
       tasksCompleted,
@@ -64,6 +72,7 @@ exports.getProgressReport = async (req, res, next) => {
     });
 
   } catch (error) {
-    next(error);
+    console.error('💥 Error generating progress report:', error);
+    res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
   }
 };

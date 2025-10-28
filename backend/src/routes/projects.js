@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+
+const { getProgressReport } = require('../controllers/progressReportController');
 const {
   getProjects,
   getProjectById,
@@ -23,5 +25,6 @@ router.route('/:id/members/:memberId').put(protect, updateProjectMemberRole).del
 // Nested snippet routes
 const snippetRoutes = require('./snippets');
 router.use('/:projectId/snippets', snippetRoutes);
+router.get('/:projectId/progress-report', protect, getProgressReport);
 
 module.exports = router;

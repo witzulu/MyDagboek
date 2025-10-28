@@ -66,21 +66,42 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const getToken = () => localStorage.getItem('token');
 
   const handleCompleteTask = async () => {
-    if (!task) return;
-    try {
-      const res = await fetch(`/api/tasks/${task._id}/complete`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-      });
-      if (res.ok) {
-        const updatedTask = await res.json();
-        onTaskUpdate(updatedTask);
-        onClose();
-      }
-    } catch (error) {
-      console.error('Error completing task:', error);
+  if (!task || !task._id) {
+    console.error('No task provided for completion');
+    return;
+  }
+
+  const token = getToken();
+  if (!token) {
+    console.error('No auth token found. Please log in again.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/tasks/${task._id}/complete`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      console.error(`Failed to complete task: ${res.status}`);
+      return;
     }
-  };
+
+    let updatedTask = null;
+    try {
+      updatedTask = await res.json();
+    } catch {
+      console.warn('No JSON returned from /complete endpoint');
+    }
+
+    if (updatedTask && onTaskUpdate) onTaskUpdate(updatedTask);
+    onClose();
+  } catch (error) {
+    console.error('Error completing task:', error);
+  }
+};
+
 
   const handleSubmit = () => {
     onSave({
