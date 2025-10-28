@@ -207,11 +207,13 @@ export default function Notebook() {
           title: currentNote.title,
           content: currentNote.content,
           tags: currentNote.tags,
+          drawing: currentNote.drawing,
         });
       }
     }
 
     setCurrentNote(note);
+    setActiveView('text');
   };
 
   if (error) {
@@ -443,6 +445,7 @@ export default function Notebook() {
               {activeView === 'drawing' && (
                 <div style={{ position: 'relative', height: '600px' }}>
                   <Tldraw
+                    key={currentNote._id}
                     snapshot={currentNote.drawing}
                     onSnapshot={handleDrawingChange}
                   />
