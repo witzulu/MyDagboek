@@ -56,6 +56,7 @@ require('./src/models/Project');
 require('./src/models/Board');
 require('./src/models/List');
 require('./src/models/Task');
+require('./src/models/Diagram');
 
     await seedAdminUser();
     await migrateProjects();
