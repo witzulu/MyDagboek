@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Plus, Trash2, X, Save } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
@@ -42,6 +42,7 @@ export default function Notebook() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState(null);
   const [activeView, setActiveView] = useState('text');
+  const editorRef = useRef(null);
 
   const filteredNotes = notes
     .filter(
@@ -115,7 +116,8 @@ export default function Notebook() {
 
   const handleSave = async () => {
     if (currentNote) {
-      const { _id, title, content, tags, drawing } = currentNote;
+      const drawing = editorRef.current?.store.getSnapshot();
+      const { _id, title, content, tags } = currentNote;
       await updateNote(_id, { title, content, tags, drawing });
       setActiveView('text');
     }
@@ -155,14 +157,14 @@ export default function Notebook() {
     []
   );
 
-  const debouncedUpdateNote = useCallback(debounce(updateNote, 1000), [updateNote]);
+  const debouncedUpdateNote = useCallback(debounce(updateNote, 1000), []);
 
-  const handleDrawingChange = (snapshot) => {
+  const handleDrawingChange = useCallback((snapshot) => {
     if (currentNote) {
       setCurrentNote(prev => ({...prev, drawing: snapshot}));
       debouncedUpdateNote(currentNote._id, { drawing: snapshot });
     }
-  };
+  }, [currentNote, debouncedUpdateNote]);
 
   const deleteNote = async (id) => {
     try {
@@ -204,11 +206,12 @@ export default function Notebook() {
           notes.find((n) => n._id === currentNote._id)?.content;
 
       if (hasChanges) {
+        const drawing = editorRef.current?.store.getSnapshot();
         await updateNote(currentNote._id, {
           title: currentNote.title,
           content: currentNote.content,
           tags: currentNote.tags,
-          drawing: currentNote.drawing,
+          drawing: drawing,
         });
       }
     }
@@ -448,6 +451,7 @@ export default function Notebook() {
                   <Tldraw
                     key={currentNote._id}
                     snapshot={currentNote.drawing}
+                    onMount={(editor) => (editorRef.current = editor)}
                     onSnapshot={handleDrawingChange}
                   />
                 </div>
