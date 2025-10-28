@@ -1,10 +1,9 @@
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { NavLink as RouterNavLink, useLocation, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useProject } from '../hooks/useProject';
 import { Book, Layout, TrendingUp, Code, Clock, Users, AlertCircle, FolderKanban, Settings } from 'lucide-react';
 
 export default function Sidebar() {
-  const location = useLocation();
   const { projectId } = useParams();
   const { selectedProject } = useProject();
 
@@ -24,24 +23,26 @@ export default function Sidebar() {
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
-  const NavLink = ({ item, disabled }) => (
-    <Link
-      to={disabled ? '#' : item.to}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-        !disabled && location.pathname === item.to
-          ? 'bg-primary text-primary-foreground'
-          : disabled
-          ? 'bg-secondary text-muted cursor-not-allowed'
-          : 'hover:bg-secondary text-foreground'
-      }`}
-      onClick={(e) => disabled && e.preventDefault()}
-    >
-      <item.icon className="w-5 h-5" />
-      <span>{item.label}</span>
-    </Link>
-  );
+  const NavItem = ({ item, disabled }) => {
+    const NavLinkComponent = disabled ? 'div' : RouterNavLink;
 
-  NavLink.propTypes = {
+    return (
+      <li>
+        <NavLinkComponent
+          to={disabled ? undefined : item.to}
+          className={({ isActive }) =>
+            `flex items-center gap-3 ${isActive ? 'active' : ''} ${disabled ? 'disabled' : ''}`
+          }
+          onClick={(e) => disabled && e.preventDefault()}
+        >
+          <item.icon className="w-5 h-5" />
+          <span>{item.label}</span>
+        </NavLinkComponent>
+      </li>
+    );
+  };
+
+  NavItem.propTypes = {
     item: PropTypes.shape({
       to: PropTypes.string.isRequired,
       icon: PropTypes.elementType.isRequired,
@@ -51,21 +52,19 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 min-h-screen p-4 flex flex-col justify-between">
+    <aside className="w-64 bg-base-200 text-base-content p-4 flex flex-col justify-between">
+      <ul className="menu p-0">
+        {projectNavItems.map(item => (
+          <NavItem key={item.to} item={item} disabled={!projectId} />
+        ))}
+      </ul>
       <div>
-        <nav className="space-y-2">
-          {projectNavItems.map(item => (
-            <NavLink key={item.to} item={item} disabled={!projectId} />
-          ))}
-        </nav>
-      </div>
-      <div>
-        <hr className="my-4 border-slate-200 dark:border-slate-700" />
-        <nav className="space-y-2">
+        <div className="divider"></div>
+        <ul className="menu p-0">
           {globalNavItems.map(item => (
-            <NavLink key={item.to} item={item} />
+            <NavItem key={item.to} item={item} />
           ))}
-        </nav>
+        </ul>
       </div>
     </aside>
   );
