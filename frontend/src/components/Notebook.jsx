@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Plus, Trash2, X, Save } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
@@ -37,7 +37,6 @@ export default function Notebook() {
   const { projectId } = useParams();
   const [notes, setNotes] = useState([]);
   const [currentNote, setCurrentNote] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState(null);
@@ -62,7 +61,6 @@ export default function Notebook() {
 
     const fetchNotes = async () => {
       try {
-        setLoading(true);
         setError(null);
         const response = await fetch(`/api/projects/${currentProjectId}/notes`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -77,8 +75,6 @@ export default function Notebook() {
       } catch (err) {
         console.error("Error fetching notes:", err);
         setError(err.message);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -116,8 +112,7 @@ export default function Notebook() {
 
   const handleSave = async () => {
     if (currentNote) {
-      const drawing = editorRef.current?.store.getSnapshot();
-      const { _id, title, content, tags } = currentNote;
+      const { _id, title, content, tags, drawing } = currentNote;
       await updateNote(_id, { title, content, tags, drawing });
       setActiveView('text');
     }
@@ -157,14 +152,23 @@ export default function Notebook() {
     []
   );
 
-  const debouncedUpdateNote = useCallback(debounce(updateNote, 1000), []);
+  const debouncedUpdateNote = useMemo(
+    () => debounce((id, fields) => updateNote(id, fields), 1000),
+    [updateNote]
+  );
 
-  const handleDrawingChange = useCallback((snapshot) => {
+  useEffect(() => {
+    if (editorRef.current && currentNote) {
+      editorRef.current.loadSnapshot(currentNote.drawing || {});
+    }
+  }, [currentNote]);
+
+  const handleDrawingChange = (snapshot) => {
     if (currentNote) {
       setCurrentNote(prev => ({...prev, drawing: snapshot}));
       debouncedUpdateNote(currentNote._id, { drawing: snapshot });
     }
-  }, [currentNote, debouncedUpdateNote]);
+  };
 
   const deleteNote = async (id) => {
     try {
@@ -199,19 +203,18 @@ export default function Notebook() {
 
   const handleSelectNote = async (note) => {
     if (currentNote && currentNote._id !== note._id) {
+      const originalNote = notes.find((n) => n._id === currentNote._id);
       const hasChanges =
-        currentNote.title !==
-          notes.find((n) => n._id === currentNote._id)?.title ||
-        currentNote.content !==
-          notes.find((n) => n._id === currentNote._id)?.content;
+        currentNote.title !== originalNote?.title ||
+        currentNote.content !== originalNote?.content ||
+        JSON.stringify(currentNote.drawing) !== JSON.stringify(originalNote?.drawing);
 
       if (hasChanges) {
-        const drawing = editorRef.current?.store.getSnapshot();
         await updateNote(currentNote._id, {
           title: currentNote.title,
           content: currentNote.content,
           tags: currentNote.tags,
-          drawing: drawing,
+          drawing: currentNote.drawing,
         });
       }
     }
@@ -449,7 +452,6 @@ export default function Notebook() {
               {activeView === 'drawing' && (
                 <div style={{ position: 'relative', height: '600px' }}>
                   <Tldraw
-                    key={currentNote._id}
                     snapshot={currentNote.drawing}
                     onMount={(editor) => (editorRef.current = editor)}
                     onSnapshot={handleDrawingChange}
