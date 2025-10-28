@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const ProgressReports = () => {
   const { projectId } = useParams();
@@ -42,6 +43,14 @@ const ProgressReports = () => {
     }
   };
 
+  const pieData = report?.pieChartData ? [
+    { name: 'Done', value: report.pieChartData.done },
+    { name: 'In Progress', value: report.pieChartData.inProgress },
+    { name: 'To-Do', value: report.pieChartData.toDo },
+  ].filter(item => item.value > 0) : [];
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
+
   return (
     <div className="p-6">
       <h2 className="text-3xl font-bold mb-6">Progress Reports</h2>
@@ -79,11 +88,39 @@ const ProgressReports = () => {
       {error && <div className="text-red-500">Error: {error}</div>}
 
       {report && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Tasks Created" value={report.tasksCreated} />
-          <StatCard title="Tasks Completed" value={report.tasksCompleted} />
-          <StatCard title="Tasks Overdue" value={report.tasksOverdue} />
-          <StatCard title="Tasks In Progress" value={report.tasksInProgress} />
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard title="Tasks Created" value={report.tasksCreated} />
+            <StatCard title="Tasks Completed" value={report.tasksCompleted} />
+            <StatCard title="Tasks Overdue" value={report.tasksOverdue} />
+            <StatCard title="Tasks In Progress" value={report.tasksInProgress} />
+          </div>
+
+          {pieData.length > 0 && (
+            <div className="bg-base-200 p-6 rounded-lg shadow-md">
+              <h3 className="text-xl font-bold mb-4">Task Status Distribution</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       )}
     </div>

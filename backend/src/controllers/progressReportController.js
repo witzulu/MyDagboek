@@ -62,6 +62,42 @@ exports.getProgressReport = async (req, res, next) => {
       completedAt: null,
     });
 
+    // --- New Pie Chart Logic ---
+    const pieChartDateFilter = {};
+    if (startDate) pieChartDateFilter.$gte = new Date(startDate);
+    if (endDate) pieChartDateFilter.$lte = new Date(endDate);
+
+    let pieChartData = { done: 0, inProgress: 0, toDo: 0 };
+
+    if (startDate || endDate) {
+      // 1. Get tasks COMPLETED in the period
+      pieChartData.done = await Task.countDocuments({
+        ...baseQuery,
+        completedAt: pieChartDateFilter,
+      });
+
+      // 2. Find IDs of 'To-Do' lists
+      const todoLists = await List.find({ board: { $in: boardIds }, name: 'To-Do' });
+      const todoListIds = todoLists.map(l => l._id);
+
+      // 3. Count tasks CREATED in the period, NOT completed, and in a 'To-Do' list
+      pieChartData.toDo = await Task.countDocuments({
+        ...baseQuery,
+        createdAt: pieChartDateFilter,
+        completedAt: null,
+        list: { $in: todoListIds },
+      });
+
+      // 4. Count tasks CREATED in the period, NOT completed, and NOT in 'To-Do' or 'Optional' lists
+      pieChartData.inProgress = await Task.countDocuments({
+        ...baseQuery,
+        createdAt: pieChartDateFilter,
+        completedAt: null,
+        list: { $nin: [...todoListIds, ...optionalListIds] },
+      });
+    }
+
+
     console.log('✅ Report generated successfully');
 
     res.status(200).json({
@@ -69,6 +105,7 @@ exports.getProgressReport = async (req, res, next) => {
       tasksCompleted,
       tasksOverdue,
       tasksInProgress,
+      pieChartData,
     });
 
   } catch (error) {
