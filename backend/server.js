@@ -22,6 +22,7 @@ const taskCommentRoutes = require('./src/routes/taskCommentRoutes');
 const settingsRoutes = require('./src/routes/settings');
 const { projectNotesRouter, noteRouter } = require('./src/routes/notes');
 const { projectLabelsRouter, labelRouter } = require('./src/routes/labels');
+const progressReportRoutes = require('./src/routes/progressReportRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -180,6 +181,7 @@ app.use('/api/projects/:projectId/notes', projectNotesRouter);
 app.use('/api/notes', noteRouter);
 app.use('/api/projects/:projectId/labels', projectLabelsRouter);
 app.use('/api/labels', labelRouter);
+app.use('/api/projects/:projectId/progress-report', progressReportRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

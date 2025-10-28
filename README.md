@@ -79,6 +79,8 @@ I am currently working on.
     - Labels on Card
     - Checklist on Card
     - Duedate on Card
+
+    When a new board is created, it comes with four default lists: "To-Do", "In Progress", "Done", and "Optional". The "Optional" list is a special list for tasks that are not part of the main workflow. Tasks in this list are excluded from the "in-progress" count in progress reports.
    
 7. Notebooks
    - A rich-text Markdown editor with a toolbar for creating and editing notes.

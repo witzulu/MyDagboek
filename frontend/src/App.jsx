@@ -22,6 +22,7 @@ import Notebook from './components/Notebook';
 import Boards from './pages/Boards/Boards';
 import Board from './pages/Board/Board';
 import Snippets from './pages/Snippets/Snippets';
+import ProgressReports from './pages/ProgressReports';
 import Team from './components/Team';
 
 // Auth Components
@@ -50,6 +51,7 @@ export default function App() {
               <Route path="projects/:projectId/boards" element={<Boards />} />
               <Route path="projects/:projectId/boards/:boardId" element={<Board />} />
               <Route path="projects/:projectId/snippets" element={<Snippets />} />
+              <Route path="projects/:projectId/progress-reports" element={<ProgressReports />} />
               <Route path="projects/:projectId/team" element={<Team />} />
               <Route path="settings" element={<UserSettings />} />
             </Route>

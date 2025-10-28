@@ -65,6 +65,23 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
 
   const getToken = () => localStorage.getItem('token');
 
+  const handleCompleteTask = async () => {
+    if (!task) return;
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/complete`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        const updatedTask = await res.json();
+        onTaskUpdate(updatedTask);
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error completing task:', error);
+    }
+  };
+
   const handleSubmit = () => {
     onSave({
       title,
@@ -264,7 +281,14 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   return (
     <div className="fixed inset-0 bg-base-200/50 flex justify-center items-center z-50">
       <div className="bg-base-300  p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto  border border-accent/50 shadow-lg">
-        <h2 className="text-2xl font-bold mb-4">{task ? 'Edit Card' : 'Create Card'}</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">{task ? 'Edit Card' : 'Create Card'}</h2>
+          {task && (
+            <button onClick={handleCompleteTask} className="px-4 py-2 rounded bg-green-500 text-white">
+              Mark as Complete
+            </button>
+          )}
+        </div>
         <div className="space-y-4">
           <input
             type="text"
