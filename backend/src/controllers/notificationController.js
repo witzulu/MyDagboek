@@ -53,7 +53,7 @@ exports.respondToInvitation = async (req, res) => {
             const project = await Project.findById(notification.project);
             if (project) {
                 // Add user to project if not already a member
-                if (!project.members.some(m => m.user.toString() === req.user.id)) {
+                if (!project.members.some(m => m.user && m.user.toString() === req.user.id)) {
                     project.members.push({ user: req.user.id, role: 'member' });
                     await project.save();
                 }
