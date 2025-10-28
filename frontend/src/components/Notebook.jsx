@@ -113,10 +113,11 @@ export default function Notebook() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (currentNote) {
       const { _id, title, content, tags, drawing } = currentNote;
-      updateNote(_id, { title, content, tags, drawing });
+      await updateNote(_id, { title, content, tags, drawing });
+      setActiveView('text');
     }
   };
 
