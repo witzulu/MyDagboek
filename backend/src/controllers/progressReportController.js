@@ -11,6 +11,14 @@ exports.getProgressReport = async (req, res, next) => {
     const { projectId } = req.params;
     const { startDate, endDate } = req.query;
 
+    // --- Date Handling ---
+    // Adjust endDate to include the whole day
+    let endDateEndOfDay;
+    if (endDate) {
+      endDateEndOfDay = new Date(endDate);
+      endDateEndOfDay.setUTCHours(23, 59, 59, 999);
+    }
+
     console.log(`🧭 Generating progress report for project ${projectId}`);
     console.log(`Dates: ${startDate || 'none'} → ${endDate || 'none'}`);
     console.log(`User: ${req.user ? req.user.id : 'no user found'}`);
@@ -40,13 +48,13 @@ exports.getProgressReport = async (req, res, next) => {
 
     const createdAtFilter = {};
     if (startDate) createdAtFilter.$gte = new Date(startDate);
-    if (endDate) createdAtFilter.$lte = new Date(endDate);
+    if (endDate) createdAtFilter.$lte = endDateEndOfDay;
     const tasksCreatedQuery = (startDate || endDate) ? { ...baseQuery, createdAt: createdAtFilter } : baseQuery;
     const tasksCreated = await Task.countDocuments(tasksCreatedQuery);
 
     const completedAtFilter = {};
     if (startDate) completedAtFilter.$gte = new Date(startDate);
-    if (endDate) completedAtFilter.$lte = new Date(endDate);
+    if (endDate) completedAtFilter.$lte = endDateEndOfDay;
     const tasksCompletedQuery = (startDate || endDate) ? { ...baseQuery, completedAt: completedAtFilter } : baseQuery;
     const tasksCompleted = await Task.countDocuments(tasksCompletedQuery);
 
@@ -65,7 +73,7 @@ exports.getProgressReport = async (req, res, next) => {
     // --- New Pie Chart Logic ---
     const pieChartDateFilter = {};
     if (startDate) pieChartDateFilter.$gte = new Date(startDate);
-    if (endDate) pieChartDateFilter.$lte = new Date(endDate);
+    if (endDate) pieChartDateFilter.$lte = endDateEndOfDay;
 
     let pieChartData = { done: 0, inProgress: 0, toDo: 0 };
 
@@ -106,7 +114,7 @@ exports.getProgressReport = async (req, res, next) => {
             ...baseQuery,
             completedAt: {
               $gte: new Date(startDate),
-              $lte: new Date(endDate),
+              $lte: endDateEndOfDay,
             },
           },
         },
