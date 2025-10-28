@@ -62,7 +62,7 @@ To get a local copy up and running, follow these simple steps.
 Currently this app is not working the frontend shows and the authentication is setup but i have not implemented all the features yet.
 I am currently working on.
 
-    > Team member
+    > Refactor Themes(currently only light stable)
     
     
     
@@ -95,6 +95,8 @@ I am currently working on.
         - C++
         - C#
         - CSS
+9. Team Member
+    - invite team maembers and manage members for a project
           
      
 ## Roadmap
