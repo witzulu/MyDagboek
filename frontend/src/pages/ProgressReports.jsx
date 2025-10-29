@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 
@@ -17,6 +18,7 @@ const ProgressReports = () => {
   const pieChartRef = useRef();
   const barChartRef = useRef();
   const burndownChartRef = useRef();
+  const changelogRef = useRef();
 
   const handleGenerateReport = async () => {
     try {
@@ -67,26 +69,59 @@ const ProgressReports = () => {
     yPos += 15;
 
     const captureElement = async (element, title) => {
-      if (!element) return;
+        if (!element) return;
 
-      const canvas = await html2canvas(element, { backgroundColor: '#1d232a' }); // Match dark theme bg
-      const imgData = canvas.toDataURL('image/png');
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgWidth = pageWidth - 2 * margin;
-      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+        // Temporarily change background for capture
+        const originalBg = element.style.backgroundColor;
+        element.style.backgroundColor = 'white'; // Or any non-transparent color
 
-      if (yPos + imgHeight > pageHeight - margin) {
-        pdf.addPage();
-        yPos = margin;
-      }
+        const canvas = await html2canvas(element);
 
-      pdf.setFontSize(16);
-      pdf.text(title, margin, yPos);
-      yPos += 8;
+        // Restore original background
+        element.style.backgroundColor = originalBg;
 
-      pdf.addImage(imgData, 'PNG', margin, yPos, imgWidth, imgHeight);
-      yPos += imgHeight + 15;
+        const imgData = canvas.toDataURL('image/png');
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgWidth = pageWidth - 2 * margin;
+        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+        if (yPos + imgHeight > pageHeight - margin) {
+            pdf.addPage();
+            yPos = margin;
+        }
+
+        pdf.setFontSize(16);
+        pdf.text(title, margin, yPos);
+        yPos += 8;
+
+        pdf.addImage(imgData, 'PNG', margin, yPos, imgWidth, imgHeight);
+        yPos += imgHeight + 15;
     };
+
+    // --- Add Changelog Table ---
+    if (report && report.changelogEntries && report.changelogEntries.length > 0) {
+        if (yPos + 20 > pageHeight - margin) { // Check if space for header
+            pdf.addPage();
+            yPos = margin;
+        }
+        pdf.setFontSize(16);
+        pdf.text('Change Log', margin, yPos);
+        yPos += 8;
+
+        pdf.autoTable({
+            startY: yPos,
+            head: [['Date', 'User', 'Change']],
+            body: report.changelogEntries.map(entry => [
+                new Date(entry.createdAt).toLocaleDateString(),
+                entry.user ? entry.user.name : 'System',
+                entry.message
+            ]),
+            theme: 'striped',
+             headStyles: { fillColor: [22, 160, 133] },
+        });
+        yPos = pdf.autoTable.previous.finalY + 15;
+    }
+
 
     await captureElement(statsRef.current, 'Summary');
     await captureElement(pieChartRef.current, 'Task Status Distribution');
@@ -160,6 +195,32 @@ const ProgressReports = () => {
               <StatCard title="Tasks Overdue" value={report.tasksOverdue} />
               <StatCard title="Tasks In Progress" value={report.tasksInProgress} />
             </div>
+
+            {report.changelogEntries && report.changelogEntries.length > 0 && (
+              <div ref={changelogRef} className="mt-8 bg-base-200 p-6 rounded-lg">
+                <h3 className="text-xl font-bold mb-4">Change Log Summary</h3>
+                <div className="overflow-x-auto">
+                  <table className="table w-full">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Change</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.changelogEntries.map(entry => (
+                        <tr key={entry._id}>
+                          <td>{new Date(entry.createdAt).toLocaleDateString()}</td>
+                           <td>{entry.user ? entry.user.name : 'System'}</td>
+                          <td>{entry.message}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
               <div ref={pieChartRef}>
