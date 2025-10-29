@@ -39,15 +39,15 @@ exports.getChangeLogEntries = async (req, res) => {
 // @route   POST /api/projects/:projectId/changelog
 // @access  Private (Project members only)
 exports.createChangeLogEntry = async (req, res) => {
-  const { title, message } = req.body;
-  if (!message || !title) {
-    return res.status(400).json({ message: 'Title and message are required' });
+  const { message, tags } = req.body;
+  if (!message) {
+    return res.status(400).json({ message: 'Message is required' });
   }
 
   try {
-    const { error, message: errMsg, status } = await checkProjectMembership(req.params.projectId, req.user.id);
+    const { error, message: errorMsg, status } = await checkProjectMembership(req.params.projectId, req.user.id);
     if (error) {
-        return res.status(status).json({ message: errMsg });
+        return res.status(status).json({ message: errorMsg });
     }
 
     const newEntry = new ChangeLog({
@@ -55,6 +55,7 @@ exports.createChangeLogEntry = async (req, res) => {
       user: req.user.id,
       title,
       message,
+      tags: tags || [],
       type: 'manual',
     });
 
@@ -71,10 +72,7 @@ exports.createChangeLogEntry = async (req, res) => {
 // @route   PUT /api/changelog/:id
 // @access  Private (Entry owner only)
 exports.updateChangeLogEntry = async (req, res) => {
-    const { title, message } = req.body;
-    if (!message || !title) {
-        return res.status(400).json({ message: 'Title and message are required' });
-    }
+    const { message, tags } = req.body;
 
     try {
         let entry = await ChangeLog.findById(req.params.id);
@@ -89,8 +87,9 @@ exports.updateChangeLogEntry = async (req, res) => {
             return res.status(400).json({ message: 'Only manual entries can be updated' });
         }
 
-        entry.title = title;
-        entry.message = message;
+        if (message) entry.message = message;
+        if (tags) entry.tags = tags;
+
         const updatedEntry = await entry.save();
         await updatedEntry.populate('user', 'name username');
 

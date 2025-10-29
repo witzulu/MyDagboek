@@ -11,10 +11,14 @@ const ChangeLog = () => {
     const { projectId } = useParams();
     const { user } = useContext(AuthContext);
     const [entries, setEntries] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [newTags, setNewTags] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [editingEntryId, setEditingEntryId] = useState(null);
     const [editingText, setEditingText] = useState('');
+    const [editingTags, setEditingTags] = useState([]);
+    const [selectedTags, setSelectedTags] = useState([]);
 
     // Set default date range to last 30 days
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -41,6 +45,14 @@ const ChangeLog = () => {
             }
         });
         return Array.from(userMap, ([id, name]) => ({ id, name }));
+    }, [entries]);
+
+    const allTags = useMemo(() => {
+        const tagSet = new Set();
+        entries.forEach(entry => {
+            entry.tags?.forEach(tag => tagSet.add(tag));
+        });
+        return [...tagSet].sort();
     }, [entries]);
 
     const token = localStorage.getItem('token');
@@ -91,37 +103,43 @@ const ChangeLog = () => {
             );
         }
 
+        if (selectedTags.length > 0) {
+            categoryFilteredEntries = categoryFilteredEntries.filter(entry =>
+                selectedTags.every(tag => entry.tags?.includes(tag))
+            );
+        }
+
         return categoryFilteredEntries;
-    }, [entries, activeFilters, startDate, endDate, searchTerm, selectedUserId]);
+    }, [entries, activeFilters, startDate, endDate, searchTerm, selectedUserId, selectedTags]);
 
     const handleFilterChange = (filter) => {
         setActiveFilters(prev => ({ ...prev, [filter]: !prev[filter] }));
+    };
+
+    const handleTagFilterChange = (tag) => {
+        setSelectedTags(prev =>
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        );
     };
 
     const handleCreateEntry = async (e) => {
         e.preventDefault();
         if (!newMessage.trim()) return toast.error('Message cannot be empty.');
 
+        const tags = newTags.split(',').map(tag => tag.trim()).filter(Boolean);
+
         try {
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ message: newMessage, category: 'manual' }),
+                body: JSON.stringify({ message: newMessage, tags, category: 'manual' }),
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Failed to ${isUpdating ? 'update' : 'create'} entry.`);
-            }
-
-            const savedEntry = await response.json();
-
-            if (isUpdating) {
-                setEntries(entries.map((e) => (e._id === savedEntry._id ? savedEntry : e)));
-            } else {
-                setEntries([savedEntry, ...entries]);
-            }
-            toast.success(`Entry ${isUpdating ? 'updated' : 'created'} successfully!`);
+            if (!response.ok) throw new Error('Failed to create entry.');
+            const newEntry = await response.json();
+            setEntries([newEntry, ...entries]);
+            setNewMessage('');
+            setNewTags('');
+            toast.success('Entry added!');
         } catch (err) {
             toast.error(err.message);
         }
@@ -142,6 +160,30 @@ const ChangeLog = () => {
         }
     };
 
+    const handleUpdateEntry = async (entryId) => {
+        if (!editingText.trim()) return toast.error('Message cannot be empty.');
+
+        const tags = Array.isArray(editingTags)
+            ? editingTags
+            : editingTags.split(',').map(tag => tag.trim()).filter(Boolean);
+
+        try {
+            const response = await fetch(`/api/changelog/${entryId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ message: editingText, tags }),
+            });
+            if (!response.ok) throw new Error('Failed to update entry.');
+            const updatedEntry = await response.json();
+            setEntries(entries.map((entry) => (entry._id === entryId ? updatedEntry : entry)));
+            setEditingEntryId(null);
+            setEditingText('');
+            toast.success('Entry updated!');
+        } catch (err) {
+            toast.error(err.message);
+        }
+    };
+
     const handleToggleReportInclusion = async (entryId) => {
         try {
             const response = await fetch(`/api/changelog/${entryId}/toggle-report`, {
@@ -157,14 +199,10 @@ const ChangeLog = () => {
         }
     };
 
-    const openCreateModal = () => {
-        setSelectedEntry(null);
-        setIsModalOpen(true);
-    };
-
-    const openEditModal = (entry) => {
-        setSelectedEntry(entry);
-        setIsModalOpen(true);
+    const startEditing = (entry) => {
+        setEditingEntryId(entry._id);
+        setEditingText(entry.message);
+        setEditingTags(entry.tags || []);
     };
 
     const handleExport = (format) => {
@@ -262,6 +300,13 @@ const ChangeLog = () => {
                                     placeholder="Manually log a change using Markdown..."
                                 />
                             </div>
+                            <input
+                                type="text"
+                                className="input input-bordered w-full mt-2"
+                                placeholder="Tags (comma-separated)"
+                                value={newTags}
+                                onChange={(e) => setNewTags(e.target.value)}
+                            />
                             <div className="card-actions justify-end mt-4">
                                 <button type="submit" className="btn btn-primary">Add Entry</button>
                             </div>
@@ -285,6 +330,18 @@ const ChangeLog = () => {
                                 {uniqueUsers.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
                             </select>
                         </div>
+                    </div>
+                    <div className="divider">Tags</div>
+                    <div className="flex flex-wrap gap-2">
+                        {allTags.map(tag => (
+                            <button
+                                key={tag}
+                                onClick={() => handleTagFilterChange(tag)}
+                                className={`btn btn-xs ${selectedTags.includes(tag) ? 'btn-accent' : 'btn-outline'}`}
+                            >
+                                {tag}
+                            </button>
+                        ))}
                     </div>
                     <div className="divider">Categories</div>
                     <div className="flex flex-wrap gap-2">
@@ -342,10 +399,22 @@ const ChangeLog = () => {
                                         plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]}
                                         contentEditableClassName="!h-32"
                                     />
+                                    <input
+                                        type="text"
+                                        className="input input-bordered w-full mt-2"
+                                        placeholder="Tags (comma-separated)"
+                                        value={Array.isArray(editingTags) ? editingTags.join(', ') : editingTags}
+                                        onChange={(e) => setEditingTags(e.target.value)}
+                                    />
                                 </div>
                             ) : (
                                 <div className="prose-sm max-w-none mt-2 text-base-content">
                                     <ReactMarkdown>{entry.message}</ReactMarkdown>
+                                </div>
+                            )}
+                            {entry.tags && entry.tags.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {entry.tags.map(tag => <div key={tag} className="badge badge-neutral">{tag}</div>)}
                                 </div>
                             )}
                         </div>
