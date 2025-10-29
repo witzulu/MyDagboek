@@ -2,6 +2,7 @@ const Task = require('../models/Task');
 const List = require('../models/List');
 const Board = require('../models/Board');
 const Project = require('../models/Project');
+const { logChange } = require('../utils/changeLogService');
 
 const checkProjectMembership = async (boardId, userId, userRole) => {
   const board = await Board.findById(boardId);
@@ -15,7 +16,7 @@ const checkProjectMembership = async (boardId, userId, userRole) => {
   if (!isMember && userRole !== 'system_admin') {
     return { error: true, status: 401, message: 'User not authorized for this project' };
   }
-  return { error: false };
+  return { error: false, project };
 };
 
 // @desc    Create a task for a list
@@ -30,9 +31,9 @@ exports.createTask = async (req, res, next) => {
       return res.status(404).json({ message: 'List not found' });
     }
 
-    const authCheck = await checkProjectMembership(list.board, req.user.id, req.user.role);
-    if (authCheck.error) {
-      return res.status(authCheck.status).json({ message: authCheck.message });
+    const { error, status, message, project } = await checkProjectMembership(list.board, req.user.id, req.user.role);
+    if (error) {
+      return res.status(status).json({ message: message });
     }
 
     const lastTask = await Task.findOne({ list: listId }).sort({ position: -1 });
@@ -47,6 +48,9 @@ exports.createTask = async (req, res, next) => {
       dueDate,
       labels,
     });
+
+    // Log the change
+    await logChange(project._id, req.user.id, `created task '${task.title}'.`);
 
     res.status(201).json(task);
   } catch (error) {
@@ -98,6 +102,10 @@ exports.deleteTask = async (req, res, next) => {
     if (authCheck.error) {
       return res.status(authCheck.status).json({ message: authCheck.message });
     }
+    const { project } = authCheck;
+
+    // Log the change before deleting
+    await logChange(project._id, req.user.id, `deleted task '${task.title}'.`);
 
     await task.deleteOne();
     res.status(200).json({ message: 'Task removed' });
@@ -119,16 +127,21 @@ exports.moveTask = async (req, res, next) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    const authCheck = await checkProjectMembership(task.board, req.user.id, req.user.role);
-    if (authCheck.error) {
-      return res.status(authCheck.status).json({ message: authCheck.message });
+    const { error, status, message, project } = await checkProjectMembership(task.board, req.user.id, req.user.role);
+    if (error) {
+      return res.status(status).json({ message: message });
     }
 
     const originalListId = task.list.toString();
+    const originalList = await List.findById(originalListId);
+
     const bulkOps = [];
 
     if (originalListId === newListId) {
       // --- MOVING WITHIN THE SAME LIST ---
+       if (task.position !== newPosition) {
+        await logChange(project._id, req.user.id, `reordered task '${task.title}' in list '${originalList.name}'.`);
+      }
       const tasksToUpdate = await Task.find({ list: originalListId, _id: { $ne: taskId } }).sort('position');
       tasksToUpdate.splice(newPosition, 0, task);
 
@@ -145,6 +158,12 @@ exports.moveTask = async (req, res, next) => {
 
     } else {
       // --- MOVING TO A DIFFERENT LIST ---
+      const newList = await List.findById(newListId);
+      if (!newList) {
+        return res.status(404).json({ message: 'Destination list not found' });
+      }
+      await logChange(project._id, req.user.id, `moved task '${task.title}' from '${originalList.name}' to '${newList.name}'.`);
+
       // 1. Update positions in the original list
       const originalListTasks = await Task.find({ list: originalListId, _id: { $ne: taskId } }).sort('position');
       originalListTasks.forEach((t, index) => {
@@ -158,25 +177,25 @@ exports.moveTask = async (req, res, next) => {
         }
       });
 
-      // 2. Update the moved task
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: taskId },
-          update: { $set: { list: newListId, position: newPosition } }
-        }
-      });
+      // 2. Update the moved task's list and position
+      task.list = newListId;
+      task.position = newPosition;
 
       // 3. Update positions in the new list
-      const newListTasks = await Task.find({ list: newListId }).sort('position');
+      const newListTasks = await Task.find({ list: newListId, _id: { $ne: taskId } }).sort('position');
       newListTasks.splice(newPosition, 0, task);
       newListTasks.forEach((t, index) => {
-        if (t.position !== index || t._id.toString() === taskId) {
-           bulkOps.push({
+          bulkOps.push({
             updateOne: {
               filter: { _id: t._id },
               update: { $set: { position: index } }
             }
           });
+      });
+       bulkOps.push({
+        updateOne: {
+          filter: { _id: taskId },
+          update: { $set: { list: newListId, position: newPosition, board: newList.board } }
         }
       });
     }
@@ -192,34 +211,35 @@ exports.moveTask = async (req, res, next) => {
   }
 };
 
+
 // @desc    Mark a task as complete
 // @route   PUT /api/tasks/:id/complete
 // @access  Private
 exports.completeTask = async (req, res) => {
   try {
-    console.log('Completing task:', req.params.id);
-
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ message: 'Task not found' });
 
-    console.log('Task found:', task.title);
-
     if (!task.board) {
-      console.error('Task has no board field');
       return res.status(400).json({ message: 'Task missing board reference' });
     }
 
-    const authCheck = await checkProjectMembership(task.board, req.user.id, req.user.role);
-    if (authCheck.error) {
-      return res.status(authCheck.status).json({ message: authCheck.message });
+    const { error, status, message, project } = await checkProjectMembership(task.board, req.user.id, req.user.role);
+    if (error) {
+      return res.status(status).json({ message: message });
+    }
+
+    // Check if the task is already completed to avoid duplicate logs and actions
+    if(task.completedAt) {
+        return res.status(400).json({ message: 'Task is already marked as complete.' });
     }
 
     const doneList = await List.findOne({ board: task.board, name: 'Done' });
     if (!doneList) {
-      console.error('No "Done" list found for board:', task.board);
-      return res.status(404).json({ message: 'No Done list found for this board' });
+      return res.status(404).json({ message: 'No "Done" list found for this board' });
     }
 
+    // Move to "Done" list
     const lastTaskInDoneList = await Task.findOne({ list: doneList._id }).sort({ position: -1 });
     const newPosition = lastTaskInDoneList ? lastTaskInDoneList.position + 1 : 0;
 
@@ -228,7 +248,9 @@ exports.completeTask = async (req, res) => {
     task.completedAt = new Date();
 
     await task.save();
-    console.log('Task completed successfully');
+
+    await logChange(project._id, req.user.id, `completed task '${task.title}'.`);
+
     res.status(200).json(task);
 
   } catch (error) {
@@ -236,6 +258,7 @@ exports.completeTask = async (req, res) => {
     res.status(500).json({ message: 'Server error completing task', error: error.message });
   }
 };
+
 
 // Not implemented yet
 exports.getTasks = async (req, res, next) => { res.status(501).json({ message: 'Not implemented' }); };

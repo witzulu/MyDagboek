@@ -20,6 +20,10 @@ const changeLogSchema = new mongoose.Schema({
     enum: ['manual', 'automatic'],
     default: 'manual',
   },
+  includeInReport: {
+    type: Boolean,
+    default: true,
+  },
 }, {
   timestamps: true,
 });
