@@ -28,6 +28,10 @@ const changeLogSchema = new mongoose.Schema({
     type: String,
     enum: ['board', 'note', 'team', 'report', 'snippet', 'manual'],
     default: 'manual',
+  },
+  tags: {
+    type: [String],
+    default: [],
   }
 }, {
   timestamps: true,
