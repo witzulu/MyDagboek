@@ -88,6 +88,7 @@ I am currently working on.
    - A tagging system to organize notes by topic.
    - A pinning feature to highlight important notes.
    - A search functionality to easily find notes by title, content, or tags.
+   - Scratch pad. a interactive multipage area where you can draw and plan straight on the page like you would in a pen and paper notebook.
 8. Code Snippets
    - Dashboard for snippets
    - can create a snippet in various languages
@@ -97,7 +98,14 @@ I am currently working on.
         - C++
         - C#
         - CSS
-9. Team Member
+9. Progress Report
+   - Text based progress
+   - Pi chart of Task Distribution
+   - Tasks Completed per day
+   - Burndodown chart
+10. Diagrams.
+    - Make diagrams like flowcharts
+11. Team Member
     - invite team maembers and manage members for a project
           
      

@@ -10,7 +10,7 @@ export default function ErrorReports({ errorReports, parseErrorReport, updateErr
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6  w-full">
         <h2 className="text-3xl font-bold text-slate-800 dark:text-white">
             {selectedProject ? `${selectedProject.name}: Error Reports` : 'Error Reports'}
         </h2>

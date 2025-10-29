@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
 
 // Layouts
 import MainLayout from './components/MainLayout';
@@ -24,6 +25,8 @@ import Board from './pages/Board/Board';
 import Snippets from './pages/Snippets/Snippets';
 import ProgressReports from './pages/ProgressReports';
 import Team from './components/Team';
+import Diagrams from './pages/Diagrams';
+import ChangeLog from './pages/ChangeLog';
 
 // Auth Components
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -35,6 +38,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <Toaster position="bottom-right" />
       <div className={`min-h-screen bg-background text-foreground`}>
         <Routes>
           {/* Public Routes */}
@@ -53,17 +57,19 @@ export default function App() {
               <Route path="projects/:projectId/snippets" element={<Snippets />} />
               <Route path="projects/:projectId/progress-reports" element={<ProgressReports />} />
               <Route path="projects/:projectId/team" element={<Team />} />
+              <Route path="projects/:projectId/diagrams" element={<Diagrams />} />
+              <Route path="projects/:projectId/changelog" element={<ChangeLog />} />
               <Route path="settings" element={<UserSettings />} />
             </Route>
           </Route>
 
           {/* Admin Routes */}
           <Route element={<ProtectedRoute adminOnly />}>
-  <Route path="/admin" element={<MainLayout />}>
-    <Route index element={<AdminDashboard />} />
-    <Route path="users" element={<UserApproval />} />
-  </Route>
-</Route>
+            <Route path="/admin" element={<MainLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<UserApproval />} />
+            </Route>
+          </Route>
 
           {/* Catch-all Route */}
           <Route path="*" element={<Navigate to={isAuthenticated ? "/projects" : "/login"} />} />

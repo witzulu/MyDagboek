@@ -57,7 +57,7 @@ const ProjectDashboard = () => {
   }
 
   return (
-    <div className="p-6 min-h-screen bg-base-200 text-base-content">
+    <div className="p-6 min-h-screen bg-base-200 text-base-content  w-full">
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-primary mb-2">
