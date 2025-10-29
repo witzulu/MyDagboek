@@ -53,6 +53,26 @@ const ProgressReports = () => {
     }
   };
 
+  const handleExportCSV = () => {
+    if (!report) return;
+
+    let csvContent = "Metric,Value\n";
+    csvContent += `Tasks Created,${report.tasksCreated}\n`;
+    csvContent += `Tasks Completed,${report.tasksCompleted}\n`;
+    csvContent += `Tasks Overdue,${report.tasksOverdue}\n`;
+    csvContent += `Tasks In Progress,${report.tasksInProgress}\n`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `progress-report.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportPDF = async () => {
     setIsExporting(true);
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -174,6 +194,12 @@ const ProgressReports = () => {
           {loading ? 'Generating...' : 'Generate Report'}
         </button>
         {report && (
+          <button
+            onClick={handleExportCSV}
+            className="self-end px-4 py-2 rounded-md bg-info text-info-content"
+          >
+            Export to CSV
+          </button>
             <button
               onClick={handleExportPDF}
               disabled={isExporting}
