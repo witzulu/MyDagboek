@@ -13,7 +13,7 @@ exports.getChangeLogEntries = async (req, res) => {
     }
 
     // Check if user is a member of the project
-    if (!project.members.some(member => member.user.equals(req.user.id))) {
+    if (!project.members.some(member => member.user && member.user.equals(req.user.id))) {
         return res.status(403).json({ message: 'User is not a member of this project' });
     }
 
@@ -42,7 +42,7 @@ exports.createChangeLogEntry = async (req, res) => {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    if (!project.members.some(member => member.user.equals(req.user.id))) {
+    if (!project.members.some(member => member.user && member.user.equals(req.user.id))) {
         return res.status(403).json({ message: 'User is not a member of this project' });
     }
 
