@@ -1,5 +1,6 @@
 const CodeSnippet = require('../models/CodeSnippet');
 const Project = require('../models/Project');
+const { logChange } = require('../utils/changeLogService');
 
 // @desc    Get all snippets for a project
 // @route   GET /api/projects/:projectId/snippets
@@ -58,6 +59,8 @@ exports.createSnippet = async (req, res, next) => {
       user: req.user.id,
     });
 
+    await logChange(req.params.projectId, req.user.id, `Created new code snippet: "${snippet.title}"`, 'snippet');
+
     res.status(201).json(snippet);
   } catch (error) {
     next(error);
@@ -87,6 +90,9 @@ exports.updateSnippet = async (req, res, next) => {
     snippet.tags = tags ?? snippet.tags;
 
     await snippet.save();
+
+    await logChange(req.params.projectId, req.user.id, `Updated code snippet: "${snippet.title}"`, 'snippet');
+
     res.status(200).json(snippet);
   } catch (error) {
     next(error);

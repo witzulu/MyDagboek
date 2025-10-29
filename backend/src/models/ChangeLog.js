@@ -26,7 +26,7 @@ const changeLogSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['board', 'note', 'team', 'report', 'manual'],
+    enum: ['board', 'note', 'team', 'report', 'snippet', 'manual'],
     default: 'manual',
   }
 }, {
