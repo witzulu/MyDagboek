@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Edit, Trash2, Save, X } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
 
 const ChangeLog = () => {
     const { projectId } = useParams();
+    const { user } = useContext(AuthContext);
     const [entries, setEntries] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -12,7 +14,6 @@ const ChangeLog = () => {
     const [editingEntryId, setEditingEntryId] = useState(null);
     const [editingText, setEditingText] = useState('');
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user'));
 
     const fetchEntries = useCallback(async () => {
         try {
