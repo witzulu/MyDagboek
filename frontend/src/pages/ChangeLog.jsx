@@ -23,6 +23,7 @@ const ChangeLog = () => {
     const [activeFilters, setActiveFilters] = useState({
         board: true,
         note: true,
+        team: true,
         manual: true,
     });
 
