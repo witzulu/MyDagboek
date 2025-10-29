@@ -51,7 +51,7 @@ exports.getProgressReport = async (req, res, next) => {
     const tasksInProgress = await Task.countDocuments({ ...baseQuery, list: { $nin: optionalListIds }, completedAt: null });
 
     // --- Chart Data Calculations ---
-    let pieChartData = { done: 0, inProgress: 0, toDo: 0 };
+  /*  let pieChartData = { done: 0, inProgress: 0, toDo: 0 };
     let barChartData = [];
     let burndownChartData = [];
 
@@ -90,7 +90,7 @@ exports.getProgressReport = async (req, res, next) => {
         remainingWork -= completionsMap.get(dateString) || 0;
         dateCursor.setDate(dateCursor.getDate() + 1);
       }
-    }
+    }*/
 
     // --- Changelog Data ---
     const changelogQuery = { project: projectId, includeInReport: true };

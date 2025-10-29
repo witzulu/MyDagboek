@@ -193,21 +193,24 @@ const ProgressReports = () => {
         >
           {loading ? 'Generating...' : 'Generate Report'}
         </button>
-        {report && (
-          <button
-            onClick={handleExportCSV}
-            className="self-end px-4 py-2 rounded-md bg-info text-info-content"
-          >
-            Export to CSV
-          </button>
-            <button
-              onClick={handleExportPDF}
-              disabled={isExporting}
-              className="self-end px-4 py-2 rounded-md bg-secondary text-secondary-content disabled:opacity-50"
-            >
-              {isExporting ? 'Exporting...' : 'Export to PDF'}
-            </button>
-        )}
+{report && (
+  <>
+    <button
+      onClick={handleExportCSV}
+      className="self-end px-4 py-2 rounded-md bg-info text-info-content"
+    >
+      Export to CSV
+    </button>
+    <button
+      onClick={handleExportPDF}
+      disabled={isExporting}
+      className="self-end px-4 py-2 rounded-md bg-secondary text-secondary-content disabled:opacity-50"
+    >
+      {isExporting ? 'Exporting...' : 'Export to PDF'}
+    </button>
+  </>
+)}
+
       </div>
 
       {error && <div className="text-red-500">Error: {error}</div>}
