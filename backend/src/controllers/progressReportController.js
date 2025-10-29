@@ -2,6 +2,7 @@ const Task = require('../models/Task');
 const List = require('../models/List');
 const Project = require('../models/Project');
 const Board = require('../models/Board');
+const ChangeLog = require('../models/ChangeLog');
 
 // @desc    Get progress report for a project
 // @route   GET /api/projects/:projectId/progress-report
@@ -17,10 +18,6 @@ exports.getProgressReport = async (req, res, next) => {
       endDateEndOfDay = new Date(endDate);
       endDateEndOfDay.setUTCHours(23, 59, 59, 999);
     }
-
-    console.log(`🧭 Generating progress report for project ${projectId}`);
-    console.log(`Dates: ${startDate || 'none'} → ${endDate || 'none'}`);
-    console.log(`User: ${req.user ? req.user.id : 'no user found'}`);
 
     const project = await Project.findById(projectId);
     if (!project) {
@@ -48,6 +45,14 @@ exports.getProgressReport = async (req, res, next) => {
     const tasksCompleted = (startDate || endDate) ? await Task.countDocuments({ ...baseQuery, completedAt: dateFilter }) : await Task.countDocuments(baseQuery);
     const tasksOverdue = await Task.countDocuments({ ...baseQuery, dueDate: { $lt: new Date() }, completedAt: null });
     const tasksInProgress = await Task.countDocuments({ ...baseQuery, list: { $nin: optionalListIds }, completedAt: null });
+
+    // --- Changelog Data ---
+    const changelogQuery = { project: projectId, includeInReport: true };
+    if (startDate || endDate) {
+        changelogQuery.createdAt = dateFilter;
+    }
+    const changelogEntries = await ChangeLog.find(changelogQuery).populate('user', 'name').sort({ createdAt: 'desc' });
+
 
     // --- Chart Data Calculations ---
     let pieChartData = { done: 0, inProgress: 0, toDo: 0 };
@@ -91,13 +96,12 @@ exports.getProgressReport = async (req, res, next) => {
       }
     }
 
-    console.log('✅ Report generated successfully');
-
     res.status(200).json({
       tasksCreated,
       tasksCompleted,
       tasksOverdue,
       tasksInProgress,
+      changelogEntries,
       pieChartData,
       barChartData,
       burndownChartData,
