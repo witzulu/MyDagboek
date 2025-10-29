@@ -122,7 +122,7 @@ I am currently working on.
     - **Export Options:** The filtered changelog can be exported to Markdown, JSON, or CSV formats.
 11. Diagrams.
     - Make diagrams like flowcharts
-12. Team Member
+11. Team Member
     - invite team maembers and manage members for a project
           
      
