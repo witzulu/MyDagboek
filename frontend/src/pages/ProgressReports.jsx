@@ -106,7 +106,8 @@ const ProgressReports = () => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
   return (
-    <div className="p-6">
+        <div className="p-6  w-full">
+
       <h2 className="text-3xl font-bold mb-6">Progress Reports</h2>
 
       <div className="flex items-center space-x-4 mb-6 p-4 bg-base-200 rounded-lg">

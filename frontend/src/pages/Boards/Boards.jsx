@@ -62,7 +62,7 @@ const Boards = () => {
   };
 
   return (
-    <div className="p-6 min-h-screen bg-base-200 text-base-content">
+    <div className="p-6 min-h-screen bg-base-200 text-base-content  w-full">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-base-content">Boards</h1>

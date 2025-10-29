@@ -340,7 +340,7 @@ export default function Notebook() {
     .filter((note) => !selectedTag || (note.tags && note.tags.includes(selectedTag)));
 
   return (
-    <div className="p-6 min-h-screen bg-base-200 text-base-content">
+    <div className="p-6 min-h-screen bg-base-200 text-base-content  w-full">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-bold text-primary mb-2">
           {selectedProject ? `${selectedProject.name}: Notebook` : "Notebook"}

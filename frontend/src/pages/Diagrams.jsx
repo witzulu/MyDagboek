@@ -132,7 +132,7 @@ export default function Diagrams() {
   // UI
   if (currentDiagram) {
     return (
-      <div className="p-6 h-full flex flex-col">
+      <div className="p-6 h-full flex flex-col  w-full">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <button onClick={() => setCurrentDiagram(null)} className="btn btn-ghost btn-sm btn-square">
@@ -172,7 +172,7 @@ export default function Diagrams() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 min-h-screen bg-base-200 text-base-content w-full">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-bold text-primary">
           {selectedProject ? `${selectedProject.name}: Diagrams` : "Diagrams"}
