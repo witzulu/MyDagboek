@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Edit, Trash2, Save, X, Bot, User, Download, PlusCircle } from 'lucide-react';
+import { Edit, Trash2, Bot, User, Download, PlusCircle } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import ManualReportModal from '../components/ManualReportModal';
 import ReactMarkdown from 'react-markdown';
@@ -159,28 +159,38 @@ const ChangeLog = () => {
             />
             <div className="flex justify-between items-center mb-6">
                  <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
-                 <button onClick={openCreateModal} className="btn btn-primary">
-                    <PlusCircle size={16} /> Create Manual Entry
-                </button>
             </div>
 
-            <div className="card bg-base-100 shadow-xl mb-6">
-                <div className="card-body">
-                    <h2 className="card-title">Export Change Log</h2>
-                    <div className="flex items-center space-x-4">
-                         <div>
-                            <label htmlFor="start-date" className="block text-sm font-medium">Start Date</label>
-                            <input type="date" id="start-date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input input-bordered w-full" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="card bg-base-100 shadow-xl">
+                    <div className="card-body">
+                        <h2 className="card-title">Export Change Log</h2>
+                        <div className="flex items-center space-x-4">
+                             <div>
+                                <label htmlFor="start-date" className="block text-sm font-medium">Start Date</label>
+                                <input type="date" id="start-date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input input-bordered w-full" />
+                            </div>
+                            <div>
+                                <label htmlFor="end-date" className="block text-sm font-medium">End Date</label>
+                                <input type="date" id="end-date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input input-bordered w-full" />
+                            </div>
                         </div>
-                        <div>
-                            <label htmlFor="end-date" className="block text-sm font-medium">End Date</label>
-                            <input type="date" id="end-date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input input-bordered w-full" />
+                         <div className="card-actions justify-end mt-4">
+                            <button onClick={handleExportMarkdown} className="btn btn-secondary">
+                                <Download size={16} /> Export to Markdown
+                            </button>
                         </div>
                     </div>
-                     <div className="card-actions justify-end mt-4">
-                        <button onClick={handleExportMarkdown} className="btn btn-secondary">
-                            <Download size={16} /> Export to Markdown
-                        </button>
+                </div>
+                 <div className="card bg-base-100 shadow-xl">
+                    <div className="card-body">
+                        <h2 className="card-title">Add a Manual Entry</h2>
+                        <p>Create a detailed entry with rich text formatting.</p>
+                        <div className="card-actions justify-end mt-4">
+                            <button onClick={openCreateModal} className="btn btn-primary">
+                                <PlusCircle size={16} /> Create Manual Entry
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
