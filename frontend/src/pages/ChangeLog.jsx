@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Edit, Trash2, Save, X, Bot, User, Download } from 'lucide-react';
+import { Edit, Trash2, Bot, User, Download, PlusCircle } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import { MDXEditor, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin, markdownShortcutPlugin } from '@mdxeditor/editor';
@@ -11,7 +11,6 @@ const ChangeLog = () => {
     const { projectId } = useParams();
     const { user } = useContext(AuthContext);
     const [entries, setEntries] = useState([]);
-    const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [editingEntryId, setEditingEntryId] = useState(null);
@@ -104,16 +103,25 @@ const ChangeLog = () => {
         if (!newMessage.trim()) return toast.error('Message cannot be empty.');
 
         try {
-            const response = await fetch(`/api/projects/${projectId}/changelog`, {
-                method: 'POST',
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ message: newMessage, category: 'manual' }),
             });
-            if (!response.ok) throw new Error('Failed to create entry.');
-            const newEntry = await response.json();
-            setEntries([newEntry, ...entries]);
-            setNewMessage('');
-            toast.success('Entry added!');
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Failed to ${isUpdating ? 'update' : 'create'} entry.`);
+            }
+
+            const savedEntry = await response.json();
+
+            if (isUpdating) {
+                setEntries(entries.map((e) => (e._id === savedEntry._id ? savedEntry : e)));
+            } else {
+                setEntries([savedEntry, ...entries]);
+            }
+            toast.success(`Entry ${isUpdating ? 'updated' : 'created'} successfully!`);
         } catch (err) {
             toast.error(err.message);
         }
@@ -134,25 +142,6 @@ const ChangeLog = () => {
         }
     };
 
-    const handleUpdateEntry = async (entryId) => {
-        if (!editingText.trim()) return toast.error('Message cannot be empty.');
-        try {
-            const response = await fetch(`/api/changelog/${entryId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ message: editingText }),
-            });
-            if (!response.ok) throw new Error('Failed to update entry.');
-            const updatedEntry = await response.json();
-            setEntries(entries.map((entry) => (entry._id === entryId ? updatedEntry : entry)));
-            setEditingEntryId(null);
-            setEditingText('');
-            toast.success('Entry updated!');
-        } catch (err) {
-            toast.error(err.message);
-        }
-    };
-
     const handleToggleReportInclusion = async (entryId) => {
         try {
             const response = await fetch(`/api/changelog/${entryId}/toggle-report`, {
@@ -168,9 +157,14 @@ const ChangeLog = () => {
         }
     };
 
-    const startEditing = (entry) => {
-        setEditingEntryId(entry._id);
-        setEditingText(entry.message);
+    const openCreateModal = () => {
+        setSelectedEntry(null);
+        setIsModalOpen(true);
+    };
+
+    const openEditModal = (entry) => {
+        setSelectedEntry(entry);
+        setIsModalOpen(true);
     };
 
     const handleExport = (format) => {
@@ -218,6 +212,12 @@ const ChangeLog = () => {
 
     return (
         <div className="container mx-auto p-4 flex-1">
+            <ManualReportModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveEntry}
+                entry={selectedEntry}
+            />
             <div className="flex justify-between items-center mb-6">
                  <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
             </div>
@@ -315,6 +315,7 @@ const ChangeLog = () => {
                                         <p className="font-bold text-lg text-foreground">{entry.user?.name || 'Unknown'}</p>
                                         <p className="text-xs text-base-content opacity-60">{new Date(entry.createdAt).toLocaleString()}</p>
                                     </div>
+                                    <div className={`badge ${entry.type === 'manual' ? 'badge-info' : 'badge-ghost'}`}>{entry.type}</div>
                                 </div>
                                 <div className="card-actions items-center">
                                     <div className="form-control" title={entry.includeInReport ? 'Include in reports' : 'Exclude from reports'}>
@@ -327,17 +328,8 @@ const ChangeLog = () => {
                                     </div>
                                     {user && entry.user?._id === user.id && entry.type === 'manual' && (
                                         <>
-                                            {editingEntryId === entry._id ? (
-                                                <>
-                                                    <button onClick={() => handleUpdateEntry(entry._id)} className="btn btn-ghost btn-sm"><Save size={16} /></button>
-                                                    <button onClick={() => setEditingEntryId(null)} className="btn btn-ghost btn-sm"><X size={16} /></button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button onClick={() => startEditing(entry)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
-                                                    <button onClick={() => handleDeleteEntry(entry._id)} className="btn btn-ghost btn-sm text-error"><Trash2 size={16} /></button>
-                                                </>
-                                            )}
+                                            <button onClick={() => openEditModal(entry)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
+                                            <button onClick={() => handleDeleteEntry(entry._id)} className="btn btn-ghost btn-sm text-error"><Trash2 size={16} /></button>
                                         </>
                                     )}
                                 </div>
