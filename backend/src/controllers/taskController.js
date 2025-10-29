@@ -50,7 +50,7 @@ exports.createTask = async (req, res, next) => {
     });
 
     // Log the change
-    await logChange(project._id, req.user.id, `created task '${task.title}'.`);
+    await logChange(project._id, req.user.id, `created task '${task.title}'.`, 'board');
 
     res.status(201).json(task);
   } catch (error) {
@@ -105,7 +105,7 @@ exports.deleteTask = async (req, res, next) => {
     const { project } = authCheck;
 
     // Log the change before deleting
-    await logChange(project._id, req.user.id, `deleted task '${task.title}'.`);
+    await logChange(project._id, req.user.id, `deleted task '${task.title}'.`, 'board');
 
     await task.deleteOne();
     res.status(200).json({ message: 'Task removed' });
@@ -140,7 +140,7 @@ exports.moveTask = async (req, res, next) => {
     if (originalListId === newListId) {
       // --- MOVING WITHIN THE SAME LIST ---
        if (task.position !== newPosition) {
-        await logChange(project._id, req.user.id, `reordered task '${task.title}' in list '${originalList.name}'.`);
+        await logChange(project._id, req.user.id, `reordered task '${task.title}' in list '${originalList.name}'.`, 'board');
       }
       const tasksToUpdate = await Task.find({ list: originalListId, _id: { $ne: taskId } }).sort('position');
       tasksToUpdate.splice(newPosition, 0, task);
@@ -162,7 +162,7 @@ exports.moveTask = async (req, res, next) => {
       if (!newList) {
         return res.status(404).json({ message: 'Destination list not found' });
       }
-      await logChange(project._id, req.user.id, `moved task '${task.title}' from '${originalList.name}' to '${newList.name}'.`);
+      await logChange(project._id, req.user.id, `moved task '${task.title}' from '${originalList.name}' to '${newList.name}'.`, 'board');
 
       // 1. Update positions in the original list
       const originalListTasks = await Task.find({ list: originalListId, _id: { $ne: taskId } }).sort('position');
@@ -249,7 +249,7 @@ exports.completeTask = async (req, res) => {
 
     await task.save();
 
-    await logChange(project._id, req.user.id, `completed task '${task.title}'.`);
+    await logChange(project._id, req.user.id, `completed task '${task.title}'.`, 'board');
 
     res.status(200).json(task);
 
