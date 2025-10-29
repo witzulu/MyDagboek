@@ -11,9 +11,6 @@ const changeLogSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  title: {
-    type: String,
-  },
   message: {
     type: String,
     required: true,
