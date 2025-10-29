@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Edit, Trash2, Save, X, Bot, User, Download } from 'lucide-react';
@@ -13,8 +13,19 @@ const ChangeLog = () => {
     const [error, setError] = useState(null);
     const [editingEntryId, setEditingEntryId] = useState(null);
     const [editingText, setEditingText] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+
+    // Set default date range to last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    const [startDate, setStartDate] = useState(thirtyDaysAgo);
+    const [endDate, setEndDate] = useState(today);
+
+    const [activeFilters, setActiveFilters] = useState({
+        board: true,
+        note: true,
+        manual: true,
+    });
+
     const token = localStorage.getItem('token');
 
     const fetchEntries = useCallback(async () => {
@@ -38,6 +49,26 @@ const ChangeLog = () => {
         if (projectId) fetchEntries();
     }, [projectId, fetchEntries]);
 
+    const filteredEntries = useMemo(() => {
+        let dateFilteredEntries = entries;
+        if (startDate) {
+            const start = new Date(startDate);
+            start.setUTCHours(0, 0, 0, 0);
+            dateFilteredEntries = dateFilteredEntries.filter(entry => new Date(entry.createdAt) >= start);
+        }
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setUTCHours(23, 59, 59, 999);
+            dateFilteredEntries = dateFilteredEntries.filter(entry => new Date(entry.createdAt) <= end);
+        }
+
+        return dateFilteredEntries.filter(entry => activeFilters[entry.category]);
+    }, [entries, activeFilters, startDate, endDate]);
+
+    const handleFilterChange = (filter) => {
+        setActiveFilters(prev => ({ ...prev, [filter]: !prev[filter] }));
+    };
+
     const handleCreateEntry = async (e) => {
         e.preventDefault();
         if (!newMessage.trim()) return toast.error('Message cannot be empty.');
@@ -46,7 +77,7 @@ const ChangeLog = () => {
             const response = await fetch(`/api/projects/${projectId}/changelog`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ message: newMessage }),
+                body: JSON.stringify({ message: newMessage, category: 'manual' }),
             });
             if (!response.ok) throw new Error('Failed to create entry.');
             const newEntry = await response.json();
@@ -113,30 +144,14 @@ const ChangeLog = () => {
     };
 
     const handleExportMarkdown = () => {
-        let filteredEntries = entries.filter(entry => entry.includeInReport);
-
-        if (startDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-            filteredEntries = filteredEntries.filter(entry => new Date(entry.createdAt) >= start);
-        }
-        if (endDate) {
-            const end = new Date(endDate);
-            end.setHours(23, 59, 59, 999);
-            filteredEntries = filteredEntries.filter(entry => new Date(entry.createdAt) <= end);
-        }
-
-        if (filteredEntries.length === 0) {
-            toast.error("No entries to export in the selected range.");
+        const exportableEntries = filteredEntries.filter(entry => entry.includeInReport);
+        if (exportableEntries.length === 0) {
+            toast.error("No entries to export with current filters.");
             return;
         }
 
-        const markdownContent = filteredEntries
-            .map(entry => {
-                const date = new Date(entry.createdAt).toLocaleDateString();
-                const user = entry.user ? entry.user.name : 'System';
-                return `**[${date}]** - **${user}**: ${entry.message}`;
-            })
+        const markdownContent = exportableEntries
+            .map(entry => `**[${new Date(entry.createdAt).toLocaleDateString()}]** - **${entry.user?.name || 'System'}**: ${entry.message}`)
             .join('\n\n');
 
         const blob = new Blob([markdownContent], { type: 'text/markdown' });
@@ -197,11 +212,28 @@ const ChangeLog = () => {
                 </div>
             </div>
 
+            <div className="card bg-base-100 shadow-xl mb-6">
+                <div className="card-body">
+                    <h2 className="card-title">Filter by Category</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {Object.keys(activeFilters).map(filter => (
+                            <button
+                                key={filter}
+                                onClick={() => handleFilterChange(filter)}
+                                className={`btn btn-sm ${activeFilters[filter] ? 'btn-primary' : 'btn-outline'}`}
+                            >
+                                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             {isLoading && <div className="text-center"><span className="loading loading-spinner"></span></div>}
             {error && <p className="text-center text-error">{error}</p>}
 
             <div className="space-y-4">
-                {entries.map((entry) => (
+                {filteredEntries.map((entry) => (
                     <div key={entry._id} className={`card shadow-lg ${entry.type === 'automatic' ? 'bg-base-200' : 'bg-base-100'}`}>
                         <div className="card-body">
                             <div className="flex justify-between items-start">
@@ -252,7 +284,7 @@ const ChangeLog = () => {
                     </div>
                 ))}
             </div>
-            {!isLoading && entries.length === 0 && <p className="text-center text-base-content opacity-70 mt-8">No changelog entries yet.</p>}
+            {!isLoading && filteredEntries.length === 0 && <p className="text-center text-base-content opacity-70 mt-8">No entries match the current filters.</p>}
         </div>
     );
 };

@@ -3,6 +3,7 @@ const Project = require('../models/Project');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { logChange } = require('../utils/changeLogService');
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '../../uploads');
@@ -99,6 +100,10 @@ exports.createNote = async (req, res, next) => {
       user: req.user.id
     });
     const note = await newNote.save();
+
+    // Log the change
+    await logChange(req.params.projectId, req.user.id, `created note '${note.title}'.`, 'note');
+
     res.json(note);
   } catch (err) {
     console.error(err.message);
@@ -124,6 +129,10 @@ exports.updateNote = async (req, res, next) => {
       return res.status(401).json({ msg: 'Not authorized' });
     }
     note = await Note.findByIdAndUpdate(req.params.id, { $set: noteFields }, { new: true });
+
+    // Log the change
+    await logChange(note.project, req.user.id, `updated note '${note.title}'.`, 'note');
+
     res.json(note);
   } catch (err) {
     console.error(err.message);
@@ -140,6 +149,10 @@ exports.deleteNote = async (req, res, next) => {
     if (note.user.toString() !== req.user.id) {
       return res.status(401).json({ msg: 'Not authorized' });
     }
+
+    // Log the change before deleting
+    await logChange(note.project, req.user.id, `deleted note '${note.title}'.`, 'note');
+
     await Note.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Note removed' });
   } catch (err) {
