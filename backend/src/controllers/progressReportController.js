@@ -162,3 +162,70 @@ exports.getProgressReport = async (req, res, next) => {
     res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
   }
 };
+
+// @desc    Get data for the main reports dashboard
+// @route   GET /api/reports/dashboard
+// @access  Private
+exports.getReportDashboard = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // 1. Get all projects for the user
+    const projects = await Project.find({ 'members.user': userId });
+    const projectIds = projects.map(p => p._id);
+
+    const boards = await Board.find({ project: { $in: projectIds } });
+    const boardIds = boards.map(b => b._id);
+    const baseQuery = { board: { $in: boardIds } };
+
+    // 2. Calculate tasks completed per day for the last 14 days
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    const today = new Date();
+    today.setUTCHours(23, 59, 59, 999);
+
+
+    const dailyCompletions = await Task.aggregate([
+      { $match: { ...baseQuery, completedAt: { $gte: fourteenDaysAgo, $lte: today } } },
+      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$completedAt" } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const completionTrend = [];
+    const dateCursor = new Date(fourteenDaysAgo);
+    const completionsMap = new Map(dailyCompletions.map(item => [item._id, item.count]));
+
+    while (dateCursor <= today) {
+        const dateString = dateCursor.toISOString().split('T')[0];
+        completionTrend.push({ date: dateString, count: completionsMap.get(dateString) || 0 });
+        dateCursor.setDate(dateCursor.getDate() + 1);
+    }
+
+    // 3. Calculate total overdue tasks
+    const totalOverdue = await Task.countDocuments({ ...baseQuery, dueDate: { $lt: new Date() }, completedAt: null });
+
+    // 4. Get recent achievements
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentAchievements = await ChangeLog.find({
+      project: { $in: projectIds },
+      includeInReport: true,
+      createdAt: { $gte: sevenDaysAgo }
+    })
+    .populate('user', 'name')
+    .populate('project', 'name')
+    .sort({ createdAt: 'desc' })
+    .limit(10);
+
+    res.status(200).json({
+      completionTrend,
+      totalOverdue,
+      recentAchievements,
+    });
+
+  } catch (error) {
+    console.error('💥 Error getting report dashboard data:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

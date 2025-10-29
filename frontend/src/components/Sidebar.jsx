@@ -22,6 +22,7 @@ export default function Sidebar() {
 
   const globalNavItems = [
     { to: '/projects', icon: FolderKanban, label: 'Projects' },
+    { to: '/reports-dashboard', icon: TrendingUp, label: 'Reports Dashboard' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
