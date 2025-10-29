@@ -3,6 +3,7 @@ const List = require('../models/List');
 const Project = require('../models/Project');
 const Board = require('../models/Board');
 const ChangeLog = require('../models/ChangeLog');
+const { logChange } = require('../utils/changeLogService');
 
 // @desc    Get progress report for a project
 // @route   GET /api/projects/:projectId/progress-report
@@ -152,6 +153,9 @@ exports.getProgressReport = async (req, res, next) => {
       barChartData,
       burndownChartData,
     });
+
+    // Log the report generation after sending the response
+    await logChange(projectId, req.user.id, `Generated a progress report for the period ${startDate || 'the beginning'} to ${endDate || 'today'}`, 'report');
 
   } catch (error) {
     console.error('💥 Error generating progress report:', error);
