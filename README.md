@@ -98,11 +98,16 @@ I am currently working on.
         - C++
         - C#
         - CSS
-9. Progress Report
-   - Text based progress
-   - Pi chart of Task Distribution
-   - Tasks Completed per day
-   - Burndodown chart
+9. Progress Reports
+   - **Per-Project Reports:** Generate detailed progress reports for a specific project within a given date range. These reports provide a snapshot of project velocity and include:
+     - Key metrics: Tasks Created, Completed, Overdue, and In Progress.
+     - Visualizations: A pie chart for task status, a bar chart for daily completions, and a burndown chart to track remaining work.
+     - Changelog Integration: Includes both manual and automatic changelog entries for a qualitative view of progress.
+     - Multiple Export Formats: Export reports to PDF, Markdown, or CSV for sharing and archiving.
+   - **High-Level Dashboard:** A dedicated dashboard at `/reports-dashboard` that provides a quick, high-level overview of progress across all of your projects at once. It includes:
+     - A 14-day trend chart for task completions.
+     - A summary of the total number of overdue tasks.
+     - A list of recent major achievements from across your projects.
 10. Diagrams.
     - Make diagrams like flowcharts
 11. Team Member
