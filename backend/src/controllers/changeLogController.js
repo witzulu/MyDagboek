@@ -53,7 +53,6 @@ exports.createChangeLogEntry = async (req, res) => {
     const newEntry = new ChangeLog({
       project: req.params.projectId,
       user: req.user.id,
-      title,
       message,
       tags: tags || [],
       type: 'manual',
