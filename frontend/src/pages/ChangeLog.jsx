@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Edit, Trash2, Save, X, Bot, User } from 'lucide-react';
+import { Edit, Trash2, Save, X, Bot, User, Download } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 const ChangeLog = () => {
@@ -13,6 +13,8 @@ const ChangeLog = () => {
     const [error, setError] = useState(null);
     const [editingEntryId, setEditingEntryId] = useState(null);
     const [editingText, setEditingText] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const token = localStorage.getItem('token');
 
     const fetchEntries = useCallback(async () => {
@@ -21,9 +23,7 @@ const ChangeLog = () => {
             const response = await fetch(`/api/projects/${projectId}/changelog`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!response.ok) {
-                throw new Error('Failed to fetch changelog entries.');
-            }
+            if (!response.ok) throw new Error('Failed to fetch changelog entries.');
             const data = await response.json();
             setEntries(data);
         } catch (err) {
@@ -35,9 +35,7 @@ const ChangeLog = () => {
     }, [projectId, token]);
 
     useEffect(() => {
-        if (projectId) {
-            fetchEntries();
-        }
+        if (projectId) fetchEntries();
     }, [projectId, fetchEntries]);
 
     const handleCreateEntry = async (e) => {
@@ -114,24 +112,88 @@ const ChangeLog = () => {
         setEditingText(entry.message);
     };
 
+    const handleExportMarkdown = () => {
+        let filteredEntries = entries.filter(entry => entry.includeInReport);
+
+        if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            filteredEntries = filteredEntries.filter(entry => new Date(entry.createdAt) >= start);
+        }
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            filteredEntries = filteredEntries.filter(entry => new Date(entry.createdAt) <= end);
+        }
+
+        if (filteredEntries.length === 0) {
+            toast.error("No entries to export in the selected range.");
+            return;
+        }
+
+        const markdownContent = filteredEntries
+            .map(entry => {
+                const date = new Date(entry.createdAt).toLocaleDateString();
+                const user = entry.user ? entry.user.name : 'System';
+                return `**[${date}]** - **${user}**: ${entry.message}`;
+            })
+            .join('\n\n');
+
+        const blob = new Blob([markdownContent], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `changelog-${projectId}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.success("Changelog exported!");
+    };
+
     return (
         <div className="container mx-auto p-4 flex-1">
-            <h1 className="text-3xl font-bold mb-6 text-foreground">Change Log</h1>
-            <div className="card bg-base-100 shadow-xl mb-6">
-                 <div className="card-body">
-                    <h2 className="card-title">Add a Manual Entry</h2>
-                    <form onSubmit={handleCreateEntry}>
-                        <textarea
-                            className="textarea textarea-bordered w-full"
-                            rows="2"
-                            placeholder="Manually log a change, e.g., 'Deployed version 2.1 to production.'"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                        />
-                        <div className="card-actions justify-end mt-4">
-                            <button type="submit" className="btn btn-primary">Add Entry</button>
+            <div className="flex justify-between items-center mb-6">
+                 <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="card bg-base-100 shadow-xl">
+                    <div className="card-body">
+                        <h2 className="card-title">Export Change Log</h2>
+                        <div className="flex items-center space-x-4">
+                             <div>
+                                <label htmlFor="start-date" className="block text-sm font-medium">Start Date</label>
+                                <input type="date" id="start-date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input input-bordered w-full" />
+                            </div>
+                            <div>
+                                <label htmlFor="end-date" className="block text-sm font-medium">End Date</label>
+                                <input type="date" id="end-date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input input-bordered w-full" />
+                            </div>
                         </div>
-                    </form>
+                         <div className="card-actions justify-end mt-4">
+                            <button onClick={handleExportMarkdown} className="btn btn-secondary">
+                                <Download size={16} /> Export to Markdown
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                 <div className="card bg-base-100 shadow-xl">
+                    <div className="card-body">
+                        <h2 className="card-title">Add a Manual Entry</h2>
+                        <form onSubmit={handleCreateEntry}>
+                            <textarea
+                                className="textarea textarea-bordered w-full"
+                                rows="2"
+                                placeholder="Manually log a change..."
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                            />
+                            <div className="card-actions justify-end mt-4">
+                                <button type="submit" className="btn btn-primary">Add Entry</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
 
