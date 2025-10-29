@@ -108,12 +108,6 @@ I am currently working on.
      - A 14-day trend chart for task completions.
      - A summary of the total number of overdue tasks.
      - A list of recent major achievements from across your projects.
-10. Diagrams.
-9. Progress Report
-   - Text based progress
-   - Pi chart of Task Distribution
-   - Tasks Completed per day
-   - Burndodown chart
 10. Change Log
     - A dedicated page that provides a timeline of all meaningful updates within a project.
     - **Automatic Event Tracking:** Automatically logs actions for:
