@@ -25,7 +25,6 @@ const { projectLabelsRouter, labelRouter } = require('./src/routes/labels');
 const progressReportRoutes = require('./src/routes/progressReportRoutes');
 const { projectDiagrams, diagrams } = require('./src/routes/diagramRoutes');
 const { projectChangeLogRouter, changeLogRouter } = require('./src/routes/changeLogRoutes');
-const reportRoutes = require('./src/routes/reportRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -191,7 +190,6 @@ app.use('/api/projects/:projectId/diagrams', projectDiagrams);
 app.use('/api/diagrams', diagrams);
 app.use('/api/projects/:projectId/changelog', projectChangeLogRouter);
 app.use('/api/changelog', changeLogRouter);
-app.use('/api/reports', reportRoutes);
 
 
 // Health check

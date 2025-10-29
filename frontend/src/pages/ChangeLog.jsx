@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Edit, Trash2, Save, X, Bot, User, Download } from 'lucide-react';
+import { Edit, Trash2, Save, X, Bot, User, Download, PlusCircle } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import ManualReportModal from '../components/ManualReportModal';
+import ReactMarkdown from 'react-markdown';
 
 const ChangeLog = () => {
     const { projectId } = useParams();
     const { user } = useContext(AuthContext);
     const [entries, setEntries] = useState([]);
-    const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [editingEntryId, setEditingEntryId] = useState(null);
-    const [editingText, setEditingText] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedEntry, setSelectedEntry] = useState(null);
     const token = localStorage.getItem('token');
 
     const fetchEntries = useCallback(async () => {
@@ -38,21 +39,31 @@ const ChangeLog = () => {
         if (projectId) fetchEntries();
     }, [projectId, fetchEntries]);
 
-    const handleCreateEntry = async (e) => {
-        e.preventDefault();
-        if (!newMessage.trim()) return toast.error('Message cannot be empty.');
+    const handleSaveEntry = async (entryData) => {
+        const isUpdating = !!entryData._id;
+        const url = isUpdating ? `/api/changelog/${entryData._id}` : `/api/projects/${projectId}/changelog`;
+        const method = isUpdating ? 'PUT' : 'POST';
 
         try {
-            const response = await fetch(`/api/projects/${projectId}/changelog`, {
-                method: 'POST',
+            const response = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ message: newMessage }),
+                body: JSON.stringify(entryData),
             });
-            if (!response.ok) throw new Error('Failed to create entry.');
-            const newEntry = await response.json();
-            setEntries([newEntry, ...entries]);
-            setNewMessage('');
-            toast.success('Entry added!');
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Failed to ${isUpdating ? 'update' : 'create'} entry.`);
+            }
+
+            const savedEntry = await response.json();
+
+            if (isUpdating) {
+                setEntries(entries.map((e) => (e._id === savedEntry._id ? savedEntry : e)));
+            } else {
+                setEntries([savedEntry, ...entries]);
+            }
+            toast.success(`Entry ${isUpdating ? 'updated' : 'created'} successfully!`);
         } catch (err) {
             toast.error(err.message);
         }
@@ -73,25 +84,6 @@ const ChangeLog = () => {
         }
     };
 
-    const handleUpdateEntry = async (entryId) => {
-        if (!editingText.trim()) return toast.error('Message cannot be empty.');
-        try {
-            const response = await fetch(`/api/changelog/${entryId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ message: editingText }),
-            });
-            if (!response.ok) throw new Error('Failed to update entry.');
-            const updatedEntry = await response.json();
-            setEntries(entries.map((entry) => (entry._id === entryId ? updatedEntry : entry)));
-            setEditingEntryId(null);
-            setEditingText('');
-            toast.success('Entry updated!');
-        } catch (err) {
-            toast.error(err.message);
-        }
-    };
-
     const handleToggleReportInclusion = async (entryId) => {
         try {
             const response = await fetch(`/api/changelog/${entryId}/toggle-report`, {
@@ -107,9 +99,14 @@ const ChangeLog = () => {
         }
     };
 
-    const startEditing = (entry) => {
-        setEditingEntryId(entry._id);
-        setEditingText(entry.message);
+    const openCreateModal = () => {
+        setSelectedEntry(null);
+        setIsModalOpen(true);
+    };
+
+    const openEditModal = (entry) => {
+        setSelectedEntry(entry);
+        setIsModalOpen(true);
     };
 
     const handleExportMarkdown = () => {
@@ -134,10 +131,11 @@ const ChangeLog = () => {
         const markdownContent = filteredEntries
             .map(entry => {
                 const date = new Date(entry.createdAt).toLocaleDateString();
-                const user = entry.user ? entry.user.name : 'System';
-                return `**[${date}]** - **${user}**: ${entry.message}`;
+                const userDisplay = entry.user ? entry.user.name : 'System';
+                const title = entry.title ? `### ${entry.title}\n` : '';
+                return `**[${date}]** - **${userDisplay}**\n${title}${entry.message}`;
             })
-            .join('\n\n');
+            .join('\n\n---\n\n');
 
         const blob = new Blob([markdownContent], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
@@ -153,46 +151,36 @@ const ChangeLog = () => {
 
     return (
         <div className="container mx-auto p-4 flex-1">
+            <ManualReportModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveEntry}
+                entry={selectedEntry}
+            />
             <div className="flex justify-between items-center mb-6">
                  <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
+                 <button onClick={openCreateModal} className="btn btn-primary">
+                    <PlusCircle size={16} /> Create Manual Entry
+                </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="card bg-base-100 shadow-xl">
-                    <div className="card-body">
-                        <h2 className="card-title">Export Change Log</h2>
-                        <div className="flex items-center space-x-4">
-                             <div>
-                                <label htmlFor="start-date" className="block text-sm font-medium">Start Date</label>
-                                <input type="date" id="start-date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input input-bordered w-full" />
-                            </div>
-                            <div>
-                                <label htmlFor="end-date" className="block text-sm font-medium">End Date</label>
-                                <input type="date" id="end-date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input input-bordered w-full" />
-                            </div>
+            <div className="card bg-base-100 shadow-xl mb-6">
+                <div className="card-body">
+                    <h2 className="card-title">Export Change Log</h2>
+                    <div className="flex items-center space-x-4">
+                         <div>
+                            <label htmlFor="start-date" className="block text-sm font-medium">Start Date</label>
+                            <input type="date" id="start-date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input input-bordered w-full" />
                         </div>
-                         <div className="card-actions justify-end mt-4">
-                            <button onClick={handleExportMarkdown} className="btn btn-secondary">
-                                <Download size={16} /> Export to Markdown
-                            </button>
+                        <div>
+                            <label htmlFor="end-date" className="block text-sm font-medium">End Date</label>
+                            <input type="date" id="end-date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input input-bordered w-full" />
                         </div>
                     </div>
-                </div>
-                 <div className="card bg-base-100 shadow-xl">
-                    <div className="card-body">
-                        <h2 className="card-title">Add a Manual Entry</h2>
-                        <form onSubmit={handleCreateEntry}>
-                            <textarea
-                                className="textarea textarea-bordered w-full"
-                                rows="2"
-                                placeholder="Manually log a change..."
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                            />
-                            <div className="card-actions justify-end mt-4">
-                                <button type="submit" className="btn btn-primary">Add Entry</button>
-                            </div>
-                        </form>
+                     <div className="card-actions justify-end mt-4">
+                        <button onClick={handleExportMarkdown} className="btn btn-secondary">
+                            <Download size={16} /> Export to Markdown
+                        </button>
                     </div>
                 </div>
             </div>
@@ -211,6 +199,7 @@ const ChangeLog = () => {
                                         <p className="font-bold text-lg text-foreground">{entry.user?.name || 'Unknown'}</p>
                                         <p className="text-xs text-base-content opacity-60">{new Date(entry.createdAt).toLocaleString()}</p>
                                     </div>
+                                    <div className={`badge ${entry.type === 'manual' ? 'badge-info' : 'badge-ghost'}`}>{entry.type}</div>
                                 </div>
                                 <div className="card-actions items-center">
                                     <div className="form-control" title={entry.includeInReport ? 'Include in reports' : 'Exclude from reports'}>
@@ -223,31 +212,16 @@ const ChangeLog = () => {
                                     </div>
                                     {user && entry.user?._id === user.id && entry.type === 'manual' && (
                                         <>
-                                            {editingEntryId === entry._id ? (
-                                                <>
-                                                    <button onClick={() => handleUpdateEntry(entry._id)} className="btn btn-ghost btn-sm"><Save size={16} /></button>
-                                                    <button onClick={() => setEditingEntryId(null)} className="btn btn-ghost btn-sm"><X size={16} /></button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button onClick={() => startEditing(entry)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
-                                                    <button onClick={() => handleDeleteEntry(entry._id)} className="btn btn-ghost btn-sm text-error"><Trash2 size={16} /></button>
-                                                </>
-                                            )}
+                                            <button onClick={() => openEditModal(entry)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
+                                            <button onClick={() => handleDeleteEntry(entry._id)} className="btn btn-ghost btn-sm text-error"><Trash2 size={16} /></button>
                                         </>
                                     )}
                                 </div>
                             </div>
-                            {editingEntryId === entry._id ? (
-                                <textarea
-                                    className="textarea textarea-bordered w-full mt-2"
-                                    value={editingText}
-                                    onChange={(e) => setEditingText(e.target.value)}
-                                    rows={3}
-                                />
-                            ) : (
-                                <p className="mt-2 text-base-content">{entry.message}</p>
-                            )}
+                            {entry.title && <h3 className="text-xl font-semibold mt-4">{entry.title}</h3>}
+                            <div className="prose max-w-none mt-2">
+                                <ReactMarkdown>{entry.message}</ReactMarkdown>
+                            </div>
                         </div>
                     </div>
                 ))}
