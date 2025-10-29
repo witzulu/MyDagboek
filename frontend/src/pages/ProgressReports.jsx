@@ -73,6 +73,37 @@ const ProgressReports = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportMarkdown = () => {
+    if (!report) return;
+
+    let mdContent = `# Progress Report\n\n`;
+    mdContent += `**Period:** ${startDate} to ${endDate}\n\n`;
+    mdContent += `## Summary\n`;
+    mdContent += `- **Tasks Created:** ${report.tasksCreated}\n`;
+    mdContent += `- **Tasks Completed:** ${report.tasksCompleted}\n`;
+    mdContent += `- **Tasks Overdue:** ${report.tasksOverdue}\n`;
+    mdContent += `- **Tasks In Progress:** ${report.tasksInProgress}\n\n`;
+
+    if (report.changelogEntries && report.changelogEntries.length > 0) {
+      mdContent += `## Change Log\n`;
+      mdContent += `| Date | User | Change |\n`;
+      mdContent += `|---|---|---|\n`;
+      report.changelogEntries.forEach(entry => {
+        mdContent += `| ${new Date(entry.createdAt).toLocaleDateString()} | ${entry.user ? entry.user.name : 'System'} | ${entry.message} |\n`;
+      });
+    }
+
+    const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `progress-report.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportPDF = async () => {
     setIsExporting(true);
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -207,6 +238,12 @@ const ProgressReports = () => {
       className="self-end px-4 py-2 rounded-md bg-secondary text-secondary-content disabled:opacity-50"
     >
       {isExporting ? 'Exporting...' : 'Export to PDF'}
+    </button>
+    <button
+      onClick={handleExportMarkdown}
+      className="self-end px-4 py-2 rounded-md bg-accent text-accent-content"
+    >
+      Export to Markdown
     </button>
   </>
 )}
