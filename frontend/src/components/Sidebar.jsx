@@ -1,7 +1,7 @@
 import { NavLink as RouterNavLink, useLocation, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useProject } from '../hooks/useProject';
-import { Book, Layout, TrendingUp, Code, Clock, Users, AlertCircle, FolderKanban, Settings, Milestone } from 'lucide-react';
+import { Book, Layout, TrendingUp, Code, Clock, Users, AlertCircle, FolderKanban, Settings } from 'lucide-react';
 
 export default function Sidebar() {
   const { projectId } = useParams();
@@ -11,7 +11,6 @@ export default function Sidebar() {
     { to: `/projects/${projectId}`, icon: Layout, label: 'Dashboard' },
     { to: `/projects/${projectId}/notebook`, icon: Book, label: 'Notebook' },
     { to: `/projects/${projectId}/boards`, icon: FolderKanban, label: 'Boards' },
-    { to: `/projects/${projectId}/diagrams`, icon: Milestone, label: 'Diagrams' },
     { to: `/projects/${projectId}/errors`, icon: AlertCircle, label: 'Error Reports' },
     { to: `/projects/${projectId}/progress-reports`, icon: TrendingUp, label: 'Progress Reports' },
     { to: `/projects/${projectId}/snippets`, icon: Code, label: 'Code Snippets' },
