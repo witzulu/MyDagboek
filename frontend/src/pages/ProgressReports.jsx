@@ -140,6 +140,32 @@ const ProgressReports = () => {
     setIsExporting(false);
   };
 
+  const handleExportMarkdown = () => {
+    if (!report) return;
+
+    const md = `
+# ${project.name} - Progress Report
+## Period: ${startDate || 'Start'} to ${endDate || 'End'}
+
+| Metric              | Value |
+| ------------------- | ----- |
+| Tasks Created       | ${report.tasksCreated} |
+| Tasks Completed     | ${report.tasksCompleted} |
+| Tasks Overdue       | ${report.tasksOverdue} |
+| Tasks In Progress   | ${report.tasksInProgress} |
+`;
+
+    const blob = new Blob([md.trim()], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `progress-report-${project.name}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const pieData = report?.pieChartData ? [
     { name: 'Done', value: report.pieChartData.done },
     { name: 'In Progress', value: report.pieChartData.inProgress },
@@ -181,6 +207,7 @@ const ProgressReports = () => {
           {loading ? 'Generating...' : 'Generate Report'}
         </button>
         {report && (
+          <>
             <button
               onClick={handleExportPDF}
               disabled={isExporting}
@@ -188,6 +215,13 @@ const ProgressReports = () => {
             >
               {isExporting ? 'Exporting...' : 'Export to PDF'}
             </button>
+            <button
+              onClick={handleExportMarkdown}
+              className="self-end px-4 py-2 rounded-md bg-accent text-accent-content"
+            >
+              Export to Markdown
+            </button>
+          </>
         )}
       </div>
 
