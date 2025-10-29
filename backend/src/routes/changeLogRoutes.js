@@ -4,6 +4,7 @@ const {
   createChangeLogEntry,
   updateChangeLogEntry,
   deleteChangeLogEntry,
+  toggleIncludeInReport,
 } = require('../controllers/changeLogController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -18,5 +19,7 @@ const changeLogRouter = express.Router();
 changeLogRouter.route('/:id')
     .put(protect, updateChangeLogEntry)
     .delete(protect, deleteChangeLogEntry);
+changeLogRouter.route('/:id/toggle-report').put(protect, toggleIncludeInReport);
+
 
 module.exports = { projectChangeLogRouter, changeLogRouter };
