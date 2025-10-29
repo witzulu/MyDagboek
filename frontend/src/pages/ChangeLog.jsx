@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Edit, Trash2, Bot, User, Download, PlusCircle } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import ManualReportModal from '../components/ManualReportModal';
 import ReactMarkdown from 'react-markdown';
+import { MDXEditor, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin, markdownShortcutPlugin } from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
 
 const ChangeLog = () => {
     const { projectId } = useParams();
@@ -12,10 +13,36 @@ const ChangeLog = () => {
     const [entries, setEntries] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedEntry, setSelectedEntry] = useState(null);
+    const [editingEntryId, setEditingEntryId] = useState(null);
+    const [editingText, setEditingText] = useState('');
+
+    // Set default date range to last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    const [startDate, setStartDate] = useState(thirtyDaysAgo);
+    const [endDate, setEndDate] = useState(today);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedUserId, setSelectedUserId] = useState('');
+
+    const [activeFilters, setActiveFilters] = useState({
+        board: true,
+        note: true,
+        team: true,
+        snippet: true,
+        report: true,
+        manual: true,
+    });
+
+    const uniqueUsers = useMemo(() => {
+        const userMap = new Map();
+        entries.forEach(entry => {
+            if (entry.user && !userMap.has(entry.user._id)) {
+                userMap.set(entry.user._id, entry.user.name);
+            }
+        });
+        return Array.from(userMap, ([id, name]) => ({ id, name }));
+    }, [entries]);
+
     const token = localStorage.getItem('token');
 
     const fetchEntries = useCallback(async () => {
@@ -39,16 +66,47 @@ const ChangeLog = () => {
         if (projectId) fetchEntries();
     }, [projectId, fetchEntries]);
 
-    const handleSaveEntry = async (entryData) => {
-        const isUpdating = !!entryData._id;
-        const url = isUpdating ? `/api/changelog/${entryData._id}` : `/api/projects/${projectId}/changelog`;
-        const method = isUpdating ? 'PUT' : 'POST';
+    const filteredEntries = useMemo(() => {
+        let dateFilteredEntries = entries;
+        if (startDate) {
+            const start = new Date(startDate);
+            start.setUTCHours(0, 0, 0, 0);
+            dateFilteredEntries = dateFilteredEntries.filter(entry => new Date(entry.createdAt) >= start);
+        }
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setUTCHours(23, 59, 59, 999);
+            dateFilteredEntries = dateFilteredEntries.filter(entry => new Date(entry.createdAt) <= end);
+        }
+
+        let categoryFilteredEntries = dateFilteredEntries.filter(entry => activeFilters[entry.category]);
+
+        if (selectedUserId) {
+            categoryFilteredEntries = categoryFilteredEntries.filter(entry => entry.user?._id === selectedUserId);
+        }
+
+        if (searchTerm) {
+            categoryFilteredEntries = categoryFilteredEntries.filter(entry =>
+                entry.message.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        return categoryFilteredEntries;
+    }, [entries, activeFilters, startDate, endDate, searchTerm, selectedUserId]);
+
+    const handleFilterChange = (filter) => {
+        setActiveFilters(prev => ({ ...prev, [filter]: !prev[filter] }));
+    };
+
+    const handleCreateEntry = async (e) => {
+        e.preventDefault();
+        if (!newMessage.trim()) return toast.error('Message cannot be empty.');
 
         try {
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify(entryData),
+                body: JSON.stringify({ message: newMessage, category: 'manual' }),
             });
 
             if (!response.ok) {
@@ -109,44 +167,47 @@ const ChangeLog = () => {
         setIsModalOpen(true);
     };
 
-    const handleExportMarkdown = () => {
-        let filteredEntries = entries.filter(entry => entry.includeInReport);
-
-        if (startDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
-            filteredEntries = filteredEntries.filter(entry => new Date(entry.createdAt) >= start);
-        }
-        if (endDate) {
-            const end = new Date(endDate);
-            end.setHours(23, 59, 59, 999);
-            filteredEntries = filteredEntries.filter(entry => new Date(entry.createdAt) <= end);
-        }
-
-        if (filteredEntries.length === 0) {
-            toast.error("No entries to export in the selected range.");
+    const handleExport = (format) => {
+        const exportableEntries = filteredEntries.filter(entry => entry.includeInReport);
+        if (exportableEntries.length === 0) {
+            toast.error("No entries to export with current filters.");
             return;
         }
 
-        const markdownContent = filteredEntries
-            .map(entry => {
-                const date = new Date(entry.createdAt).toLocaleDateString();
-                const userDisplay = entry.user ? entry.user.name : 'System';
-                const title = entry.title ? `### ${entry.title}\n` : '';
-                return `**[${date}]** - **${userDisplay}**\n${title}${entry.message}`;
-            })
-            .join('\n\n---\n\n');
+        const data = exportableEntries.map(({ message, createdAt, user }) => ({
+            date: new Date(createdAt).toISOString(),
+            user: user?.name || 'System',
+            message,
+        }));
 
-        const blob = new Blob([markdownContent], { type: 'text/markdown' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `changelog-${projectId}.md`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast.success("Changelog exported!");
+        let blob;
+        let filename;
+
+        if (format === 'json') {
+            blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            filename = `changelog-${projectId}.json`;
+        } else if (format === 'csv') {
+            const header = 'Date,User,Message\n';
+            const csv = data.map(e => `"${e.date}","${e.user}","${e.message.replace(/"/g, '""')}"`).join('\n');
+            blob = new Blob([header + csv], { type: 'text/csv;charset=utf-8;' });
+            filename = `changelog-${projectId}.csv`;
+        } else if (format === 'md') {
+            const md = data.map(e => `**[${new Date(e.date).toLocaleDateString()}]** - **${e.user}**: ${e.message}`).join('\n\n');
+            blob = new Blob([md], { type: 'text/markdown' });
+            filename = `changelog-${projectId}.md`;
+        }
+
+        if (blob && filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success(`Changelog exported as ${format.toUpperCase()}!`);
+        }
     };
 
     return (
@@ -176,8 +237,14 @@ const ChangeLog = () => {
                             </div>
                         </div>
                          <div className="card-actions justify-end mt-4">
-                            <button onClick={handleExportMarkdown} className="btn btn-secondary">
-                                <Download size={16} /> Export to Markdown
+                            <button onClick={() => handleExport('md')} className="btn btn-secondary btn-sm">
+                                <Download size={16} /> MD
+                            </button>
+                            <button onClick={() => handleExport('json')} className="btn btn-secondary btn-sm">
+                                <Download size={16} /> JSON
+                            </button>
+                             <button onClick={() => handleExport('csv')} className="btn btn-secondary btn-sm">
+                                <Download size={16} /> CSV
                             </button>
                         </div>
                     </div>
@@ -185,12 +252,51 @@ const ChangeLog = () => {
                  <div className="card bg-base-100 shadow-xl">
                     <div className="card-body">
                         <h2 className="card-title">Add a Manual Entry</h2>
-                        <p>Create a detailed entry with rich text formatting.</p>
-                        <div className="card-actions justify-end mt-4">
-                            <button onClick={openCreateModal} className="btn btn-primary">
-                                <PlusCircle size={16} /> Create Manual Entry
-                            </button>
+                        <form onSubmit={handleCreateEntry}>
+                            <div className="prose-sm max-w-none">
+                                <MDXEditor
+                                    markdown={newMessage}
+                                    onChange={setNewMessage}
+                                    plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]}
+                                    contentEditableClassName="!h-24"
+                                    placeholder="Manually log a change using Markdown..."
+                                />
+                            </div>
+                            <div className="card-actions justify-end mt-4">
+                                <button type="submit" className="btn btn-primary">Add Entry</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div className="card bg-base-100 shadow-xl mb-6">
+                <div className="card-body">
+                    <h2 className="card-title">Filters</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="form-control">
+                            <label className="label"><span className="label-text">Search</span></label>
+                            <input type="text" placeholder="Search in messages..." className="input input-bordered" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
+                        <div className="form-control">
+                            <label className="label"><span className="label-text">Filter by User</span></label>
+                            <select className="select select-bordered" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+                                <option value="">All Users</option>
+                                {uniqueUsers.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="divider">Categories</div>
+                    <div className="flex flex-wrap gap-2">
+                        {Object.keys(activeFilters).map(filter => (
+                            <button
+                                key={filter}
+                                onClick={() => handleFilterChange(filter)}
+                                className={`btn btn-sm ${activeFilters[filter] ? 'btn-primary' : 'btn-outline'}`}
+                            >
+                                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -199,7 +305,7 @@ const ChangeLog = () => {
             {error && <p className="text-center text-error">{error}</p>}
 
             <div className="space-y-4">
-                {entries.map((entry) => (
+                {filteredEntries.map((entry) => (
                     <div key={entry._id} className={`card shadow-lg ${entry.type === 'automatic' ? 'bg-base-200' : 'bg-base-100'}`}>
                         <div className="card-body">
                             <div className="flex justify-between items-start">
@@ -228,15 +334,25 @@ const ChangeLog = () => {
                                     )}
                                 </div>
                             </div>
-                            {entry.title && <h3 className="text-xl font-semibold mt-4">{entry.title}</h3>}
-                            <div className="prose max-w-none mt-2">
-                                <ReactMarkdown>{entry.message}</ReactMarkdown>
-                            </div>
+                            {editingEntryId === entry._id ? (
+                                <div className="prose-sm max-w-none mt-2">
+                                    <MDXEditor
+                                        markdown={editingText}
+                                        onChange={setEditingText}
+                                        plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]}
+                                        contentEditableClassName="!h-32"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="prose-sm max-w-none mt-2 text-base-content">
+                                    <ReactMarkdown>{entry.message}</ReactMarkdown>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
             </div>
-            {!isLoading && entries.length === 0 && <p className="text-center text-base-content opacity-70 mt-8">No changelog entries yet.</p>}
+            {!isLoading && filteredEntries.length === 0 && <p className="text-center text-base-content opacity-70 mt-8">No entries match the current filters.</p>}
         </div>
     );
 };

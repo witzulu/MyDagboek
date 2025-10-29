@@ -27,6 +27,11 @@ const changeLogSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  category: {
+    type: String,
+    enum: ['board', 'note', 'team', 'report', 'snippet', 'manual'],
+    default: 'manual',
+  }
 }, {
   timestamps: true,
 });

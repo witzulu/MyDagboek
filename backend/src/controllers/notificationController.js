@@ -1,5 +1,6 @@
 const Notification = require('../models/Notification');
 const Project = require('../models/Project');
+const { logChange } = require('../utils/changeLogService');
 
 // @desc    Get all notifications for a user
 // @route   GET /api/notifications
@@ -56,6 +57,9 @@ exports.respondToInvitation = async (req, res) => {
                 if (!project.members.some(m => m.user && m.user.toString() === req.user.id)) {
                     project.members.push({ user: req.user.id, role: 'member' });
                     await project.save();
+
+                    // Log the change
+                    await logChange(project._id, req.user.id, `joined the project.`, 'team');
                 }
             }
         }

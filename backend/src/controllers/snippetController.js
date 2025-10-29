@@ -1,102 +1,122 @@
-const asyncHandler = require('express-async-handler');
 const CodeSnippet = require('../models/CodeSnippet');
+const Project = require('../models/Project');
+const { logChange } = require('../utils/changeLogService');
 
-// @desc Get all snippets for a project
-// @route GET /api/projects/:projectId/snippets
-// @access Private
-const getSnippets = asyncHandler(async (req, res) => {
-  const snippets = await CodeSnippet.find({ project: req.params.projectId });
-  res.json(snippets);
-});
-
-// @desc Get single snippet
-// @route GET /api/projects/:projectId/snippets/:snippetId
-// @access Private
-const getSnippetById = asyncHandler(async (req, res) => {
-  const snippet = await CodeSnippet.findById(req.params.snippetId);
-
-  if (snippet) {
-    res.json(snippet);
-  } else {
-    res.status(404);
-    throw new Error('Snippet not found');
+// @desc    Get all snippets for a project
+// @route   GET /api/projects/:projectId/snippets
+// @access  Private
+exports.getSnippets = async (req, res, next) => {
+  try {
+    const project = await Project.findById(req.params.projectId);
+    if (!project || !project.members.includes(req.user.id)) {
+      return res.status(404).json({ message: 'Project not found or user not authorized' });
+    }
+    const snippets = await CodeSnippet.find({ project: req.params.projectId });
+    res.status(200).json(snippets);
+  } catch (error) {
+    next(error);
   }
-});
+};
 
-// @desc Create new snippet
-// @route POST /api/projects/:projectId/snippets
-// @access Private
-const createSnippet = asyncHandler(async (req, res) => {
-  const { title, description, code, language, tags } = req.body;
-
-  if (!title || !code || !language) {
-    res.status(400);
-    throw new Error('Please add all required fields');
+// @desc    Get a single snippet by ID
+// @route   GET /api/projects/:projectId/snippets/:snippetId
+// @access  Private
+exports.getSnippetById = async (req, res, next) => {
+  try {
+    const snippet = await CodeSnippet.findOne({ _id: req.params.snippetId, project: req.params.projectId });
+    if (!snippet) {
+      return res.status(404).json({ message: 'Snippet not found' });
+    }
+    const project = await Project.findById(req.params.projectId);
+    if (!project.members.includes(req.user.id)) {
+        return res.status(401).json({ message: 'User not authorized' });
+    }
+    res.status(200).json(snippet);
+  } catch (error) {
+    next(error);
   }
+};
 
-  const snippet = await CodeSnippet.create({
-    title,
-    description,
-    code,
-    language,
-    tags,
-    user: req.user.id,
-    project: req.params.projectId,
-  });
+// @desc    Create a snippet for a project
+// @route   POST /api/projects/:projectId/snippets
+// @access  Private
+exports.createSnippet = async (req, res, next) => {
+  try {
+    const { title, description, code, language, tags } = req.body;
+    const project = await Project.findById(req.params.projectId);
 
-  res.status(201).json(snippet);
-});
+    if (!project || !project.members.includes(req.user.id)) {
+      return res.status(404).json({ message: 'Project not found or user not authorized' });
+    }
 
-// @desc Update snippet
-// @route PUT /api/projects/:projectId/snippets/:snippetId
-// @access Private
-const updateSnippet = asyncHandler(async (req, res) => {
-  const snippet = await CodeSnippet.findById(req.params.snippetId);
+    const snippet = await CodeSnippet.create({
+      title,
+      description,
+      code,
+      language,
+      tags,
+      project: req.params.projectId,
+      user: req.user.id,
+    });
 
-  if (!snippet) {
-    res.status(404);
-    throw new Error('Snippet not found');
+    await logChange(req.params.projectId, req.user.id, `Created new code snippet: "${snippet.title}"`, 'snippet');
+
+    res.status(201).json(snippet);
+  } catch (error) {
+    next(error);
   }
+};
 
-  // Check for user
-  if (snippet.user.toString() !== req.user.id) {
-    res.status(401);
-    throw new Error('User not authorized');
+// @desc    Update a snippet
+// @route   PUT /api/projects/:projectId/snippets/:snippetId
+// @access  Private
+exports.updateSnippet = async (req, res, next) => {
+  try {
+    const { title, description, code, language, tags } = req.body;
+    let snippet = await CodeSnippet.findOne({ _id: req.params.snippetId, project: req.params.projectId });
+
+    if (!snippet) {
+      return res.status(404).json({ message: 'Snippet not found' });
+    }
+
+    if (snippet.user.toString() !== req.user.id) {
+        return res.status(401).json({ message: 'User not authorized to update this snippet' });
+    }
+
+    snippet.title = title ?? snippet.title;
+    snippet.description = description ?? snippet.description;
+    snippet.code = code ?? snippet.code;
+    snippet.language = language ?? snippet.language;
+    snippet.tags = tags ?? snippet.tags;
+
+    await snippet.save();
+
+    await logChange(req.params.projectId, req.user.id, `Updated code snippet: "${snippet.title}"`, 'snippet');
+
+    res.status(200).json(snippet);
+  } catch (error) {
+    next(error);
   }
+};
 
-  const updatedSnippet = await CodeSnippet.findByIdAndUpdate(req.params.snippetId, req.body, {
-    new: true,
-  });
+// @desc    Delete a snippet
+// @route   DELETE /api/projects/:projectId/snippets/:snippetId
+// @access  Private
+exports.deleteSnippet = async (req, res, next) => {
+  try {
+    const snippet = await CodeSnippet.findOne({ _id: req.params.snippetId, project: req.params.projectId });
 
-  res.json(updatedSnippet);
-});
+    if (!snippet) {
+      return res.status(404).json({ message: 'Snippet not found' });
+    }
 
-// @desc Delete snippet
-// @route DELETE /api/projects/:projectId/snippets/:snippetId
-// @access Private
-const deleteSnippet = asyncHandler(async (req, res) => {
-  const snippet = await CodeSnippet.findById(req.params.snippetId);
+    if (snippet.user.toString() !== req.user.id) {
+        return res.status(401).json({ message: 'User not authorized to delete this snippet' });
+    }
 
-  if (!snippet) {
-    res.status(404);
-    throw new Error('Snippet not found');
+    await snippet.deleteOne();
+    res.status(200).json({ message: 'Snippet removed' });
+  } catch (error) {
+    next(error);
   }
-
-  // Check for user
-  if (snippet.user.toString() !== req.user.id) {
-    res.status(401);
-    throw new Error('User not authorized');
-  }
-
-  await snippet.deleteOne();
-
-  res.json({ id: req.params.snippetId });
-});
-
-module.exports = {
-  getSnippets,
-  getSnippetById,
-  createSnippet,
-  updateSnippet,
-  deleteSnippet
 };
