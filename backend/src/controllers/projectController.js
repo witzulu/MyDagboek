@@ -1,6 +1,7 @@
 const Project = require('../models/Project');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const { logChange } = require('../utils/changeLogService');
 
 // @desc    Get all projects for a user
 // @route   GET /api/projects
@@ -47,8 +48,14 @@ exports.updateProjectMemberRole = async (req, res) => {
         return res.status(400).json({ msg: 'Cannot change or assign owner role' });
     }
 
+    const oldRole = memberToUpdate.role;
     memberToUpdate.role = role;
     await project.save();
+
+    // Log the change
+    const memberUser = await User.findById(memberToUpdate.user);
+    await logChange(project._id, req.user.id, `changed ${memberUser.name}'s role from ${oldRole} to ${role}.`, 'team');
+
 
     const updatedProject = await Project.findById(req.params.id);
     const members = await Promise.all(updatedProject.members.map(async (member) => {
@@ -93,6 +100,10 @@ exports.removeProjectMember = async (req, res) => {
         if (memberToRemove.role === 'owner') {
             return res.status(400).json({ msg: 'Cannot remove the project owner' });
         }
+
+        const memberUser = await User.findById(memberToRemove.user);
+        await logChange(project._id, req.user.id, `removed ${memberUser.name} from the project.`, 'team');
+
 
         project.members = project.members.filter(m => m.user && m.user.toString() !== req.params.memberId);
         await project.save();
