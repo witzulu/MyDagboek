@@ -78,6 +78,10 @@ const taskSchema = new mongoose.Schema({
   attachments: [attachmentSchema],
   checklist: [checklistItemSchema],
   comments: [commentSchema],
+  isImportant: {
+    type: Boolean,
+    default: false,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Task', taskSchema);

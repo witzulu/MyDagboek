@@ -54,6 +54,15 @@ exports.getProgressReport = async (req, res, next) => {
     }
     const changelogEntries = await ChangeLog.find(changelogQuery).populate('user', 'name').sort({ createdAt: 'desc' });
 
+    // --- Important Tasks Calculation ---
+    const importantTasksQuery = { ...baseQuery, isImportant: true };
+    if (startDate || endDate) {
+        importantTasksQuery.completedAt = dateFilter;
+    } else {
+        importantTasksQuery.completedAt = { $ne: null };
+    }
+    const completedImportantTasks = await Task.find(importantTasksQuery).sort({ completedAt: 'desc' });
+
 
     // --- Chart Data Calculations ---
     let pieChartData = { done: 0, inProgress: 0, toDo: 0 };
@@ -106,6 +115,8 @@ exports.getProgressReport = async (req, res, next) => {
       pieChartData,
       barChartData,
       burndownChartData,
+      teamInsights,
+      completedImportantTasks,
     });
 
     // Log the report generation after sending the response
@@ -114,5 +125,124 @@ exports.getProgressReport = async (req, res, next) => {
   } catch (error) {
     console.error('💥 Error generating progress report:', error);
     res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
+  }
+};
+
+// @desc    Get data for the main reports dashboard
+// @route   GET /api/reports/dashboard
+// @access  Private
+exports.getReportDashboard = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    // 1. Get all projects for the user
+    const projects = await Project.find({ 'members.user': userId });
+    const projectIds = projects.map(p => p._id);
+
+    const boards = await Board.find({ project: { $in: projectIds } });
+    const boardIds = boards.map(b => b._id);
+    const baseQuery = { board: { $in: boardIds } };
+
+    // 2. Calculate tasks completed per day for the last 14 days
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    const today = new Date();
+    today.setUTCHours(23, 59, 59, 999);
+
+
+    const dailyCompletions = await Task.aggregate([
+      { $match: { ...baseQuery, completedAt: { $gte: fourteenDaysAgo, $lte: today } } },
+      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$completedAt" } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const completionTrend = [];
+    const dateCursor = new Date(fourteenDaysAgo);
+    const completionsMap = new Map(dailyCompletions.map(item => [item._id, item.count]));
+
+    while (dateCursor <= today) {
+        const dateString = dateCursor.toISOString().split('T')[0];
+        completionTrend.push({ date: dateString, count: completionsMap.get(dateString) || 0 });
+        dateCursor.setDate(dateCursor.getDate() + 1);
+    }
+
+    // 3. Calculate total overdue tasks
+    const totalOverdue = await Task.countDocuments({ ...baseQuery, dueDate: { $lt: new Date() }, completedAt: null });
+
+    // 4. Get recent achievements
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentAchievements = await ChangeLog.find({
+      project: { $in: projectIds },
+      includeInReport: true,
+      createdAt: { $gte: sevenDaysAgo }
+    })
+    .populate('user', 'name')
+    .populate('project', 'name')
+    .sort({ createdAt: 'desc' })
+    .limit(10);
+
+    // 5. Get completed important tasks
+    const importantTasksQuery = { ...baseQuery, isImportant: true, completedAt: { $gte: sevenDaysAgo } };
+    const completedImportantTasks = await Task.find(importantTasksQuery).sort({ completedAt: 'desc' });
+
+    // 6. Calculate Top 5 Team Insights
+    const fourteenDaysAgoForInsights = new Date();
+    fourteenDaysAgoForInsights.setDate(fourteenDaysAgoForInsights.getDate() - 14);
+
+    const memberStats = await Task.aggregate([
+        { $match: { board: { $in: boardIds }, assignees: { $exists: true, $ne: [] } } },
+        { $unwind: "$assignees" },
+        {
+            $group: {
+                _id: "$assignees",
+                tasksCompleted: {
+                    $sum: {
+                        $cond: [{
+                            $and: [
+                                { $gte: ["$completedAt", fourteenDaysAgoForInsights] },
+                                { $lte: ["$completedAt", today] }
+                            ]
+                        }, 1, 0]
+                    }
+                },
+                tasksAssigned: {
+                    $sum: { $cond: [{ $eq: ["$completedAt", null] }, 1, 0] }
+                }
+            }
+        },
+        { $sort: { tasksCompleted: -1 } },
+        { $limit: 5 },
+        {
+            $lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'userDetails'
+            }
+        },
+        { $unwind: "$userDetails" },
+        {
+            $project: {
+                _id: 0,
+                userName: "$userDetails.name",
+                tasksCompleted: "$tasksCompleted",
+                tasksAssigned: "$tasksAssigned"
+            }
+        }
+    ]);
+
+    res.status(200).json({
+      completionTrend,
+      totalOverdue,
+      recentAchievements,
+      completedImportantTasks,
+      teamInsights: memberStats,
+    });
+
+  } catch (error) {
+    console.error('💥 Error getting report dashboard data:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };

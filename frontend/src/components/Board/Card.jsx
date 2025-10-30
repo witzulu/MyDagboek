@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CheckSquare, MessageSquare, MoreVertical } from 'lucide-react';
+import { CheckSquare, MessageSquare, MoreVertical, Star } from 'lucide-react';
 
 const Card = ({ task, onEditTask, onCompleteTask }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,7 +58,10 @@ const Card = ({ task, onEditTask, onCompleteTask }) => {
             </span>
           ))}
         </div>
-        <p className="text-sm text-primary/">{task.title}</p>
+        <div className="flex justify-between items-start">
+          <p className="text-sm text-primary flex-grow">{task.title}</p>
+          {task.isImportant && <Star size={16} className="text-yellow-500 fill-current ml-2" />}
+        </div>
         <div className="flex justify-between items-center mt-2 text-xs text-secondary">
           <div>
             {task.dueDate && (
