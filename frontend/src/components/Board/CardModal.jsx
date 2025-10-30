@@ -23,6 +23,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(null);
+  const [priority, setPriority] = useState('Low');
   const [assignedLabels, setAssignedLabels] = useState([]);
   const [assignees, setAssignees] = useState([]);
   const [attachments, setAttachments] = useState([]);
@@ -42,6 +43,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setTitle(task.title);
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
+        setPriority(task.priority || 'Low');
         setAssignedLabels(task.labels || []);
         setAssignees(task.assignees?.filter(a => a && a._id).map(a => a._id) || []);
         setAttachments(task.attachments || []);
@@ -113,6 +115,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       title,
       description,
       dueDate,
+      priority,
       labels: assignedLabels.map(l => l._id || l),
       assignees,
       listId: task ? task.list : listId,
@@ -346,6 +349,18 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                 onChange={(e) => setDueDate(e.target.value)}
                 className="mt-1 block w-full p-2 rounded border bg-base-300"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium ">Priority</label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="mt-1 block w-full p-2 rounded border bg-base-300"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
             </div>
             <LabelManager
               projectLabels={projectLabels}
