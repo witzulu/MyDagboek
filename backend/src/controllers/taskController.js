@@ -32,7 +32,7 @@ const checkProjectMembership = async (boardId, userId, userRole) => {
 // @access  Private
 exports.createTask = async (req, res, next) => {
   try {
-    const { title, listId, position, description, dueDate, labels, assignees } = req.body;
+    const { title, listId, position, description, dueDate, labels, assignees, priority } = req.body;
     const list = await List.findById(listId);
     if (!list) {
       return res.status(404).json({ message: 'List not found' });
@@ -70,6 +70,7 @@ exports.createTask = async (req, res, next) => {
       dueDate,
       labels,
       assignees,
+      priority,
     });
 
     await logChange(project._id, req.user.id, `created a new task '${title}' in list '${list.name}'.`, 'board');
@@ -130,6 +131,7 @@ exports.updateTask = async (req, res, next) => {
     if (title && title !== task.title) changes.push(`title to '${title}'`);
     if (description && description !== task.description) changes.push('description');
     if (dueDate && task.dueDate && new Date(dueDate).toISOString() !== new Date(task.dueDate).toISOString()) changes.push('due date');
+    if (priority && priority !== task.priority) changes.push(`priority to '${priority}'`);
     if (labels) changes.push('labels');
     if (assignees) changes.push('assignees');
 
