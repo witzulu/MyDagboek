@@ -70,13 +70,13 @@ const ProgressReports = () => {
 
     const captureElement = async (element, title) => {
         if (!element) return;
-        
+
         // Temporarily change background for capture
         const originalBg = element.style.backgroundColor;
         element.style.backgroundColor = 'white'; // Or any non-transparent color
 
         const canvas = await html2canvas(element);
-        
+
         // Restore original background
         element.style.backgroundColor = originalBg;
 
@@ -97,7 +97,7 @@ const ProgressReports = () => {
         pdf.addImage(imgData, 'PNG', margin, yPos, imgWidth, imgHeight);
         yPos += imgHeight + 15;
     };
-    
+
     // --- Add Changelog Table ---
     if (report && report.changelogEntries && report.changelogEntries.length > 0) {
         if (yPos + 20 > pageHeight - margin) { // Check if space for header
@@ -195,7 +195,7 @@ const ProgressReports = () => {
               <StatCard title="Tasks Overdue" value={report.tasksOverdue} />
               <StatCard title="Tasks In Progress" value={report.tasksInProgress} />
             </div>
-            
+
             {report.changelogEntries && report.changelogEntries.length > 0 && (
               <div ref={changelogRef} className="mt-8 bg-base-200 p-6 rounded-lg">
                 <h3 className="text-xl font-bold mb-4">Change Log Summary</h3>
