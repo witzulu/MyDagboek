@@ -19,6 +19,7 @@ const ChangeLog = () => {
     const [editingText, setEditingText] = useState('');
     const [editingTags, setEditingTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
+    const [projectMembers, setProjectMembers] = useState([]);
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
@@ -68,12 +69,23 @@ const ChangeLog = () => {
     const fetchEntries = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`/api/projects/${projectId}/changelog`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!response.ok) throw new Error('Failed to fetch changelog entries.');
-            const data = await response.json();
-            setEntries(data);
+            const [entriesRes, membersRes] = await Promise.all([
+                fetch(`/api/projects/${projectId}/changelog`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                fetch(`/api/projects/${projectId}/members`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+            ]);
+
+            if (!entriesRes.ok) throw new Error('Failed to fetch changelog entries.');
+            if (!membersRes.ok) throw new Error('Failed to fetch project members.');
+
+            const entriesData = await entriesRes.json();
+            const membersData = await membersRes.json();
+
+            setEntries(entriesData);
+            setProjectMembers(membersData);
         } catch (err) {
             setError(err.message);
             toast.error(err.message);
@@ -119,6 +131,42 @@ const ChangeLog = () => {
 
         return categoryFilteredEntries;
     }, [entries, activeFilters, startDate, endDate, searchTerm, selectedUserId, selectedTags]);
+
+    const handleAddManualEntry = async () => {
+        if (!newMessage.trim()) {
+            return toast.error('Message cannot be empty.');
+        }
+        const tags = newTags.split(',').map(tag => tag.trim()).filter(Boolean);
+
+        try {
+            const response = await fetch(`/api/projects/${projectId}/changelog`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    message: newMessage,
+                    tags,
+                    type: 'manual',
+                    includeInReport: true, // Default to true for manual entries
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to add manual entry.');
+            }
+
+            const newEntry = await response.json();
+            setEntries([newEntry, ...entries]); // Add to top of the list
+            setNewMessage('');
+            setNewTags('');
+            toast.success('Manual entry added!');
+        } catch (err) {
+            toast.error(err.message);
+        }
+    };
 
     const handleFilterChange = (filter) => {
         setActiveFilters(prev => ({ ...prev, [filter]: !prev[filter] }));
@@ -190,12 +238,51 @@ const ChangeLog = () => {
         setEditingTags(entry.tags || []);
     };
 
+    const canManageLog = useMemo(() => {
+        if (!user || !projectMembers) return false;
+        // This includes system admins who might not be formal project members
+        if (user.role === 'system_admin') return true;
+        return projectMembers.some(member => member.user && member.user._id === user.id);
+    }, [user, projectMembers]);
+
     return (
         <div className="container mx-auto p-4 flex-1">
 
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
             </div>
+
+            {canManageLog && (
+                <div className="card bg-base-100 shadow-xl mb-6">
+                    <div className="card-body">
+                        <h2 className="card-title">Add Manual Entry</h2>
+                        <div className="prose max-w-none">
+                            <MDXEditor
+                                markdown={newMessage}
+                                onChange={setNewMessage}
+                                plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]}
+                                contentEditableClassName="!h-24"
+                            />
+                        </div>
+                        <div className="form-control mt-4">
+                            <label className="label"><span className="label-text">Tags (comma-separated)</span></label>
+                            <input
+                                type="text"
+                                value={newTags}
+                                onChange={(e) => setNewTags(e.target.value)}
+                                className="input input-bordered"
+                                placeholder="e.g. bugfix, feature, design"
+                            />
+                        </div>
+                        <div className="card-actions justify-end mt-4">
+                            <button onClick={handleAddManualEntry} className="btn btn-primary">
+                                <PlusCircle size={18} className="mr-2" />
+                                Add Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="card bg-base-100 shadow-xl mb-6">
                 <div className="card-body">
@@ -265,9 +352,9 @@ const ChangeLog = () => {
                                             onChange={() => handleToggleReportInclusion(entry._id)}
                                         />
                                     </div>
-                                    {user && entry.user?._id === user.id && entry.type === 'manual' && (
+                                    {canManageLog && entry.type === 'manual' && (
                                         <>
-
+                                            <button onClick={() => startEditing(entry)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
                                             <button onClick={() => handleDeleteEntry(entry._id)} className="btn btn-ghost btn-sm text-error"><Trash2 size={16} /></button>
                                         </>
                                     )}
@@ -288,6 +375,10 @@ const ChangeLog = () => {
                                         value={Array.isArray(editingTags) ? editingTags.join(', ') : editingTags}
                                         onChange={(e) => setEditingTags(e.target.value)}
                                     />
+                                    <div className="card-actions justify-end mt-2">
+                                        <button onClick={() => setEditingEntryId(null)} className="btn btn-ghost btn-sm">Cancel</button>
+                                        <button onClick={() => handleUpdateEntry(entry._id)} className="btn btn-primary btn-sm">Save</button>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="prose-sm max-w-none mt-2 text-base-content">
