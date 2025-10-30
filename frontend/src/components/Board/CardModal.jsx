@@ -43,7 +43,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
         setAssignedLabels(task.labels || []);
-        setAssignees(task.assignees?.map(a => a._id) || []);
+        setAssignees(task.assignees?.filter(a => a && a._id).map(a => a._id) || []);
         setAttachments(task.attachments || []);
         setChecklist(task.checklist || []);
         setComments(task.comments || []);
@@ -358,8 +358,8 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               <div className="flex items-center space-x-2">
                 <div className="flex -space-x-2">
                   {assignees.map(assigneeId => {
-                      const member = projectMembers.find(m => m.user._id === assigneeId);
-                      return member ? (
+                      const member = projectMembers.find(m => m.user && m.user._id === assigneeId);
+                      return member && member.user ? (
                           <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
                               <div className="avatar">
                                   <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">

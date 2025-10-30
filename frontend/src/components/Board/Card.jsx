@@ -59,13 +59,15 @@ const Card = ({ task, onEditTask }) => {
         </div>
         <div className="flex -space-x-2">
             {task.assignees?.map(assignee => (
-                <div key={assignee._id} className="tooltip" data-tip={assignee.name}>
-                    <div className="avatar">
-                        <div className="w-6 h-6 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
-                            {assignee.name.charAt(0)}
+                assignee && assignee._id && assignee.name && (
+                    <div key={assignee._id} className="tooltip" data-tip={assignee.name}>
+                        <div className="avatar">
+                            <div className="w-6 h-6 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
+                                {assignee.name.charAt(0)}
+                            </div>
                         </div>
                     </div>
-                </div>
+                )
             ))}
         </div>
       </div>
