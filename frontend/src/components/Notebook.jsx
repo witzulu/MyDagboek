@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Plus, Trash2, X, Save, FolderPlus, Folder, File, ChevronRight, ChevronDown, Edit } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
-import { Excalidraw } from "@excalidraw/excalidraw";
-import "@excalidraw/excalidraw/index.css";
+import { Tldraw } from "@tldraw/tldraw";
+import "@tldraw/tldraw/tldraw.css";
 import debounce from "lodash.debounce";
 import "@mdxeditor/editor/style.css";
 import '../mdxeditor.css'
