@@ -31,7 +31,12 @@ const NoteSchema = new mongoose.Schema({
   isPinned: {
     type: Boolean,
     default: false
-  }
+  },
+  folder: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Folder',
+    default: null,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Note', NoteSchema);
