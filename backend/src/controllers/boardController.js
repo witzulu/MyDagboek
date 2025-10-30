@@ -84,11 +84,6 @@ exports.getBoardById = async (req, res, next) => {
             model: 'Label'
           },
           {
-            path: 'assignees',
-            model: 'User',
-            select: 'name email'
-          },
-          {
             path: 'comments.user',
             model: 'User',
             select: 'name email'

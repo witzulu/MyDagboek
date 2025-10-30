@@ -1,59 +1,56 @@
 const Task = require('../models/Task');
 const List = require('../models/List');
+const Board = require('../models/Board');
 const Project = require('../models/Project');
 const { logChange } = require('../utils/changeLogService');
 
-// Middleware to check if user is a member of the project associated with the board
 const checkProjectMembership = async (boardId, userId, userRole) => {
-  if (userRole === 'system_admin') {
-    const project = await Project.findOne({ boards: boardId });
-    return { error: false, project };
+  const board = await Board.findById(boardId);
+  if (!board) return { error: true, status: 404, message: 'Board not found' };
+
+  const project = await Project.findById(board.project);
+  if (!project) return { error: true, status: 404, message: 'Project not found for this board' };
+
+  const isMember = project.members.some(member => member.user && member.user.toString() === userId);
+
+  if (!isMember && userRole !== 'system_admin') {
+    return { error: true, status: 401, message: 'User not authorized for this project' };
   }
-
-  const project = await Project.findOne({ boards: boardId }).populate('members.user');
-
-  if (!project) {
-    return { error: true, message: 'Project not found for this board', status: 404 };
-  }
-
-  const isMember = project.members.some(member => member.user && member.user._id.equals(userId));
-
-  if (!isMember) {
-    return { error: true, message: 'User is not a member of this project', status: 403 };
-  }
-
   return { error: false, project };
 };
 
-// @desc    Create a task
+// @desc    Create a task for a list
 // @route   POST /api/tasks
 // @access  Private
 exports.createTask = async (req, res, next) => {
   try {
-    const { title, listId, position, description, dueDate, labels, assignees } = req.body;
+    const { title, description, listId, dueDate, labels } = req.body;
+
     const list = await List.findById(listId);
     if (!list) {
       return res.status(404).json({ message: 'List not found' });
     }
 
-    const authCheck = await checkProjectMembership(list.board, req.user.id, req.user.role);
-    if (authCheck.error) {
-      return res.status(authCheck.status).json({ message: authCheck.message });
+    const { error, status, message, project } = await checkProjectMembership(list.board, req.user.id, req.user.role);
+    if (error) {
+      return res.status(status).json({ message: message });
     }
-    const { project } = authCheck;
+
+    const lastTask = await Task.findOne({ list: listId }).sort({ position: -1 });
+    const newPosition = lastTask ? lastTask.position + 1 : 0;
 
     const task = await Task.create({
       title,
+      description,
       list: listId,
       board: list.board,
-      position,
-      description,
+      position: newPosition,
       dueDate,
       labels,
-      assignees,
     });
 
-    await logChange(project._id, req.user.id, `created a new task '${title}' in list '${list.name}'.`, 'board');
+    // Log the change
+    await logChange(project._id, req.user.id, `created task '${task.title}'.`, 'board');
 
     res.status(201).json(task);
   } catch (error) {
@@ -66,7 +63,7 @@ exports.createTask = async (req, res, next) => {
 // @access  Private
 exports.updateTask = async (req, res, next) => {
   try {
-    const { title, description, dueDate, labels, assignees } = req.body;
+    const { title, description, dueDate, labels } = req.body;
     const task = await Task.findById(req.params.id);
 
     if (!task) {
@@ -77,30 +74,14 @@ exports.updateTask = async (req, res, next) => {
     if (authCheck.error) {
       return res.status(authCheck.status).json({ message: authCheck.message });
     }
-    const { project } = authCheck;
-
-    let logMessage = `updated task '${task.title}'`;
-    const changes = [];
-    if (title && title !== task.title) changes.push(`title to '${title}'`);
-    if (description && description !== task.description) changes.push('description');
-    if (dueDate && new Date(dueDate).toISOString() !== new Date(task.dueDate).toISOString()) changes.push('due date');
-    if (labels) changes.push('labels');
-    if (assignees) changes.push('assignees');
-
-
-    if(changes.length > 0) {
-      logMessage += `: ${changes.join(', ')}.`;
-      await logChange(project._id, req.user.id, logMessage, 'board');
-    }
 
     task.title = title ?? task.title;
     task.description = description ?? task.description;
     task.dueDate = dueDate ?? task.dueDate;
     task.labels = labels ?? task.labels;
-    task.assignees = assignees ?? task.assignees;
 
-    const updatedTask = await task.save();
-    res.status(200).json(updatedTask);
+    await task.save();
+    res.status(200).json(task);
   } catch (error) {
     next(error);
   }

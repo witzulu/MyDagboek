@@ -75,10 +75,6 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Label'
   }],
-  assignees: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
   attachments: [attachmentSchema],
   checklist: [checklistItemSchema],
   comments: [commentSchema],

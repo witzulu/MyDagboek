@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CheckSquare, MessageSquare } from 'lucide-react';
+import { CheckSquare, MessageSquare, MoreVertical } from 'lucide-react';
 
-const Card = ({ task, onEditTask }) => {
+const Card = ({ task, onEditTask, onCompleteTask }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
     attributes,
-    listeners,
+    listeners: dndListeners,
     setNodeRef,
     transform,
     transition,
@@ -25,49 +26,83 @@ const Card = ({ task, onEditTask }) => {
 
   const commentsExist = task.comments && task.comments.length > 0;
 
+  const handleMenuClick = (e) => {
+    e.stopPropagation();
+    setIsMenuOpen(prev => !prev);
+  };
+
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    onEditTask(task);
+    setIsMenuOpen(false);
+  };
+
+  const handleCompleteClick = (e) => {
+    e.stopPropagation();
+    onCompleteTask(task._id);
+    setIsMenuOpen(false);
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      onClick={() => onEditTask(task)}
-      className="p-3 bg-base-100 rounded-md shadow-sm mb-2 cursor-pointer hover:shadow-lg"
+      className="relative p-3 btn-accent rounded-md shadow-sm mb-2 hover:shadow-md m-2 bg-accent-content/10"
     >
-      <div className="flex flex-wrap gap-1 mb-2">
-        {task.labels?.map(label => (
-          <span key={label._id} style={{ backgroundColor: label.color }} className="px-2 py-0.5 rounded text-xs text-white">
-            {label.name}
-          </span>
-        ))}
+      <div {...dndListeners} onClick={() => onEditTask(task)} className="cursor-pointer">
+        <div className="flex flex-wrap gap-1 mb-2">
+          {task.labels?.map(label => (
+            <span key={label._id} style={{ backgroundColor: label.color }} className="px-2 py-0.5 rounded text-xs text-accent-content">
+              {label.name}
+            </span>
+          ))}
+        </div>
+        <p className="text-sm text-primary/">{task.title}</p>
+        <div className="flex justify-between items-center mt-2 text-xs text-secondary">
+          <div>
+            {task.dueDate && (
+              <span>
+                Due: {new Date(task.dueDate).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            {commentsExist && (
+              <span className="flex items-center space-x-1">
+                <MessageSquare size={14} />
+                <span>{task.comments.length}</span>
+              </span>
+            )}
+            {checklistExists && (
+              <span className={`flex items-center space-x-1 px-2 py-1 rounded ${completedItems === task.checklist.length ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : ''}`}>
+                <CheckSquare size={14} />
+                <span>{completedItems}/{task.checklist.length}</span>
+              </span>
+            )}
+          </div>
+        </div>
       </div>
-      <p className="text-sm text-base-content">{task.title}</p>
-      <div className="flex justify-between items-center mt-2 text-xs text-base-content/70">
-        <div className="flex items-center space-x-2">
-          {commentsExist && (
-            <span className="flex items-center space-x-1">
-              <MessageSquare size={14} />
-              <span>{task.comments.length}</span>
-            </span>
-          )}
-          {checklistExists && (
-            <span className={`flex items-center space-x-1 px-2 py-1 rounded ${completedItems === task.checklist.length ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : ''}`}>
-              <CheckSquare size={14} />
-              <span>{completedItems}/{task.checklist.length}</span>
-            </span>
-          )}
-        </div>
-        <div className="flex -space-x-2">
-            {task.assignees?.map(assignee => (
-                <div key={assignee._id} className="tooltip" data-tip={assignee.name}>
-                    <div className="avatar">
-                        <div className="w-6 h-6 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
-                            {assignee.name.charAt(0)}
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </div>
+      <div className="absolute top-1 right-1">
+        <button onClick={handleMenuClick} className="p-1 rounded-full hover:bg-base-100/50">
+          <MoreVertical size={16} />
+        </button>
+        {isMenuOpen && (
+          <div className="absolute right-0 mt-2 w-48 bg-base-100 rounded-md shadow-lg z-20">
+            <button
+              onClick={handleEditClick}
+              className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"
+            >
+              Edit
+            </button>
+            <button
+              onClick={handleCompleteClick}
+              className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"
+            >
+              Mark as Complete
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

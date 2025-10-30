@@ -1,9 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { Plus, Trash2, X, Save, FolderPlus, Folder, File, ChevronRight, ChevronDown, Edit } from "lucide-react";
+import { Plus, Trash2, X, Save, FolderPlus, Folder, File, ChevronRight, ChevronDown, Edit, GripVertical } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
-import { Tldraw } from "@tldraw/tldraw";
-import "@tldraw/tldraw/tldraw.css";
 import debounce from "lodash.debounce";
 import "@mdxeditor/editor/style.css";
 import '../mdxeditor.css'
@@ -46,11 +44,10 @@ export default function Notebook() {
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState("saved");
     const [lastSaved, setLastSaved] = useState(null);
+    const [Excalidraw, setExcalidraw] = useState(null);
 
     const excalidrawAPIRef = useRef(null);
     const currentProjectId = selectedProject?._id || projectId;
-    const noteStateRef = useRef();
-    noteStateRef.current = currentNote;
 
     // --- Data Fetching ---
     const fetchData = useCallback(async () => {
@@ -78,6 +75,17 @@ export default function Notebook() {
     useEffect(() => {
       fetchData();
     }, [fetchData]);
+
+    useEffect(() => {
+        import("@excalidraw/excalidraw")
+          .then((comp) => setExcalidraw(() => comp.Excalidraw))
+          .catch((err) => {
+            console.error("Failed to load Excalidraw:", err);
+            setError("Drawing component failed to load. Please try again later.");
+          });
+        // Dynamically import the CSS as well
+        import("@excalidraw/excalidraw/index.css");
+      }, []);
 
     // --- Note Actions ---
     const addNote = async () => {
@@ -160,22 +168,26 @@ export default function Notebook() {
     };
 
     const renameFolder = async (folderId, newName) => {
-      try {
-        const res = await fetch(`/api/folders/${folderId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({ name: newName }),
-        });
-        if (!res.ok) throw new Error('Failed to rename folder');
-        const updatedFolder = await res.json();
-        setFolders(prev => prev.map(f => f._id === folderId ? updatedFolder : f));
-      } catch (err) {
-        console.error('Error renaming folder', err);
-      }
+        await updateFolder(folderId, { name: newName });
     };
+
+    const updateFolder = async (folderId, fields) => {
+        try {
+          const res = await fetch(`/api/folders/${folderId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(fields),
+          });
+          if (!res.ok) throw new Error('Failed to update folder');
+          const updatedFolder = await res.json();
+          setFolders(prev => prev.map(f => f._id === folderId ? updatedFolder : f));
+        } catch (err) {
+          console.error('Error updating folder', err);
+        }
+      };
 
     const deleteFolder = async (folderId) => {
       if (window.confirm('Are you sure you want to delete this folder and all its contents?')) {
@@ -195,22 +207,22 @@ export default function Notebook() {
     };
 
     // --- Debounced & Auto Save ---
-    const debouncedUpdateNote = useMemo(
-        () => debounce(async (id, fields) => {
-          setSaveStatus("saving");
-          try {
-            const latestNote = noteStateRef.current;
-            const payload = {
-                ...fields,
-                title: latestNote.title,
-            };
-            await updateNote(id, payload);
-            setSaveStatus("saved");
-            setLastSaved(new Date());
-          } catch {
-            setSaveStatus("error");
-          }
-        }, 1000),
+      const debouncedSave = useMemo(
+        () =>
+          debounce(async (noteToSave) => {
+            if (!noteToSave) return;
+            setSaveStatus("saving");
+            try {
+              await updateNote(noteToSave._id, {
+                title: noteToSave.title,
+                content: noteToSave.content,
+              });
+              setSaveStatus("saved");
+              setLastSaved(new Date());
+            } catch {
+              setSaveStatus("error");
+            }
+          }, 1500),
         [updateNote]
       );
 
@@ -297,11 +309,12 @@ export default function Notebook() {
         if (draggedId === droppedId) return;
 
         const isDraggedItemNote = notes.some(n => n._id === draggedId);
+        const isDroppedOnFolder = folders.some(f => f._id === droppedId);
 
-        if (isDraggedItemNote) { // It's a note
+        if (isDraggedItemNote && isDroppedOnFolder) {
             updateNote(draggedId, { folder: droppedId });
-        } else { // It's a folder
-            renameFolder(draggedId, { parent: droppedId });
+        } else if (!isDraggedItemNote && isDroppedOnFolder) {
+            updateFolder(draggedId, { parent: droppedId });
         }
     };
 
@@ -331,7 +344,7 @@ export default function Notebook() {
             notesWithoutFolder.push(note);
           }
         }
-    
+
         return { tree, notesWithoutFolder };
     }, [folders, notes, searchTerm]);
 
@@ -361,11 +374,11 @@ export default function Notebook() {
                 }}
             >
                 <div
-                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer ${selectedFolder === folder._id ? 'bg-primary text-primary-content' : 'hover:bg-base-200'}`}
+                    className={`flex items-center justify-between p-2 rounded-lg group ${selectedFolder === folder._id ? 'bg-primary text-primary-content' : 'hover:bg-base-200'}`}
                     onClick={() => setSelectedFolder(folder._id)}
                 >
-                    <div className="flex items-center gap-2" ref={setNodeRef} {...listeners} {...attributes}>
-                        <span onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}>
+                    <div className="flex items-center gap-2 flex-grow">
+                        <span onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }} className="cursor-pointer">
                             {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                         </span>
                         <Folder size={16} />
@@ -378,14 +391,18 @@ export default function Notebook() {
                                 onKeyDown={e => e.key === 'Enter' && handleRename()}
                                 className="input input-xs"
                                 autoFocus
+                                onClick={e => e.stopPropagation()} // Prevent folder selection
                             />
                         ) : (
-                            <span>{folder.name}</span>
+                            <span className="cursor-pointer flex-grow">{folder.name}</span>
                         )}
                     </div>
-                    <div className="flex items-center gap-1">
-                        <button className="btn btn-xs btn-ghost" onClick={() => setIsEditing(true)}><Edit size={12} /></button>
-                        <button className="btn btn-xs btn-ghost" onClick={() => deleteFolder(folder._id)}><Trash2 size={12} /></button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <div ref={setNodeRef} {...listeners} {...attributes} className="cursor-grab touch-none p-1">
+                            <GripVertical size={14} />
+                        </div>
+                        <button className="btn btn-xs btn-ghost" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}><Edit size={12} /></button>
+                        <button className="btn btn-xs btn-ghost" onClick={(e) => { e.stopPropagation(); deleteFolder(folder._id); }}><Trash2 size={12} /></button>
                     </div>
                 </div>
                 {isOpen && (
@@ -403,18 +420,20 @@ export default function Notebook() {
         const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: note._id });
         return (
             <div
-                ref={setNodeRef}
                 style={{
                     paddingLeft: `${level * 16}px`,
                     transform: `translate3d(${transform?.x || 0}px, ${transform?.y || 0}px, 0)`,
                 }}
                 onClick={() => handleSelectNote(note)}
-                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer ${currentNote?._id === note._id ? 'bg-primary text-primary-content' : 'hover:bg-base-200'}`}
-                {...listeners}
-                {...attributes}
+                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer group ${currentNote?._id === note._id ? 'bg-primary text-primary-content' : 'hover:bg-base-200'}`}
             >
-                <File size={16} />
-                <span>{note.title || "Untitled"}</span>
+                <div className="flex items-center gap-2">
+                    <File size={16} />
+                    <span>{note.title || "Untitled"}</span>
+                </div>
+                <div ref={setNodeRef} {...listeners} {...attributes} className="cursor-grab touch-none p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <GripVertical size={14} />
+                </div>
             </div>
         )
     };
@@ -453,10 +472,18 @@ export default function Notebook() {
                         </button>
                     </div>
                     <div className="space-y-1 overflow-y-auto max-h-[70vh]">
-                        {tree.map(item => (
-                            item.isFolder ? <FolderTreeItem key={item._id} folder={item} level={0} /> : <NoteTreeItem key={item._id} note={item} level={0} />
-                        ))}
-                        {notesWithoutFolder.map(note => <NoteTreeItem key={note._id} note={note} level={0} />)}
+                        {tree.length === 0 && notesWithoutFolder.length === 0 ? (
+                            <div className="text-center text-base-content/60 p-4">
+                                No matches found.
+                            </div>
+                        ) : (
+                            <>
+                                {tree.map(item => (
+                                    item.isFolder ? <FolderTreeItem key={item._id} folder={item} level={0} /> : <NoteTreeItem key={item._id} note={item} level={0} />
+                                ))}
+                                {notesWithoutFolder.map(note => <NoteTreeItem key={note._id} note={note} level={0} />)}
+                            </>
+                        )}
                     </div>
                     </div>
 
@@ -502,8 +529,11 @@ export default function Notebook() {
                             key={currentNote._id}
                             markdown={currentNote.content || ""}
                             onChange={(newContent) => {
-                                setCurrentNote((prev) => ({ ...prev, content: newContent }));
-                                debouncedUpdateNote(currentNote._id, { content: newContent });
+                                setCurrentNote(prev => {
+                                    const newNote = { ...prev, content: newContent };
+                                    debouncedSave(newNote);
+                                    return newNote;
+                                  });
                             }}
                             plugins={[
                                 headingsPlugin(),
@@ -546,12 +576,18 @@ export default function Notebook() {
                         {/* Drawing Editor */}
                         {activeView === "drawing" && (
                             <div className="relative h-[600px] border rounded-lg overflow-hidden">
-                            <Excalidraw
-                                key={currentNote._id}
-                                excalidrawAPI={(api) => (excalidrawAPIRef.current = api)}
-                                initialData={currentNote.drawing}
-                                onChange={handleDrawingChange}
-                            />
+                                {Excalidraw ? (
+                                    <Excalidraw
+                                        key={currentNote._id}
+                                        excalidrawAPI={(api) => (excalidrawAPIRef.current = api)}
+                                        initialData={currentNote.drawing}
+                                        onChange={handleDrawingChange}
+                                    />
+                                ) : (
+                                    <div className="flex items-center justify-center h-full">
+                                        Loading Drawing Canvas...
+                                    </div>
+                                )}
                             </div>
                         )}
                         </div>
