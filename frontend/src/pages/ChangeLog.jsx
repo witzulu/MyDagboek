@@ -20,7 +20,6 @@ const ChangeLog = () => {
     const [editingTags, setEditingTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
 
-    // Set default date range to last 30 days
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
     const [startDate, setStartDate] = useState(thirtyDaysAgo);
@@ -131,29 +130,6 @@ const ChangeLog = () => {
         );
     };
 
-    const handleCreateEntry = async (e) => {
-        e.preventDefault();
-        if (!newMessage.trim()) return toast.error('Message cannot be empty.');
-
-        const tags = newTags.split(',').map(tag => tag.trim()).filter(Boolean);
-
-        try {
-            const response = await fetch(`/api/projects/${projectId}/changelog`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ message: newMessage, tags, category: 'manual' }),
-            });
-            if (!response.ok) throw new Error('Failed to create entry.');
-            const newEntry = await response.json();
-            setEntries([newEntry, ...entries]);
-            setNewMessage('');
-            setNewTags('');
-            toast.success('Entry added!');
-        } catch (err) {
-            toast.error(err.message);
-        }
-    };
-
     const handleDeleteEntry = async (entryId) => {
         if (!window.confirm('Are you sure?')) return;
         try {
@@ -214,83 +190,10 @@ const ChangeLog = () => {
         setEditingTags(entry.tags || []);
     };
 
-    const handleExport = (format) => {
-        const exportableEntries = filteredEntries.filter(entry => entry.includeInReport);
-        if (exportableEntries.length === 0) {
-            toast.error("No entries to export with current filters.");
-            return;
-        }
-
-        const data = exportableEntries.map(({ message, createdAt, user }) => ({
-            date: new Date(createdAt).toISOString(),
-            user: user?.name || 'System',
-            message,
-        }));
-
-        let blob;
-        let filename;
-
-        if (format === 'json') {
-            blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            filename = `changelog-${projectId}.json`;
-        } else if (format === 'csv') {
-            const header = 'Date,User,Message\n';
-            const csv = data.map(e => `"${e.date}","${e.user}","${e.message.replace(/"/g, '""')}"`).join('\n');
-            blob = new Blob([header + csv], { type: 'text/csv;charset=utf-8;' });
-            filename = `changelog-${projectId}.csv`;
-        } else if (format === 'md') {
-            const md = data.map(e => `**[${new Date(e.date).toLocaleDateString()}]** - **${e.user}**: ${e.message}`).join('\n\n');
-            blob = new Blob([md], { type: 'text/markdown' });
-            filename = `changelog-${projectId}.md`;
-        }
-
-        if (blob && filename) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            toast.success(`Changelog exported as ${format.toUpperCase()}!`);
-        }
-    };
-
     return (
         <div className="container mx-auto p-4 flex-1">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="card bg-base-100 shadow-xl">
-                    <div className="card-body">
-                        <h2 className="card-title">Export Change Log</h2>
-                        <div className="flex items-center space-x-4">
-                             <div>
-                                <label htmlFor="start-date" className="block text-sm font-medium">Start Date</label>
-                                <input type="date" id="start-date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input input-bordered w-full" />
-                            </div>
-                            <div>
-                                <label htmlFor="end-date" className="block text-sm font-medium">End Date</label>
-                                <input type="date" id="end-date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input input-bordered w-full" />
-                            </div>
-                        </div>
-                         <div className="card-actions justify-end mt-4">
-                            <button onClick={() => handleExport('md')} className="btn btn-secondary btn-sm">
-                                <Download size={16} /> MD
-                            </button>
-                            <button onClick={() => handleExport('json')} className="btn btn-secondary btn-sm">
-                                <Download size={16} /> JSON
-                            </button>
-                             <button onClick={() => handleExport('csv')} className="btn btn-secondary btn-sm">
-                                <Download size={16} /> CSV
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
             <div className="card bg-base-100 shadow-xl mb-6">
