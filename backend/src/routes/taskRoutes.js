@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getTasks, getTaskById, createTask, updateTask, deleteTask, moveTask, completeTask } = require('../controllers/taskController');
+const { getTasks, getTaskById, createTask, updateTask, deleteTask, moveTask, completeTask, updateTaskPriority } = require('../controllers/taskController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Note: getTasks and getTaskById are not implemented yet
@@ -13,5 +13,6 @@ router.route('/:id')
 
 router.route('/:id/move').put(protect, moveTask);
 router.route('/:id/complete').put(protect, completeTask);
+router.route('/:id/priority').put(protect, updateTaskPriority);
 
 module.exports = router;

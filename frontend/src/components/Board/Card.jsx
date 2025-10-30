@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CheckSquare, MessageSquare } from 'lucide-react';
+import { Star, CheckSquare, MessageSquare, MoreVertical, Edit, Trash2, Check } from 'lucide-react';
 
-const Card = ({ task, onEditTask }) => {
+const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
     attributes,
     listeners,
@@ -16,6 +17,30 @@ const Card = ({ task, onEditTask }) => {
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const handlePriorityToggle = async (e) => {
+    e.stopPropagation();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/tasks/${task._id}/priority`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Failed to update priority');
+      const updatedTask = await response.json();
+      onUpdateTask(updatedTask);
+    } catch (error) {
+      console.error('Error updating priority:', error);
+    }
+  };
+
+  const priorityConfig = {
+    'High': { color: 'text-red-500', fill: 'fill-red-500' },
+    'Medium': { color: 'text-yellow-500', fill: 'fill-yellow-500' },
+    'Low': { color: 'text-green-500', fill: 'fill-green-500' },
+  };
+
+  const { color: priorityColor, fill: priorityFill } = priorityConfig[task.priority] || { color: 'text-gray-400', fill: 'none' };
 
   const checklistExists = task.checklist && task.checklist.length > 0;
   let completedItems = 0;
@@ -30,19 +55,39 @@ const Card = ({ task, onEditTask }) => {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      onClick={() => onEditTask(task)}
       className="p-3 bg-base-100 rounded-md shadow-sm mb-2 cursor-pointer hover:shadow-lg"
     >
-      <div className="flex flex-wrap gap-1 mb-2">
-        {task.labels?.map(label => (
-          <span key={label._id} style={{ backgroundColor: label.color }} className="px-2 py-0.5 rounded text-xs text-white">
-            {label.name}
-          </span>
-        ))}
+      <div className="flex justify-between items-start">
+        <div {...listeners} onClick={() => onEditTask(task)} className="flex-grow">
+          <div className="flex flex-wrap gap-1 mb-2">
+            {task.labels?.map(label => (
+              <span key={label._id} style={{ backgroundColor: label.color }} className="px-2 py-0.5 rounded text-xs text-white">
+                {label.name}
+              </span>
+            ))}
+          </div>
+          <p className="text-sm text-base-content">{task.title}</p>
+        </div>
+        <div className="flex items-center">
+          <button onClick={handlePriorityToggle} className={`p-1 -mr-1 ${priorityColor}`}>
+            <Star size={18} className={priorityFill} />
+          </button>
+          <div className="relative">
+            <button onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} className="p-1">
+              <MoreVertical size={18} />
+            </button>
+            {isMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-base-100 rounded-md shadow-lg z-10">
+                <button onClick={(e) => { e.stopPropagation(); onEditTask(task); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Edit size={14} className="inline mr-2" />Edit</button>
+                <button onClick={(e) => { e.stopPropagation(); onDeleteTask(task._id); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Trash2 size={14} className="inline mr-2" />Delete</button>
+                <button onClick={(e) => { e.stopPropagation(); onCompleteTask(task._id); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Check size={14} className="inline mr-2" />Mark as Completed</button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-      <p className="text-sm text-base-content">{task.title}</p>
-      <div className="flex justify-between items-center mt-2 text-xs text-base-content/70">
+
+      <div {...listeners} onClick={() => onEditTask(task)} className="flex justify-between items-center mt-2 text-xs text-base-content/70">
         <div className="flex items-center space-x-2">
           {commentsExist && (
             <span className="flex items-center space-x-1">

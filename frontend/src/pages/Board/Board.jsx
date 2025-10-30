@@ -519,6 +519,8 @@ const Board = () => {
                   onAddTask={() => { setTargetListId(list._id); setEditingTask(null); setIsCardModalOpen(true); }}
                   onEditTask={(task) => { setEditingTask(task); setIsCardModalOpen(true); }}
                   onCompleteTask={handleCompleteTask}
+                  onUpdateTask={handleTaskUpdate}
+                  onDeleteTask={handleDeleteTask}
                 />
               ))}
               <div className="w-72 flex-shrink-0">
@@ -532,7 +534,7 @@ const Board = () => {
   );
 };
 
-const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask }) => {
+const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask }) => {
   const {
     attributes,
     listeners,
@@ -555,13 +557,15 @@ const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask,
         onAddTask={onAddTask}
         onEditTask={onEditTask}
         onCompleteTask={onCompleteTask}
+        onUpdateTask={onUpdateTask}
+        onDeleteTask={onDeleteTask}
         dragHandleProps={{...attributes, ...listeners}}
       />
     </div>
   );
 };
 
-const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, dragHandleProps }) => {
+const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask, dragHandleProps }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(list.name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -621,7 +625,7 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompl
         <div className="mt-2 space-y-2">
           {list.tasks && list.tasks.map(task => (
             <div key={task._id}>
-              <Card task={task} onEditTask={onEditTask} onCompleteTask={onCompleteTask}/>
+              <Card task={task} onEditTask={onEditTask} onCompleteTask={onCompleteTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask}/>
             </div>
           ))}
         </div>
