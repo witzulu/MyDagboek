@@ -19,6 +19,7 @@ const ProgressReports = () => {
   const barChartRef = useRef();
   const burndownChartRef = useRef();
   const changelogRef = useRef();
+  const teamInsightsRef = useRef();
 
   const handleGenerateReport = async () => {
     try {
@@ -207,6 +208,7 @@ const ProgressReports = () => {
     await captureElement(statsRef.current, 'Summary');
     await captureElement(pieChartRef.current, 'Task Status Distribution');
     await captureElement(barChartRef.current, 'Tasks Completed Per Day');
+    await captureElement(teamInsightsRef.current, 'Team Insights');
     await captureElement(burndownChartRef.current, 'Burndown Chart');
 
     pdf.save('progress-report.pdf');
@@ -323,6 +325,24 @@ const ProgressReports = () => {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                        <div ref={teamInsightsRef} className="mt-8">
+                            {report.teamInsights && report.teamInsights.length > 0 && (
+                                <div className="bg-base-200 p-6 rounded-lg shadow-md">
+                                    <h3 className="text-xl font-bold mb-4">Team Insights</h3>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={report.teamInsights}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis dataKey="userName" />
+                                            <YAxis allowDecimals={false} />
+                                            <Tooltip />
+                                            <Legend />
+                                            <Bar dataKey="tasksCompleted" fill="#8884d8" name="Tasks Completed" />
+                                            <Bar dataKey="tasksAssigned" fill="#82ca9d" name="Tasks Assigned" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
                         </div>
                         <div ref={burndownChartRef} className="mt-8">
                             {report.burndownChartData && report.burndownChartData.length > 0 && (
