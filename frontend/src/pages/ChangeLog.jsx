@@ -266,7 +266,7 @@ const ChangeLog = () => {
                 entry={selectedEntry}
             />
             <div className="flex justify-between items-center mb-6">
-                 <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
+                <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -296,32 +296,7 @@ const ChangeLog = () => {
                         </div>
                     </div>
                 </div>
-                 <div className="card bg-base-100 shadow-xl">
-                    <div className="card-body">
-                        <h2 className="card-title">Add a Manual Entry</h2>
-                        <form onSubmit={handleCreateEntry}>
-                            <div className="prose-sm max-w-none">
-                                <MDXEditor
-                                    markdown={newMessage}
-                                    onChange={setNewMessage}
-                                    plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]}
-                                    contentEditableClassName="!h-24"
-                                    placeholder="Manually log a change using Markdown..."
-                                />
-                            </div>
-                            <input
-                                type="text"
-                                className="input input-bordered w-full mt-2"
-                                placeholder="Tags (comma-separated)"
-                                value={newTags}
-                                onChange={(e) => setNewTags(e.target.value)}
-                            />
-                            <div className="card-actions justify-end mt-4">
-                                <button type="submit" className="btn btn-primary">Add Entry</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+
             </div>
 
             <div className="card bg-base-100 shadow-xl mb-6">
@@ -372,7 +347,7 @@ const ChangeLog = () => {
 
             <div className="space-y-4">
                 {filteredEntries.map((entry) => (
-                    <div key={entry._id} className={`card shadow-lg ${entry.type === 'automatic' ? 'bg-base-200' : 'bg-base-100'} ${categoryStyles[entry.category] || ''}`}>
+                    <div key={entry._id} className={`card shadow-lg ${entry.type === 'automatic' ? 'bg-base-200' : 'bg-base-100'} ${categoryStyles[entry.category] || categoryStyles.manual}`}>
                         <div className="card-body">
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-3">
