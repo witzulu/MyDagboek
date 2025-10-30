@@ -17,12 +17,13 @@ import {
 import '../../mdxeditor.css'
 import { AuthContext } from '../../context/AuthContext';
 
-const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate }) => {
+const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, projectMembers, onNewLabel, onTaskUpdate }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(null);
   const [isImportant, setIsImportant] = useState(false);
+  const [assignees, setAssignees] = useState([]);
   const [assignedLabels, setAssignedLabels] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [checklist, setChecklist] = useState([]);
@@ -41,6 +42,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
         setIsImportant(task.isImportant || false);
+        setAssignees(task.assignees || []);
         setAssignedLabels(task.labels || []);
         setAttachments(task.attachments || []);
         setChecklist(task.checklist || []);
@@ -50,6 +52,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setDescription('');
         setDueDate(null);
         setIsImportant(false);
+        setAssignees([]);
         setAssignedLabels([]);
         setAttachments([]);
         setChecklist([]);
@@ -112,6 +115,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       description,
       dueDate,
       isImportant,
+      assignees: assignees.map(a => a._id || a),
       labels: assignedLabels.map(l => l._id || l),
       listId: task ? task.list : listId,
       taskId: task ? task._id : null
@@ -126,6 +130,18 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
     } else {
         const labelToAdd = projectLabels.find(l => l._id === labelId);
         if(labelToAdd) setAssignedLabels(prev => [...prev, labelToAdd]);
+    }
+  };
+
+  const handleAssigneeToggle = (userId) => {
+    const isAssigned = assignees.some(a => a._id === userId);
+    if (isAssigned) {
+      setAssignees(prev => prev.filter(a => a._id !== userId));
+    } else {
+      const memberToAdd = projectMembers.find(m => m.user._id === userId);
+      if (memberToAdd) {
+        setAssignees(prev => [...prev, memberToAdd.user]);
+      }
     }
   };
 
@@ -355,6 +371,37 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             onLabelToggle={handleLabelToggle}
             onNewLabel={onNewLabel}
           />
+
+          {/* Assignees Section */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Assignees</h3>
+            <div className="flex flex-wrap gap-2">
+              {assignees.map(assignee => (
+                <div key={assignee._id} className="badge badge-primary">
+                  {assignee.name}
+                  <button onClick={() => handleAssigneeToggle(assignee._id)} className="ml-2">x</button>
+                </div>
+              ))}
+            </div>
+            <div className="dropdown">
+              <div tabIndex={0} role="button" className="btn m-1">Assign to...</div>
+              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                {projectMembers.map(member => (
+                  <li key={member.user._id}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={assignees.some(a => a._id === member.user._id)}
+                        onChange={() => handleAssigneeToggle(member.user._id)}
+                        className="checkbox"
+                      />
+                      <span className="label-text">{member.user.name}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
 
           {/* Attachments Section */}
           <div className="space-y-2">

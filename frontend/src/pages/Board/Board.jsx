@@ -21,6 +21,7 @@ const Board = () => {
   const [board, setBoard] = useState(null);
   const [lists, setLists] = useState([]);
   const [projectLabels, setProjectLabels] = useState([]);
+  const [projectMembers, setProjectMembers] = useState([]);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -38,11 +39,14 @@ const Board = () => {
           throw new Error("Authentication token not found.");
         }
 
-        const [boardRes, labelsRes] = await Promise.all([
+        const [boardRes, labelsRes, membersRes] = await Promise.all([
           fetch(`/api/boards/${boardId}`, {
             headers: { "Authorization": `Bearer ${token}` },
           }),
           fetch(`/api/projects/${projectId}/labels`, {
+            headers: { "Authorization": `Bearer ${token}` },
+          }),
+          fetch(`/api/projects/${projectId}/members`, {
             headers: { "Authorization": `Bearer ${token}` },
           }),
         ]);
@@ -56,10 +60,12 @@ const Board = () => {
 
         const boardData = await boardRes.json();
         const labelsData = await labelsRes.json();
+        const membersData = await membersRes.json();
 
         setBoard(boardData.board);
         setLists(boardData.lists);
         setProjectLabels(labelsData);
+        setProjectMembers(membersData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -272,7 +278,7 @@ const Board = () => {
     }
   };
 
-  const handleSaveTask = async ({ title, description, dueDate, isImportant, labels, listId, taskId }) => {
+  const handleSaveTask = async ({ title, description, dueDate, isImportant, labels, assignees, listId, taskId }) => {
     const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
     const method = taskId ? 'PUT' : 'POST';
 
@@ -284,7 +290,7 @@ const Board = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, dueDate, isImportant, labels, listId }),
+        body: JSON.stringify({ title, description, dueDate, isImportant, labels, assignees, listId }),
       });
 
       if (!response.ok) {
@@ -501,6 +507,7 @@ const Board = () => {
         task={editingTask}
         listId={targetListId}
         projectLabels={projectLabels}
+        projectMembers={projectMembers}
         onNewLabel={handleNewLabel}
       />
       <EditBoardModal
