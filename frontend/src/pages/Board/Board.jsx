@@ -240,11 +240,11 @@ const Board = () => {
     }
   };
 
-  const handleSaveTask = async ({ title, description, dueDate, labels, assignees, listId, taskId }) => {
+  const handleSaveTask = async ({ title, description, dueDate, labels, assignees, priority, listId, taskId }) => {
     const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
     const method = taskId ? 'PUT' : 'POST';
 
-    const body = { title, description, dueDate, labels, assignees, listId };
+    const body = { title, description, dueDate, labels, assignees, priority, listId };
 
     if (!taskId) {
       // For new tasks, calculate the position
