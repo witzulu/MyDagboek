@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import LabelManager from './LabelManager';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import AssigneeSelectionModal from './AssigneeSelectionModal';
+import { Plus, Trash2, Edit2, UserPlus } from 'lucide-react';
 import { 
   MDXEditor, 
   UndoRedo, 
@@ -33,6 +34,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [newComment, setNewComment] = useState('');
   const [editingComment, setEditingComment] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState('');
+  const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -127,10 +129,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         const labelToAdd = projectLabels.find(l => l._id === labelId);
         if(labelToAdd) setAssignedLabels(prev => [...prev, labelToAdd]);
     }
-  };
-
-  const toggleAssignee = (memberId) => {
-    setAssignees(prev => prev.includes(memberId) ? prev.filter(id => id !== memberId) : [...prev, memberId]);
   };
 
   const handleFileChange = async (e) => {
@@ -308,234 +306,252 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const checklistProgress = checklist.length > 0 ? (checklist.filter(item => item.done).length / checklist.length) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 bg-base-200/50 flex justify-center items-center z-50">
-      <div className="bg-base-300  p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto  border border-accent/50 shadow-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">{task ? 'Edit Card' : 'Create Card'}</h2>
-          {task && (
-            <button onClick={handleCompleteTask} className="px-4 py-2 rounded bg-green-500 text-white">
-              Mark as Complete
-            </button>
-          )}
-        </div>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Card title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 rounded border bg-base-100 "
-          />
-          <textarea
-            placeholder="Card description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 rounded border h-32 bg-base-300"
-          />
-          <div>
-            <label className="block text-sm font-medium ">Due Date</label>
+    <>
+      <AssigneeSelectionModal
+        isOpen={isAssigneeModalOpen}
+        onClose={() => setIsAssigneeModalOpen(false)}
+        members={projectMembers}
+        selectedAssignees={assignees}
+        onConfirm={setAssignees}
+      />
+      <div className="fixed inset-0 bg-base-200/50 flex justify-center items-center z-50">
+        <div className="bg-base-300  p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto  border border-accent/50 shadow-lg">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">{task ? 'Edit Card' : 'Create Card'}</h2>
+            {task && (
+              <button onClick={handleCompleteTask} className="px-4 py-2 rounded bg-green-500 text-white">
+                Mark as Complete
+              </button>
+            )}
+          </div>
+          <div className="space-y-4">
             <input
-              type="date"
-              value={dueDate || ''}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1 block w-full p-2 rounded border bg-base-300"
+              type="text"
+              placeholder="Card title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full p-2 rounded border bg-base-100 "
             />
-          </div>
-          <LabelManager
-            projectLabels={projectLabels}
-            assignedLabels={assignedLabels.map(l => l._id || l)}
-            onLabelToggle={handleLabelToggle}
-            onNewLabel={onNewLabel}
-          />
+            <textarea
+              placeholder="Card description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full p-2 rounded border h-32 bg-base-300"
+            />
             <div>
-                <h3 className="font-semibold mb-2">Assignees</h3>
-                <div className="dropdown">
-                  <div tabIndex={0} role="button" className="btn btn-outline w-full justify-start">{assignees.length} selected</div>
-                  <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                    {projectMembers && projectMembers.map(member => (
-                      <li key={member.user._id} onClick={() => toggleAssignee(member.user._id)}>
-                        <a className={assignees.includes(member.user._id) ? 'bg-accent' : ''}>{member.user.name}</a>
-                      </li>
-                    ))}
-                  </ul>
+              <label className="block text-sm font-medium ">Due Date</label>
+              <input
+                type="date"
+                value={dueDate || ''}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="mt-1 block w-full p-2 rounded border bg-base-300"
+              />
+            </div>
+            <LabelManager
+              projectLabels={projectLabels}
+              assignedLabels={assignedLabels.map(l => l._id || l)}
+              onLabelToggle={handleLabelToggle}
+              onNewLabel={onNewLabel}
+            />
+            <div>
+              <h3 className="font-semibold mb-2">Assignees</h3>
+              <div className="flex items-center space-x-2">
+                <div className="flex -space-x-2">
+                  {assignees.map(assigneeId => {
+                      const member = projectMembers.find(m => m.user._id === assigneeId);
+                      return member ? (
+                          <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
+                              <div className="avatar">
+                                  <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
+                                      {member.user.name.charAt(0)}
+                                  </div>
+                              </div>
+                          </div>
+                      ) : null;
+                  })}
                 </div>
+                <button onClick={() => setIsAssigneeModalOpen(true)} className="btn btn-outline btn-circle btn-sm">
+                    <UserPlus size={16} />
+                </button>
+              </div>
             </div>
 
-          {/* Attachments Section */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Attachments</h3>
+            {/* Attachments Section */}
             <div className="space-y-2">
-              {attachments.map(file => (
-                <div key={file._id} className="flex items-center justify-between p-2 rounded">
-                  <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
-                  <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="mt-2">
-              <label className="w-full flex items-center px-4 py-2  rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
-                <span className="text-base leading-normal">Select a file</span>
-                <input type='file' className="hidden" onChange={handleFileChange} />
-              </label>
-            </div>
-          </div>
-
-          {/* Checklist Section */}
-          {task && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Checklist</h3>
-              {checklist.length > 0 && (
-                <div className="w-full rounded-full h-2.5">
-                  <div className=" h-2.5 rounded-full" style={{ width: `${checklistProgress}%` }}></div>
-                </div>
-              )}
-              <div className="space-y-1">
-                {checklist.map(item => (
-                  <div key={item._id} className="flex items-center group">
-                    <input
-                      type="checkbox"
-                      checked={item.done}
-                      onChange={() => handleToggleChecklistItem(item._id, item.done)}
-                      className="h-4 w-4 rounded"
-                    />
-                    {editingChecklistItem === item._id ? (
-                      <input
-                        type="text"
-                        value={editingText}
-                        onChange={(e) => setEditingText(e.target.value)}
-                        onBlur={() => handleUpdateChecklistItem(item._id)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleUpdateChecklistItem(item._id)}
-                        className="ml-2 flex-grow p-1 rounded border "
-                        autoFocus
-                      />
-                    ) : (
-                      <span className={`ml-2 flex-grow ${item.done ? 'line-through' : ''}`}>{item.text}</span>
-                    )}
-                    <button onClick={() => { setEditingChecklistItem(item._id); setEditingText(item.text); }} className="ml-2 opacity-0 group-hover:opacity-100">
-                      <Edit2 size={16} />
-                    </button>
-                    <button onClick={() => handleDeleteChecklistItem(item._id)} className="ml-2 text-error opacity-0 group-hover:opacity-100">
+              <h3 className="text-lg font-semibold">Attachments</h3>
+              <div className="space-y-2">
+                {attachments.map(file => (
+                  <div key={file._id} className="flex items-center justify-between p-2 rounded">
+                    <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
+                    <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
                       <Trash2 size={16} />
                     </button>
                   </div>
                 ))}
               </div>
-              <div className="flex items-center mt-2">
-                <input
-                  type="text"
-                  value={newChecklistItem}
-                  onChange={(e) => setNewChecklistItem(e.target.value)}
-                  placeholder="Add an item"
-                  className="w-full p-2 rounded border"
-                />
-                <button onClick={handleAddChecklistItem} className="ml-2 px-4 py-3 rounded bg-accent"><Plus size={18}/></button>
+              <div className="mt-2">
+                <label className="w-full flex items-center px-4 py-2  rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
+                  <span className="text-base leading-normal">Select a file</span>
+                  <input type='file' className="hidden" onChange={handleFileChange} />
+                </label>
               </div>
             </div>
-          )}
 
-          {/* Comments Section */}
-          {task && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Comments</h3>
-              <div className="bg-base-100/90 p-3 rounded-lg text-2xl ">
-              <MDXEditor 
-              contentEditableClassName="mxEditor"
-                markdown={newComment}
-                onChange={setNewComment}
-                plugins={[
-                 
-                  toolbarPlugin({
-                    toolbarContents: () => (
-                      <>
-                        <UndoRedo />
-                        <BoldItalicUnderlineToggles />
-                        <DiffSourceToggleWrapper />
-                      </>
-                    )
-                  }),
-                  listsPlugin(),
-                  quotePlugin(),
-                  headingsPlugin(),
-                  linkPlugin(),
-                  thematicBreakPlugin(),
-                   diffSourcePlugin(),
-                 
-                ]}
-              />
-              </div>
-              <button onClick={handleAddComment} className="px-4 py-2 rounded bg-accent ">Comment</button>
-              <div className="space-y-4 ">
-                {comments.map(comment => (
-                  <div key={comment._id} className=" p-3 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold">{comment.user.name}</span>
-                      <span className="text-xs ">{new Date(comment.createdAt).toLocaleString()}</span>
-                    </div>
-                    {editingComment === comment._id ? (
-                      <div >
-                        <MDXEditor
-                           contentEditableClassName="mxEditor"
-                          markdown={editingCommentText}
-                          onChange={setEditingCommentText}
-                          className="mxEditor"
-                           plugins={[
-                              toolbarPlugin({
-                                toolbarContents: () => (
-                                  <>
-                                    <UndoRedo />
-                                    <BoldItalicUnderlineToggles />
-                                    <ListsToggles />
-                                    <diffSourcePlugin.DiffSourceToggle />
-                                    
-                                  </>
-                                )
-                              }),
-                              listsPlugin(),
-                              quotePlugin(),
-                              headingsPlugin(),
-                              linkPlugin(),
-                              thematicBreakPlugin(),
-                              diffSourcePlugin()
-                            ]}
-                        />
-                        <div className="flex justify-end space-x-2 mt-2">
-                           <button onClick={() => { setEditingComment(null); setEditingCommentText(''); }} className="px-3 py-1 rounded ">Cancel</button>
-                           <button onClick={() => handleUpdateComment(comment._id)} className="px-3 py-1 rounded bg-accent">Save</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <MDXEditor contentEditableClassName="mxEditor" markdown={comment.content} readOnly className="prose dark:prose-invert max-w-none"/>
-                    )}
-                    {user && user.id === comment.user._id && editingComment !== comment._id && (
-                      <div className="flex justify-end space-x-2 mt-2">
-                        <button onClick={() => { setEditingComment(comment._id); setEditingCommentText(comment.content); }} className="text-xs text-gray-500 hover:underline">Edit</button>
-                        <button onClick={() => handleDeleteComment(comment._id)} className="text-xs text-red-500 hover:underline">Delete</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </div>
-        <div className="mt-6 flex justify-between items-center">
-          <div>
+            {/* Checklist Section */}
             {task && (
-              <button onClick={() => onDelete(task._id)} className="px-4 py-2 rounded bg-red-500 text-white">
-                Delete
-              </button>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">Checklist</h3>
+                {checklist.length > 0 && (
+                  <div className="w-full rounded-full h-2.5">
+                    <div className=" h-2.5 rounded-full" style={{ width: `${checklistProgress}%` }}></div>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  {checklist.map(item => (
+                    <div key={item._id} className="flex items-center group">
+                      <input
+                        type="checkbox"
+                        checked={item.done}
+                        onChange={() => handleToggleChecklistItem(item._id, item.done)}
+                        className="h-4 w-4 rounded"
+                      />
+                      {editingChecklistItem === item._id ? (
+                        <input
+                          type="text"
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          onBlur={() => handleUpdateChecklistItem(item._id)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleUpdateChecklistItem(item._id)}
+                          className="ml-2 flex-grow p-1 rounded border "
+                          autoFocus
+                        />
+                      ) : (
+                        <span className={`ml-2 flex-grow ${item.done ? 'line-through' : ''}`}>{item.text}</span>
+                      )}
+                      <button onClick={() => { setEditingChecklistItem(item._id); setEditingText(item.text); }} className="ml-2 opacity-0 group-hover:opacity-100">
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => handleDeleteChecklistItem(item._id)} className="ml-2 text-error opacity-0 group-hover:opacity-100">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center mt-2">
+                  <input
+                    type="text"
+                    value={newChecklistItem}
+                    onChange={(e) => setNewChecklistItem(e.target.value)}
+                    placeholder="Add an item"
+                    className="w-full p-2 rounded border"
+                  />
+                  <button onClick={handleAddChecklistItem} className="ml-2 px-4 py-3 rounded bg-accent"><Plus size={18}/></button>
+                </div>
+              </div>
             )}
+
+            {/* Comments Section */}
+            {task && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Comments</h3>
+                <div className="bg-base-100/90 p-3 rounded-lg text-2xl ">
+                <MDXEditor
+                contentEditableClassName="mxEditor"
+                  markdown={newComment}
+                  onChange={setNewComment}
+                  plugins={[
+
+                    toolbarPlugin({
+                      toolbarContents: () => (
+                        <>
+                          <UndoRedo />
+                          <BoldItalicUnderlineToggles />
+                          <DiffSourceToggleWrapper />
+                        </>
+                      )
+                    }),
+                    listsPlugin(),
+                    quotePlugin(),
+                    headingsPlugin(),
+                    linkPlugin(),
+                    thematicBreakPlugin(),
+                     diffSourcePlugin(),
+
+                  ]}
+                />
+                </div>
+                <button onClick={handleAddComment} className="px-4 py-2 rounded bg-accent ">Comment</button>
+                <div className="space-y-4 ">
+                  {comments.map(comment => (
+                    <div key={comment._id} className=" p-3 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold">{comment.user.name}</span>
+                        <span className="text-xs ">{new Date(comment.createdAt).toLocaleString()}</span>
+                      </div>
+                      {editingComment === comment._id ? (
+                        <div >
+                          <MDXEditor
+                             contentEditableClassName="mxEditor"
+                            markdown={editingCommentText}
+                            onChange={setEditingCommentText}
+                            className="mxEditor"
+                             plugins={[
+                                toolbarPlugin({
+                                  toolbarContents: () => (
+                                    <>
+                                      <UndoRedo />
+                                      <BoldItalicUnderlineToggles />
+                                      <ListsToggles />
+                                      <diffSourcePlugin.DiffSourceToggle />
+
+                                    </>
+                                  )
+                                }),
+                                listsPlugin(),
+                                quotePlugin(),
+                                headingsPlugin(),
+                                linkPlugin(),
+                                thematicBreakPlugin(),
+                                diffSourcePlugin()
+                              ]}
+                          />
+                          <div className="flex justify-end space-x-2 mt-2">
+                             <button onClick={() => { setEditingComment(null); setEditingCommentText(''); }} className="px-3 py-1 rounded ">Cancel</button>
+                             <button onClick={() => handleUpdateComment(comment._id)} className="px-3 py-1 rounded bg-accent">Save</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <MDXEditor contentEditableClassName="mxEditor" markdown={comment.content} readOnly className="prose dark:prose-invert max-w-none"/>
+                      )}
+                      {user && user.id === comment.user._id && editingComment !== comment._id && (
+                        <div className="flex justify-end space-x-2 mt-2">
+                          <button onClick={() => { setEditingComment(comment._id); setEditingCommentText(comment.content); }} className="text-xs text-gray-500 hover:underline">Edit</button>
+                          <button onClick={() => handleDeleteComment(comment._id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
-          <div className="flex space-x-4">
-            <button onClick={onClose} className="px-4 py-2 rounded">Cancel</button>
-            <button onClick={handleSubmit} className="px-4 py-2 rounded bg-blue-500 text-white">Save</button>
+          <div className="mt-6 flex justify-between items-center">
+            <div>
+              {task && (
+                <button onClick={() => onDelete(task._id)} className="px-4 py-2 rounded bg-red-500 text-white">
+                  Delete
+                </button>
+              )}
+            </div>
+            <div className="flex space-x-4">
+              <button onClick={onClose} className="px-4 py-2 rounded">Cancel</button>
+              <button onClick={handleSubmit} className="px-4 py-2 rounded bg-blue-500 text-white">Save</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
