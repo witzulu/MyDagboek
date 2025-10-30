@@ -170,7 +170,7 @@ const ChangeLog = () => {
                 <div className="card bg-base-100 shadow-xl mb-6">
                     <div className="card-body">
                         <h2 className="card-title">New Manual Entry</h2>
-                        <MDXEditor markdown={newMessage} onChange={setNewMessage} plugins={[toolbarPlugin({ toolbar: () => <><UndoRedo /><BoldItalicUnderlineToggles /></> }), headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]} contentEditableClassName="!h-32 bg-base-200" />
+                        <MDXEditor markdown={newMessage} onChange={setNewMessage} plugins={[toolbarPlugin({ toolbarContents: () => <><UndoRedo /><BoldItalicUnderlineToggles /></> }), headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]} contentEditableClassName="!h-32 bg-base-200" />
                         {renderLabelSelector(newSelectedLabels, (id) => toggleLabel(id, setNewSelectedLabels))}
                         <div className="card-actions justify-end mt-4">
                             <button onClick={() => setIsCreating(false)} className="btn btn-ghost">Cancel</button>
@@ -224,7 +224,7 @@ const ChangeLog = () => {
                             </div>
                             {editingEntryId === entry._id ? (
                                 <div>
-                                    <MDXEditor markdown={editingText} onChange={setEditingText} plugins={[toolbarPlugin({ toolbar: () => <><UndoRedo /><BoldItalicUnderlineToggles /></> }), headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]} contentEditableClassName="!h-32 bg-base-200" />
+                                    <MDXEditor markdown={editingText} onChange={setEditingText} plugins={[toolbarPlugin({ toolbarContents: () => <><UndoRedo /><BoldItalicUnderlineToggles /></> }), headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]} contentEditableClassName="!h-32 bg-base-200" />
                                     {renderLabelSelector(editingLabels, (id) => toggleLabel(id, setEditingLabels))}
                                     <div className="card-actions justify-end mt-2">
                                         <button onClick={() => setEditingEntryId(null)} className="btn btn-ghost">Cancel</button>
