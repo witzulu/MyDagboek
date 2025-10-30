@@ -22,7 +22,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(null);
-  const [isImportant, setIsImportant] = useState(false);
   const [assignedLabels, setAssignedLabels] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [checklist, setChecklist] = useState([]);
@@ -40,7 +39,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setTitle(task.title);
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
-        setIsImportant(task.isImportant || false);
         setAssignedLabels(task.labels || []);
         setAttachments(task.attachments || []);
         setChecklist(task.checklist || []);
@@ -49,7 +47,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setTitle('');
         setDescription('');
         setDueDate(null);
-        setIsImportant(false);
         setAssignedLabels([]);
         setAttachments([]);
         setChecklist([]);
@@ -111,7 +108,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       title,
       description,
       dueDate,
-      isImportant,
       labels: assignedLabels.map(l => l._id || l),
       listId: task ? task.list : listId,
       taskId: task ? task._id : null
