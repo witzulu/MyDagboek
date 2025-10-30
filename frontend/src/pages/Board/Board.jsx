@@ -68,7 +68,7 @@ const Board = () => {
         setBoard(boardData.board);
         setLists(boardData.lists);
         setProjectLabels(labelsData);
-        setProjectMembers(membersData.members || []);
+        setProjectMembers(membersData || []);
       } catch (err) {
         setError(err.message);
       } finally {
