@@ -99,6 +99,47 @@ const Board = () => {
     }
   };
 
+  const handleToggleImportant = async (taskId, isImportant) => {
+    // Optimistic UI update
+    setLists(prevLists => {
+      const newLists = JSON.parse(JSON.stringify(prevLists));
+      for (const list of newLists) {
+        const task = list.tasks.find(t => t._id === taskId);
+        if (task) {
+          task.isImportant = isImportant;
+          break;
+        }
+      }
+      return newLists;
+    });
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isImportant }),
+      });
+    } catch (err) {
+      setError("Failed to update task's important status.");
+      // Revert optimistic update on failure
+       setLists(prevLists => {
+        const newLists = JSON.parse(JSON.stringify(prevLists));
+        for (const list of newLists) {
+            const task = list.tasks.find(t => t._id === taskId);
+            if (task) {
+                task.isImportant = !isImportant;
+                break;
+            }
+        }
+        return newLists;
+    });
+    }
+  };
+
   const handleUpdateList = async (listId, newName) => {
     try {
       const token = localStorage.getItem('token');
@@ -488,6 +529,7 @@ const Board = () => {
                   onAddTask={() => { setTargetListId(list._id); setIsCardModalOpen(true); }}
                   onEditTask={(task) => { setEditingTask(task); setIsCardModalOpen(true); }}
                   onCompleteTask={handleCompleteTask}
+                  onToggleImportant={handleToggleImportant}
                 />
               ))}
               <div className="w-72 flex-shrink-0">
@@ -501,7 +543,7 @@ const Board = () => {
   );
 };
 
-const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask }) => {
+const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onToggleImportant }) => {
   const {
     attributes,
     listeners,
@@ -524,13 +566,14 @@ const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask,
         onAddTask={onAddTask}
         onEditTask={onEditTask}
         onCompleteTask={onCompleteTask}
+        onToggleImportant={onToggleImportant}
         dragHandleProps={{...attributes, ...listeners}}
       />
     </div>
   );
 };
 
-const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, dragHandleProps }) => {
+const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onToggleImportant, dragHandleProps }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(list.name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -590,7 +633,7 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompl
         <div className="mt-2 space-y-2">
           {list.tasks && list.tasks.map(task => (
             <div key={task._id}>
-              <Card task={task} onEditTask={onEditTask} onCompleteTask={onCompleteTask}/>
+              <Card task={task} onEditTask={onEditTask} onCompleteTask={onCompleteTask} onToggleImportant={onToggleImportant} />
             </div>
           ))}
         </div>

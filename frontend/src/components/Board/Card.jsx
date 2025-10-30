@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { CheckSquare, MessageSquare, MoreVertical, Star } from 'lucide-react';
 
-const Card = ({ task, onEditTask, onCompleteTask }) => {
+const Card = ({ task, onEditTask, onCompleteTask, onToggleImportant }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
     attributes,
@@ -103,6 +103,16 @@ const Card = ({ task, onEditTask, onCompleteTask }) => {
               className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"
             >
               Mark as Complete
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleImportant(task._id, !task.isImportant);
+                setIsMenuOpen(false);
+              }}
+              className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"
+            >
+              {task.isImportant ? 'Remove from Important' : 'Mark as Important'}
             </button>
           </div>
         )}
