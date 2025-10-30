@@ -5,17 +5,17 @@ def run(playwright):
     browser = playwright.chromium.launch(headless=True)
     context = browser.new_context()
     page = context.new_page()
-    page.goto("http://localhost:5173/login")
+    page.goto("http://localhost:5176/login")
     page.get_by_label("Email").fill("admin@dagboek.com")
     page.get_by_label("Password").fill("admin")
     page.get_by_role("button", name="Login").click()
-    page.wait_for_url("http://localhost:5173/projects")
+    page.wait_for_url("http://localhost:5176/projects")
     page.locator("a:has-text('Test Project')").click()
-    page.wait_for_url("http://localhost:5173/projects/66d30421255e26963a43a05c")
+    page.wait_for_url("http://localhost:5176/projects/66d30421255e26963a43a05c")
     page.locator("a:has-text('Boards')").click()
-    page.wait_for_url("http://localhost:5173/projects/66d30421255e26963a43a05c/boards")
+    page.wait_for_url("http://localhost:5176/projects/66d30421255e26963a43a05c/boards")
     page.locator("a:has-text('Test Board')").click()
-    page.wait_for_url("http://localhost:5173/projects/66d30421255e26963a43a05c/boards/66d3042c255e26963a43a067")
+    page.wait_for_url("http://localhost:5176/projects/66d30421255e26963a43a05c/boards/66d3042c255e26963a43a067")
 
     # Wait for the card to be visible
     card = page.locator(".card").first
