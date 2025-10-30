@@ -308,11 +308,23 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       <div className="bg-base-300  p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto  border border-accent/50 shadow-lg">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">{task ? 'Edit Card' : 'Create Card'}</h2>
-          {task && (
-            <button onClick={handleCompleteTask} className="px-4 py-2 rounded bg-green-500 text-white">
-              Mark as Complete
-            </button>
-          )}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <label htmlFor="is-important-modal" className="mr-2 text-sm font-medium">Important</label>
+              <input
+                type="checkbox"
+                id="is-important-modal"
+                checked={isImportant}
+                onChange={(e) => setIsImportant(e.target.checked)}
+                className="toggle toggle-primary"
+              />
+            </div>
+            {task && (
+              <button onClick={handleCompleteTask} className="px-4 py-2 rounded bg-green-500 text-white">
+                Mark as Complete
+              </button>
+            )}
+          </div>
         </div>
         <div className="space-y-4">
           <input
@@ -335,16 +347,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               value={dueDate || ''}
               onChange={(e) => setDueDate(e.target.value)}
               className="mt-1 block w-full p-2 rounded border bg-base-300"
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <label htmlFor="is-important" className="block text-sm font-medium">Mark as Important</label>
-            <input
-              type="checkbox"
-              id="is-important"
-              checked={isImportant}
-              onChange={(e) => setIsImportant(e.target.checked)}
-              className="toggle toggle-primary"
             />
           </div>
           <LabelManager
