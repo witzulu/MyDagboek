@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback, useRef, DragEvent } from "react";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
-import ReactFlow, {
+import {
+  ReactFlow,
   Controls,
   Background,
   applyNodeChanges,
