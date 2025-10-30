@@ -2,8 +2,6 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Plus, Trash2, X, Save, FolderPlus, Folder, File, ChevronRight, ChevronDown, Edit } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
-import { Tldraw } from "@tldraw/tldraw";
-import "@tldraw/tldraw/tldraw.css";
 import debounce from "lodash.debounce";
 import "@mdxeditor/editor/style.css";
 import '../mdxeditor.css'
@@ -32,7 +30,7 @@ import {
   DiffSourceToggleWrapper,
 } from "@mdxeditor/editor";
 import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
-
+import "@excalidraw/excalidraw/index.css";
 export default function Notebook() {
     const { selectedProject } = useProject();
     const { projectId } = useParams();
@@ -46,8 +44,9 @@ export default function Notebook() {
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState("saved");
     const [lastSaved, setLastSaved] = useState(null);
+    const [Excalidraw, setExcalidraw] = useState(null);
 
-    const excalidrawAPIRef = useRef(null);
+    const excalidrawRef = useRef(null);
     const currentProjectId = selectedProject?._id || projectId;
     const noteStateRef = useRef();
     noteStateRef.current = currentNote;
@@ -78,6 +77,13 @@ export default function Notebook() {
     useEffect(() => {
       fetchData();
     }, [fetchData]);
+
+    // Load Excalidraw dynamically
+    useEffect(() => {
+      import("@excalidraw/excalidraw").then((module) => {
+        setExcalidraw(() => module.Excalidraw);
+      });
+    }, []);
 
     // --- Note Actions ---
     const addNote = async () => {
@@ -221,9 +227,9 @@ export default function Notebook() {
           setSaveStatus("saving");
 
           let drawingData = currentNote.drawing;
-          if (activeView === 'drawing' && excalidrawAPIRef.current) {
-            const elements = excalidrawAPIRef.current.getSceneElements();
-            const appState = excalidrawAPIRef.current.getAppState();
+          if (activeView === 'drawing' && excalidrawRef.current) {
+            const elements = excalidrawRef.current.getSceneElements();
+            const appState = excalidrawRef.current.getAppState();
             drawingData = { elements, appState };
           }
 
@@ -362,13 +368,14 @@ export default function Notebook() {
             >
                 <div
                     className={`flex items-center justify-between p-2 rounded-lg cursor-pointer ${selectedFolder === folder._id ? 'bg-primary text-primary-content' : 'hover:bg-base-200'}`}
-                    onClick={() => setSelectedFolder(folder._id)}
                 >
-                    <div className="flex items-center gap-2" ref={setNodeRef} {...listeners} {...attributes}>
+                    <div className="flex items-center gap-2" ref={setNodeRef}>
                         <span onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}>
                             {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                         </span>
-                        <Folder size={16} />
+                        <span {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
+                            <Folder size={16} />
+                        </span>
                         {isEditing ? (
                             <input
                                 type="text"
@@ -378,14 +385,15 @@ export default function Notebook() {
                                 onKeyDown={e => e.key === 'Enter' && handleRename()}
                                 className="input input-xs"
                                 autoFocus
+                                onClick={e => e.stopPropagation()}
                             />
                         ) : (
-                            <span>{folder.name}</span>
+                            <span onClick={() => setSelectedFolder(folder._id)}>{folder.name}</span>
                         )}
                     </div>
                     <div className="flex items-center gap-1">
-                        <button className="btn btn-xs btn-ghost" onClick={() => setIsEditing(true)}><Edit size={12} /></button>
-                        <button className="btn btn-xs btn-ghost" onClick={() => deleteFolder(folder._id)}><Trash2 size={12} /></button>
+                        <button className="btn btn-xs btn-ghost" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}><Edit size={12} /></button>
+                        <button className="btn btn-xs btn-ghost" onClick={(e) => { e.stopPropagation(); deleteFolder(folder._id); }}><Trash2 size={12} /></button>
                     </div>
                 </div>
                 {isOpen && (
@@ -408,13 +416,14 @@ export default function Notebook() {
                     paddingLeft: `${level * 16}px`,
                     transform: `translate3d(${transform?.x || 0}px, ${transform?.y || 0}px, 0)`,
                 }}
-                onClick={() => handleSelectNote(note)}
                 className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer ${currentNote?._id === note._id ? 'bg-primary text-primary-content' : 'hover:bg-base-200'}`}
-                {...listeners}
-                {...attributes}
             >
-                <File size={16} />
-                <span>{note.title || "Untitled"}</span>
+                <span {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
+                    <File size={16} />
+                </span>
+                <span onClick={() => handleSelectNote(note)} className="flex-1">
+                    {note.title || "Untitled"}
+                </span>
             </div>
         )
     };
@@ -546,12 +555,18 @@ export default function Notebook() {
                         {/* Drawing Editor */}
                         {activeView === "drawing" && (
                             <div className="relative h-[600px] border rounded-lg overflow-hidden">
-                            <Excalidraw
+                            {Excalidraw ? (
+                              <Excalidraw
                                 key={currentNote._id}
-                                excalidrawAPI={(api) => (excalidrawAPIRef.current = api)}
-                                initialData={currentNote.drawing}
+                                ref={excalidrawRef}
+                                initialData={currentNote.drawing || { elements: [], appState: {} }}
                                 onChange={handleDrawingChange}
-                            />
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <span className="loading loading-spinner loading-lg"></span>
+                              </div>
+                            )}
                             </div>
                         )}
                         </div>
