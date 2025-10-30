@@ -28,6 +28,15 @@ const ChangeLog = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUserId, setSelectedUserId] = useState('');
 
+    const categoryStyles = {
+        board: 'border-l-4 border-blue-500',
+        note: 'border-l-4 border-green-500',
+        team: 'border-l-4 border-yellow-500',
+        snippet: 'border-l-4 border-purple-500',
+        report: 'border-l-4 border-red-500',
+        manual: 'border-l-4 border-gray-500',
+    };
+
     const [activeFilters, setActiveFilters] = useState({
         board: true,
         note: true,
@@ -357,7 +366,7 @@ const ChangeLog = () => {
 
             <div className="space-y-4">
                 {filteredEntries.map((entry) => (
-                    <div key={entry._id} className={`card shadow-lg ${entry.type === 'automatic' ? 'bg-base-200' : 'bg-base-100'}`}>
+                    <div key={entry._id} className={`card shadow-lg ${entry.type === 'automatic' ? 'bg-base-200' : 'bg-base-100'} ${categoryStyles[entry.category] || ''}`}>
                         <div className="card-body">
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-3">
