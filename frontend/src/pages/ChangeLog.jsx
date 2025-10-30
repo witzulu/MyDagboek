@@ -5,6 +5,7 @@ import { Edit, Trash2, Bot, User, Download, PlusCircle } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import { MDXEditor, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin, markdownShortcutPlugin } from '@mdxeditor/editor';
+import ManualEntryModal from '../components/ManualEntryModal';
 import '@mdxeditor/editor/style.css';
 
 const ChangeLog = () => {
@@ -22,6 +23,42 @@ const ChangeLog = () => {
     const [editingTags, setEditingTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
     const [projectMembers, setProjectMembers] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingEntry, setEditingEntry] = useState(null);
+
+    const handleSaveManualEntry = async (entryData) => {
+        const { _id, ...data } = entryData;
+        const isUpdating = !!_id;
+        const url = isUpdating ? `/api/changelog/${_id}` : `/api/projects/${projectId}/changelog`;
+        const method = isUpdating ? 'PUT' : 'POST';
+
+        if (!data.message.trim()) {
+            return toast.error('Message cannot be empty.');
+        }
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ ...data, type: 'manual' }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to ${isUpdating ? 'update' : 'add'} entry.`);
+            }
+
+            const savedEntry = await response.json();
+            if (isUpdating) {
+                setEntries(entries.map((entry) => (entry._id === _id ? savedEntry : entry)));
+            } else {
+                setEntries([savedEntry, ...entries]);
+            }
+            toast.success(`Entry ${isUpdating ? 'updated' : 'added'}!`);
+        } catch (err) {
+            toast.error(err.message);
+        }
+    };
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
@@ -134,44 +171,6 @@ const ChangeLog = () => {
         return categoryFilteredEntries;
     }, [entries, activeFilters, startDate, endDate, searchTerm, selectedUserId, selectedTags]);
 
-    const handleAddManualEntry = async () => {
-        if (!newMessage.trim()) {
-            return toast.error('Message cannot be empty.');
-        }
-        const tags = newTags.split(',').map(tag => tag.trim()).filter(Boolean);
-
-        try {
-            const response = await fetch(`/api/projects/${projectId}/changelog`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    title: newTitle,
-                    message: newMessage,
-                    tags,
-                    type: 'manual',
-                    includeInReport: true, // Default to true for manual entries
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to add manual entry.');
-            }
-
-            const newEntry = await response.json();
-            setEntries([newEntry, ...entries]); // Add to top of the list
-            setNewTitle('');
-            setNewMessage('');
-            setNewTags('');
-            toast.success('Manual entry added!');
-        } catch (err) {
-            toast.error(err.message);
-        }
-    };
-
     const handleFilterChange = (filter) => {
         setActiveFilters(prev => ({ ...prev, [filter]: !prev[filter] }));
     };
@@ -197,32 +196,6 @@ const ChangeLog = () => {
         }
     };
 
-    const handleUpdateEntry = async (entryId) => {
-        if (!editingText.trim()) return toast.error('Message cannot be empty.');
-
-        const tags = Array.isArray(editingTags)
-            ? editingTags
-            : editingTags.split(',').map(tag => tag.trim()).filter(Boolean);
-
-        try {
-            const response = await fetch(`/api/changelog/${entryId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ title: editingTitle, message: editingText, tags }),
-            });
-            if (!response.ok) throw new Error('Failed to update entry.');
-            const updatedEntry = await response.json();
-            setEntries(entries.map((entry) => (entry._id === entryId ? updatedEntry : entry)));
-            setEditingEntryId(null);
-            setEditingTitle('');
-            setEditingText('');
-            setEditingTags([]);
-            toast.success('Entry updated!');
-        } catch (err) {
-            toast.error(err.message);
-        }
-    };
-
     const handleToggleReportInclusion = async (entryId) => {
         try {
             const response = await fetch(`/api/changelog/${entryId}/toggle-report`, {
@@ -239,10 +212,8 @@ const ChangeLog = () => {
     };
 
     const startEditing = (entry) => {
-        setEditingEntryId(entry._id);
-        setEditingTitle(entry.title || '');
-        setEditingText(entry.message);
-        setEditingTags(entry.tags || []);
+        setEditingEntry(entry);
+        setIsModalOpen(true);
     };
 
     const canManageLog = useMemo(() => {
@@ -254,52 +225,24 @@ const ChangeLog = () => {
 
     return (
         <div className="container mx-auto p-4 flex-1">
-
+            <ManualEntryModal
+                isOpen={isModalOpen}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingEntry(null);
+                }}
+                onSave={handleSaveManualEntry}
+                entry={editingEntry}
+            />
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
+                {canManageLog && (
+                    <button onClick={() => { setEditingEntry(null); setIsModalOpen(true); }} className="btn btn-primary">
+                        <PlusCircle size={18} className="mr-2" />
+                        Add Manual Entry
+                    </button>
+                )}
             </div>
-
-            {canManageLog && (
-                <div className="card bg-base-100 shadow-xl mb-6">
-                    <div className="card-body">
-                        <h2 className="card-title">Add Manual Entry</h2>
-                        <div className="form-control">
-                            <label className="label"><span className="label-text">Title (Optional)</span></label>
-                            <input
-                                type="text"
-                                value={newTitle}
-                                onChange={(e) => setNewTitle(e.target.value)}
-                                className="input input-bordered"
-                                placeholder="A brief summary of the change"
-                            />
-                        </div>
-                        <div className="prose max-w-none mt-4">
-                            <MDXEditor
-                                markdown={newMessage}
-                                onChange={setNewMessage}
-                                plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]}
-                                contentEditableClassName="!h-24"
-                            />
-                        </div>
-                        <div className="form-control mt-4">
-                            <label className="label"><span className="label-text">Tags (comma-separated)</span></label>
-                            <input
-                                type="text"
-                                value={newTags}
-                                onChange={(e) => setNewTags(e.target.value)}
-                                className="input input-bordered"
-                                placeholder="e.g. bugfix, feature, design"
-                            />
-                        </div>
-                        <div className="card-actions justify-end mt-4">
-                            <button onClick={handleAddManualEntry} className="btn btn-primary">
-                                <PlusCircle size={18} className="mr-2" />
-                                Add Entry
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <div className="card bg-base-100 shadow-xl mb-6">
                 <div className="card-body">
@@ -377,38 +320,10 @@ const ChangeLog = () => {
                                     )}
                                 </div>
                             </div>
-                            {editingEntryId === entry._id ? (
-                                <div className="prose-sm max-w-none mt-2">
-                                    <input
-                                        type="text"
-                                        className="input input-bordered w-full mb-2"
-                                        placeholder="Title"
-                                        value={editingTitle}
-                                        onChange={(e) => setEditingTitle(e.target.value)}
-                                    />
-                                    <MDXEditor
-                                        markdown={editingText}
-                                        onChange={setEditingText}
-                                        plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin(), markdownShortcutPlugin()]}
-                                        contentEditableClassName="!h-32"
-                                    />
-                                    <input
-                                        type="text"
-                                        className="input input-bordered w-full mt-2"
-                                        placeholder="Tags (comma-separated)"
-                                        value={Array.isArray(editingTags) ? editingTags.join(', ') : editingTags}
-                                        onChange={(e) => setEditingTags(e.target.value)}
-                                    />
-                                    <div className="card-actions justify-end mt-2">
-                                        <button onClick={() => setEditingEntryId(null)} className="btn btn-ghost btn-sm">Cancel</button>
-                                        <button onClick={() => handleUpdateEntry(entry._id)} className="btn btn-primary btn-sm">Save</button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="prose-sm max-w-none mt-2 text-base-content">
-                                    <ReactMarkdown>{entry.message}</ReactMarkdown>
-                                </div>
-                            )}
+                            <div className="prose-sm max-w-none mt-2 text-base-content">
+                                {entry.title && <h3 className="font-bold">{entry.title}</h3>}
+                                <ReactMarkdown>{entry.message}</ReactMarkdown>
+                            </div>
                             {entry.tags && entry.tags.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {entry.tags.map(tag => <div key={tag} className="badge badge-neutral">{tag}</div>)}
