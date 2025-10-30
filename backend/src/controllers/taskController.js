@@ -500,6 +500,51 @@ exports.completeTask = async (req, res) => {
   }
 };
 
+// @desc    Update task priority
+// @route   PUT /api/tasks/:id/priority
+// @access  Private
+exports.updateTaskPriority = async (req, res, next) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Authorization check
+    const board = await Board.findById(task.board);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+    const project = await Project.findById(board.project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found for this board' });
+    }
+
+    if (req.user.role !== 'system_admin') {
+      const isMember = project.members.some(member => member.user && member.user.toString() === req.user.id);
+      if (!isMember) {
+        return res.status(403).json({ message: 'User is not a member of this project' });
+      }
+    }
+
+    const priorities = ['Low', 'Medium', 'High', 'None'];
+    const currentPriorityIndex = priorities.indexOf(task.priority);
+    const nextPriorityIndex = (currentPriorityIndex + 1) % priorities.length;
+    const nextPriority = priorities[nextPriorityIndex];
+
+    task.priority = nextPriority === 'None' ? null : nextPriority;
+    const updatedTask = await task.save();
+
+    await logChange(project._id, req.user.id, `set priority for task '${task.title}' to ${nextPriority}.`, 'board');
+
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    console.error('Error updating task priority:', error);
+    next(error);
+  }
+};
+
+
 // Not implemented yet
 exports.getTasks = async (req, res, next) => { res.status(501).json({ message: 'Not implemented' }); };
 exports.getTaskById = async (req, res, next) => { res.status(501).json({ message: 'Not implemented' }); };
