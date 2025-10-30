@@ -32,10 +32,10 @@ const changeLogSchema = new mongoose.Schema({
     enum: ['board', 'note', 'team', 'report', 'snippet', 'manual'],
     default: 'manual',
   },
-  labels: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Label'
-  }],
+  tags: {
+    type: [String],
+    default: [],
+  }
 }, {
   timestamps: true,
 });

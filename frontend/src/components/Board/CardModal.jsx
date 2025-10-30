@@ -17,12 +17,13 @@ import {
 import '../../mdxeditor.css'
 import { AuthContext } from '../../context/AuthContext';
 
-const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate }) => {
+const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(null);
   const [assignedLabels, setAssignedLabels] = useState([]);
+  const [assignees, setAssignees] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [comments, setComments] = useState([]);
@@ -40,6 +41,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
         setAssignedLabels(task.labels || []);
+        setAssignees(task.assignees?.map(a => a._id) || []);
         setAttachments(task.attachments || []);
         setChecklist(task.checklist || []);
         setComments(task.comments || []);
@@ -48,6 +50,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setDescription('');
         setDueDate(null);
         setAssignedLabels([]);
+        setAssignees([]);
         setAttachments([]);
         setChecklist([]);
         setComments([]);
@@ -109,6 +112,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       description,
       dueDate,
       labels: assignedLabels.map(l => l._id || l),
+      assignees,
       listId: task ? task.list : listId,
       taskId: task ? task._id : null
     });
@@ -123,6 +127,10 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         const labelToAdd = projectLabels.find(l => l._id === labelId);
         if(labelToAdd) setAssignedLabels(prev => [...prev, labelToAdd]);
     }
+  };
+
+  const toggleAssignee = (memberId) => {
+    setAssignees(prev => prev.includes(memberId) ? prev.filter(id => id !== memberId) : [...prev, memberId]);
   };
 
   const handleFileChange = async (e) => {
@@ -339,6 +347,19 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             onLabelToggle={handleLabelToggle}
             onNewLabel={onNewLabel}
           />
+            <div>
+                <h3 className="font-semibold mb-2">Assignees</h3>
+                <div className="dropdown">
+                  <div tabIndex={0} role="button" className="btn btn-outline w-full justify-start">{assignees.length} selected</div>
+                  <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                    {projectMembers && projectMembers.map(member => (
+                      <li key={member.user._id} onClick={() => toggleAssignee(member.user._id)}>
+                        <a className={assignees.includes(member.user._id) ? 'bg-accent' : ''}>{member.user.name}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+            </div>
 
           {/* Attachments Section */}
           <div className="space-y-2">

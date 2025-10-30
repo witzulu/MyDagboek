@@ -21,6 +21,7 @@ const Board = () => {
   const [board, setBoard] = useState(null);
   const [lists, setLists] = useState([]);
   const [projectLabels, setProjectLabels] = useState([]);
+  const [projectMembers, setProjectMembers] = useState([]);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -38,11 +39,14 @@ const Board = () => {
           throw new Error("Authentication token not found.");
         }
 
-        const [boardRes, labelsRes] = await Promise.all([
+        const [boardRes, labelsRes, membersRes] = await Promise.all([
           fetch(`/api/boards/${boardId}`, {
             headers: { "Authorization": `Bearer ${token}` },
           }),
           fetch(`/api/projects/${projectId}/labels`, {
+            headers: { "Authorization": `Bearer ${token}` },
+          }),
+          fetch(`/api/projects/${projectId}/members`, {
             headers: { "Authorization": `Bearer ${token}` },
           }),
         ]);
@@ -53,13 +57,18 @@ const Board = () => {
         if (!labelsRes.ok) {
           throw new Error(`Failed to fetch labels: ${labelsRes.status}`);
         }
+        if (!membersRes.ok) {
+            throw new Error(`Failed to fetch members: ${membersRes.status}`);
+        }
 
         const boardData = await boardRes.json();
         const labelsData = await labelsRes.json();
+        const membersData = await membersRes.json();
 
         setBoard(boardData.board);
         setLists(boardData.lists);
         setProjectLabels(labelsData);
+        setProjectMembers(membersData.members || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -231,7 +240,7 @@ const Board = () => {
     }
   };
 
-  const handleSaveTask = async ({ title, description, dueDate, labels, listId, taskId }) => {
+  const handleSaveTask = async ({ title, description, dueDate, labels, assignees, listId, taskId }) => {
     const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
     const method = taskId ? 'PUT' : 'POST';
 
@@ -243,7 +252,7 @@ const Board = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, dueDate, labels, listId }),
+        body: JSON.stringify({ title, description, dueDate, labels, assignees, listId }),
       });
 
       if (!response.ok) {
@@ -252,11 +261,16 @@ const Board = () => {
 
       let savedTask = await response.json();
 
-      // Manually populate labels on the client-side to avoid a crash
+      // Manually populate labels and assignees on the client-side to avoid a crash
       if (savedTask.labels && projectLabels.length > 0) {
         savedTask.labels = savedTask.labels.map(labelId =>
           projectLabels.find(l => l._id === labelId)
-        ).filter(Boolean); // Filter out any nulls if a label wasn't found
+        ).filter(Boolean);
+      }
+      if (savedTask.assignees && projectMembers.length > 0) {
+        savedTask.assignees = savedTask.assignees.map(assigneeId =>
+          projectMembers.find(m => m.user._id === assigneeId)?.user
+        ).filter(Boolean);
       }
 
       setLists(prevLists => {
@@ -293,12 +307,15 @@ const Board = () => {
       if (listIndex !== -1) {
         const taskIndex = newLists[listIndex].tasks.findIndex(t => t._id === updatedTask._id);
         if (taskIndex !== -1) {
-          // Preserve and re-populate labels
+          // Preserve and re-populate labels and assignees
           const repopulatedLabels = (updatedTask.labels || []).map(labelId =>
             projectLabels.find(l => l._id === labelId) || labelId
           ).filter(Boolean);
+          const repopulatedAssignees = (updatedTask.assignees || []).map(assigneeId =>
+            projectMembers.find(m => m.user._id === assigneeId)?.user || assigneeId
+            ).filter(Boolean);
 
-          newLists[listIndex].tasks[taskIndex] = { ...updatedTask, labels: repopulatedLabels };
+          newLists[listIndex].tasks[taskIndex] = { ...updatedTask, labels: repopulatedLabels, assignees: repopulatedAssignees };
         }
       }
       return newLists;
@@ -391,6 +408,11 @@ const Board = () => {
           projectLabels.find(l => l._id === labelId)
         ).filter(Boolean);
       }
+      if (updatedTask.assignees && projectMembers.length > 0) {
+        updatedTask.assignees = updatedTask.assignees.map(assigneeId =>
+            projectMembers.find(m => m.user._id === assigneeId)?.user
+        ).filter(Boolean);
+      }
 
       // Find the source list and destination list ('Done')
       const sourceListId = findList(updatedTask._id)?._id;
@@ -460,6 +482,7 @@ const Board = () => {
         task={editingTask}
         listId={targetListId}
         projectLabels={projectLabels}
+        projectMembers={projectMembers}
         onNewLabel={handleNewLabel}
       />
       <EditBoardModal
@@ -485,7 +508,7 @@ const Board = () => {
                   list={list}
                   onUpdateList={handleUpdateList}
                   onDeleteList={handleDeleteList}
-                  onAddTask={() => { setTargetListId(list._id); setIsCardModalOpen(true); }}
+                  onAddTask={() => { setTargetListId(list._id); setEditingTask(null); setIsCardModalOpen(true); }}
                   onEditTask={(task) => { setEditingTask(task); setIsCardModalOpen(true); }}
                   onCompleteTask={handleCompleteTask}
                 />
