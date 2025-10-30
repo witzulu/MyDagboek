@@ -11,7 +11,8 @@ const {
   getProjectMembers,
   addProjectMember,
   updateProjectMemberRole,
-  removeProjectMember
+  removeProjectMember,
+  getProjectTasks
 } = require('../controllers/projectController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -26,5 +27,8 @@ router.route('/:id/members/:memberId').put(protect, updateProjectMemberRole).del
 const snippetRoutes = require('./snippets');
 router.use('/:projectId/snippets', snippetRoutes);
 router.get('/:projectId/progress-report', protect, getProgressReport);
+
+// Tasks for project
+router.route('/:id/tasks').get(protect, getProjectTasks);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const Project = require('../models/Project');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Task = require('../models/Task');
 const { logChange } = require('../utils/changeLogService');
 
 // @desc    Get all projects for a user
@@ -17,6 +18,28 @@ exports.getProjects = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Get all tasks for a project
+// @route   GET /api/projects/:id/tasks
+// @access  Private
+exports.getProjectTasks = async (req, res, next) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Verify user is a member of the project
+    if (project.user.toString() !== req.user.id && !project.members.some(member => member.user.toString() === req.user.id)) {
+      return res.status(403).json({ message: 'User is not a member of this project' });
+    }
+
+    const tasks = await Task.find({ project: req.params.id });
+    res.status(200).json(tasks);
+  } catch (error) {
+    next(error);
   }
 };
 

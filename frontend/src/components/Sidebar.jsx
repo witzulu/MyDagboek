@@ -16,13 +16,13 @@ export default function Sidebar() {
     { to: `/projects/${projectId}/errors`, icon: AlertCircle, label: 'Error Reports' },
     { to: `/projects/${projectId}/progress-reports`, icon: TrendingUp, label: 'Progress Reports' },
     { to: `/projects/${projectId}/snippets`, icon: Code, label: 'Code Snippets' },
-    { to: `/projects/${projectId}/time`, icon: Clock, label: 'Time Tracking' },
     { to: `/projects/${projectId}/team`, icon: Users, label: 'Team' }
   ];
 
   const globalNavItems = [
     { to: '/projects', icon: FolderKanban, label: 'Projects' },
     { to: '/reports-dashboard', icon: TrendingUp, label: 'Reports Dashboard' },
+    { to: '/time-tracking', icon: Clock, label: 'Time Tracking' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
