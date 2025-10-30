@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import api from '../services/api';
 
@@ -28,6 +29,28 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
+  const navigate = useNavigate();
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+    setNotifications([]);
+    // Redirect to login page
+    navigate('/login', { replace: true });
+  }, [navigate]);
+
+  useEffect(() => {
+    const handleAuthError = () => {
+      logout();
+    };
+
+    window.addEventListener('auth-error', handleAuthError);
+
+    return () => {
+      window.removeEventListener('auth-error', handleAuthError);
+    };
+  }, [logout]);
 
   const fetchNotifications = useCallback(async () => {
     if (!token) return;
@@ -35,7 +58,7 @@ export const AuthProvider = ({ children }) => {
       const data = await api('/notifications');
       setNotifications(data);
     } catch (error) {
-      console.error('Failed to fetch notifications', error);
+      // Error is handled by the api service interceptor
     }
   }, [token]);
 
@@ -48,24 +71,15 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Failed to decode token:", error);
-      setUser(null);
-      localStorage.removeItem('token');
-      setToken(null);
+      logout();
     } finally {
       setLoading(false);
     }
-  }, [token, fetchNotifications]);
+  }, [token, fetchNotifications, logout]);
 
   const login = (newToken) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-    setNotifications([]);
   };
 
   const value = {

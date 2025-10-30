@@ -30,13 +30,22 @@ const api = async (endpoint, options = {}) => {
   try {
     // Use relative path to leverage Vite's proxy
     const response = await fetch(`/api${endpoint}`, config);
+
+    if (response.status === 401) {
+      window.dispatchEvent(new Event('auth-error'));
+      throw new Error('Session expired. Please log in again.');
+    }
+
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || 'Something went wrong');
     }
     return data;
   } catch (error) {
-    console.error('API Error:', error);
+    // Don't log the auth-error specifically, as it's a handled case.
+    if (error.message !== 'Session expired. Please log in again.') {
+        console.error('API Error:', error);
+    }
     throw error;
   }
 };
