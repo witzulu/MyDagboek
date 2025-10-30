@@ -1,9 +1,44 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, DragEvent } from "react";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
-import { Tldraw } from "@tldraw/tldraw";
-import "@tldraw/tldraw/tldraw.css";
+import {
+  ReactFlow,
+  Controls,
+  Background,
+  applyNodeChanges,
+  applyEdgeChanges,
+  addEdge,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+
+
+let id = 0;
+const getId = () => `dndnode_${id++}`;
+
+const Sidebar = () => {
+  const onDragStart = (event, nodeType) => {
+    event.dataTransfer.setData('application/reactflow', nodeType);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  return (
+    <aside className="border-r-2 border-base-300 p-4 text-sm text-base-content bg-base-100 w-64">
+      <h3 className="text-xl font-semibold mb-4 text-primary">Nodes</h3>
+      <div className="space-y-2">
+        <div className="p-3 border-2 border-dashed rounded-md cursor-grab bg-base-200 text-center" onDragStart={(event) => onDragStart(event, 'input')} draggable>
+          Input Node
+        </div>
+        <div className="p-3 border-2 border-dashed rounded-md cursor-grab bg-base-200 text-center" onDragStart={(event) => onDragStart(event, 'default')} draggable>
+          Default Node
+        </div>
+        <div className="p-3 border-2 border-dashed rounded-md cursor-grab bg-base-200 text-center" onDragStart={(event) => onDragStart(event, 'output')} draggable>
+          Output Node
+        </div>
+      </div>
+    </aside>
+  );
+};
 
 export default function Diagrams() {
   const { selectedProject } = useProject();
@@ -13,8 +48,69 @@ export default function Diagrams() {
   const [error, setError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const editorRef = useRef(null);
+  const reactFlowWrapper = useRef(null);
+  const [nodes, setNodes] = useState([]);
+  const [edges, setEdges] = useState([]);
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
+
+  const onNodesChange = useCallback(
+    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    [setNodes]
+  );
+  const onEdgesChange = useCallback(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [setEdges]
+  );
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
+
   const currentProjectId = selectedProject?._id || projectId;
+
+  useEffect(() => {
+    if (currentDiagram && currentDiagram.data) {
+      const { nodes: savedNodes = [], edges: savedEdges = [] } = currentDiagram.data;
+      setNodes(savedNodes);
+      setEdges(savedEdges);
+    } else {
+      setNodes([]);
+      setEdges([]);
+    }
+  }, [currentDiagram]);
+
+
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+
+      const type = event.dataTransfer.getData('application/reactflow');
+
+      if (typeof type === 'undefined' || !type) {
+        return;
+      }
+
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      const newNode = {
+        id: getId(),
+        type,
+        position,
+        data: { label: `${type} node` },
+      };
+
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [reactFlowInstance],
+  );
+
 
   // Fetch diagrams for project
   useEffect(() => {
@@ -97,14 +193,13 @@ export default function Diagrams() {
 
   // Manual Save Button
   const handleManualSave = async () => {
-    if (!currentDiagram?._id || !editorRef.current) return;
+    if (!currentDiagram?._id || !reactFlowInstance) return;
     try {
       setIsSaving(true);
-      const editor = editorRef.current;
-      const snapshot = editor.store.getSnapshot();
+      const flow = reactFlowInstance.toObject();
       await updateDiagram(currentDiagram._id, {
         name: currentDiagram.name,
-        data: snapshot,
+        data: flow,
       });
     } catch (err) {
       console.error("Manual save failed:", err);
@@ -132,7 +227,7 @@ export default function Diagrams() {
   // UI
   if (currentDiagram) {
     return (
-      <div className="p-6 h-full flex flex-col  w-full">
+      <div className="p-6 h-full flex flex-col w-full">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <button onClick={() => setCurrentDiagram(null)} className="btn btn-ghost btn-sm btn-square">
@@ -157,15 +252,24 @@ export default function Diagrams() {
             </button>
           </div>
         </div>
-
-        <div className="flex-grow relative border rounded-lg overflow-hidden">
-          <Tldraw
-            persistenceKey={`tldraw-diagram-${currentDiagram._id}`}
-            snapshot={currentDiagram.data}
-            onMount={(editor) => {
-              editorRef.current = editor;
-            }}
-          />
+        <div className="flex-grow flex border rounded-lg overflow-hidden" ref={reactFlowWrapper}>
+            <Sidebar />
+            <div className="flex-grow h-full">
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    onInit={setReactFlowInstance}
+                    onDrop={onDrop}
+                    onDragOver={onDragOver}
+                    fitView
+                >
+                    <Controls />
+                    <Background />
+                </ReactFlow>
+            </div>
         </div>
       </div>
     );
