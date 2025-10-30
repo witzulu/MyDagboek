@@ -39,7 +39,7 @@ exports.getChangeLogEntries = async (req, res) => {
 // @route   POST /api/projects/:projectId/changelog
 // @access  Private (Project members only)
 exports.createChangeLogEntry = async (req, res) => {
-  const { message, tags } = req.body;
+  const { title, message, tags } = req.body;
   if (!message) {
     return res.status(400).json({ message: 'Message is required' });
   }
@@ -50,14 +50,19 @@ exports.createChangeLogEntry = async (req, res) => {
         return res.status(status).json({ message: errorMsg });
     }
 
-    const newEntry = new ChangeLog({
+    const entryData = {
       project: req.params.projectId,
       user: req.user.id,
-      title,
       message,
       tags: tags || [],
       type: 'manual',
-    });
+    };
+
+    if (title) {
+      entryData.title = title;
+    }
+
+    const newEntry = new ChangeLog(entryData);
 
     const savedEntry = await newEntry.save();
     await savedEntry.populate('user', 'name username');
@@ -72,7 +77,7 @@ exports.createChangeLogEntry = async (req, res) => {
 // @route   PUT /api/changelog/:id
 // @access  Private (Entry owner only)
 exports.updateChangeLogEntry = async (req, res) => {
-    const { message, tags } = req.body;
+    const { title, message, tags } = req.body;
 
     try {
         let entry = await ChangeLog.findById(req.params.id);
@@ -87,8 +92,9 @@ exports.updateChangeLogEntry = async (req, res) => {
             return res.status(400).json({ message: 'Only manual entries can be updated' });
         }
 
-        if (message) entry.message = message;
-        if (tags) entry.tags = tags;
+        entry.title = title || entry.title;
+        entry.message = message || entry.message;
+        entry.tags = tags || entry.tags;
 
         const updatedEntry = await entry.save();
         await updatedEntry.populate('user', 'name username');

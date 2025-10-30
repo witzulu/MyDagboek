@@ -11,11 +11,13 @@ const ChangeLog = () => {
     const { projectId } = useParams();
     const { user } = useContext(AuthContext);
     const [entries, setEntries] = useState([]);
+    const [newTitle, setNewTitle] = useState('');
     const [newMessage, setNewMessage] = useState('');
     const [newTags, setNewTags] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [editingEntryId, setEditingEntryId] = useState(null);
+    const [editingTitle, setEditingTitle] = useState('');
     const [editingText, setEditingText] = useState('');
     const [editingTags, setEditingTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
@@ -146,6 +148,7 @@ const ChangeLog = () => {
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
+                    title: newTitle,
                     message: newMessage,
                     tags,
                     type: 'manual',
@@ -160,6 +163,7 @@ const ChangeLog = () => {
 
             const newEntry = await response.json();
             setEntries([newEntry, ...entries]); // Add to top of the list
+            setNewTitle('');
             setNewMessage('');
             setNewTags('');
             toast.success('Manual entry added!');
@@ -204,13 +208,15 @@ const ChangeLog = () => {
             const response = await fetch(`/api/changelog/${entryId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ message: editingText, tags }),
+                body: JSON.stringify({ title: editingTitle, message: editingText, tags }),
             });
             if (!response.ok) throw new Error('Failed to update entry.');
             const updatedEntry = await response.json();
             setEntries(entries.map((entry) => (entry._id === entryId ? updatedEntry : entry)));
             setEditingEntryId(null);
+            setEditingTitle('');
             setEditingText('');
+            setEditingTags([]);
             toast.success('Entry updated!');
         } catch (err) {
             toast.error(err.message);
@@ -234,6 +240,7 @@ const ChangeLog = () => {
 
     const startEditing = (entry) => {
         setEditingEntryId(entry._id);
+        setEditingTitle(entry.title || '');
         setEditingText(entry.message);
         setEditingTags(entry.tags || []);
     };
@@ -256,7 +263,17 @@ const ChangeLog = () => {
                 <div className="card bg-base-100 shadow-xl mb-6">
                     <div className="card-body">
                         <h2 className="card-title">Add Manual Entry</h2>
-                        <div className="prose max-w-none">
+                        <div className="form-control">
+                            <label className="label"><span className="label-text">Title (Optional)</span></label>
+                            <input
+                                type="text"
+                                value={newTitle}
+                                onChange={(e) => setNewTitle(e.target.value)}
+                                className="input input-bordered"
+                                placeholder="A brief summary of the change"
+                            />
+                        </div>
+                        <div className="prose max-w-none mt-4">
                             <MDXEditor
                                 markdown={newMessage}
                                 onChange={setNewMessage}
@@ -362,6 +379,13 @@ const ChangeLog = () => {
                             </div>
                             {editingEntryId === entry._id ? (
                                 <div className="prose-sm max-w-none mt-2">
+                                    <input
+                                        type="text"
+                                        className="input input-bordered w-full mb-2"
+                                        placeholder="Title"
+                                        value={editingTitle}
+                                        onChange={(e) => setEditingTitle(e.target.value)}
+                                    />
                                     <MDXEditor
                                         markdown={editingText}
                                         onChange={setEditingText}
