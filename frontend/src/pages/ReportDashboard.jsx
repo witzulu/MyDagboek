@@ -58,7 +58,7 @@ const ReportDashboard = () => {
         return <div className="p-6">No dashboard data available.</div>;
     }
 
-    const { completionTrend, totalOverdue, recentAchievements, teamInsights } = dashboardData;
+    const { completionTrend, totalOverdue, recentAchievements, teamInsights, completedImportantTasks } = dashboardData;
 
     return (
         <div className="p-6 w-full">
@@ -104,6 +104,30 @@ const ReportDashboard = () => {
                                 <Bar dataKey="tasksAssigned" fill="#82ca9d" name="Tasks Assigned" />
                             </BarChart>
                         </ResponsiveContainer>
+                    </div>
+                </div>
+            )}
+
+            {completedImportantTasks && completedImportantTasks.length > 0 && (
+                <div className="mt-8 bg-base-200 p-6 rounded-lg">
+                    <h3 className="text-xl font-bold mb-4">Completed Important Tasks</h3>
+                    <div className="max-h-96 overflow-y-auto">
+                        <table className="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Completed On</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {completedImportantTasks.map(task => (
+                                    <tr key={task._id}>
+                                        <td>{task.title}</td>
+                                        <td>{new Date(task.completedAt).toLocaleDateString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             )}
