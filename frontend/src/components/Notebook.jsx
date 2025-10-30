@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Plus, Trash2, X, Save } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
-import { Tldraw } from "@tldraw/tldraw";
-import "@tldraw/tldraw/tldraw.css";
+import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
 import debounce from "lodash.debounce";
 import "@mdxeditor/editor/style.css";
 import '../mdxeditor.css'
@@ -45,10 +45,10 @@ export default function Notebook() {
   const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
 
-  const editorRef = useRef(null);
-  const isEditorReady = useRef(false);
-  const lastDrawingSnapshot = useRef(null);
+  const excalidrawAPIRef = useRef(null);
   const currentProjectId = selectedProject?._id || projectId;
+  const noteStateRef = useRef();
+  noteStateRef.current = currentNote;
 
   // --- Fetch notes for project ---
   useEffect(() => {
@@ -117,7 +117,12 @@ export default function Notebook() {
     () => debounce(async (id, fields) => {
       setSaveStatus("saving");
       try {
-        await updateNote(id, fields);
+        const latestNote = noteStateRef.current;
+        const payload = {
+            ...fields,
+            title: latestNote.title,
+        };
+        await updateNote(id, payload);
         setSaveStatus("saved");
         setLastSaved(new Date());
       } catch {
@@ -127,69 +132,6 @@ export default function Notebook() {
     [updateNote]
   );
 
-  // --- Helper: Check if editor is ready ---
-  const isEditorInitialized = (editor) => {
-    if (!editor) return false;
-    try {
-      // Check if store exists and has necessary properties
-      if (!editor.store) return false;
-      // Try to access currentPageId safely
-      const pageId = editor.getCurrentPageId?.();
-      return !!pageId;
-    } catch (e) {
-      return false;
-    }
-  };
-
-  // --- Helper: Get snapshot safely ---
-  const getDrawingSnapshot = (editor) => {
-    if (!editor || !isEditorInitialized(editor)) {
-      console.warn("Editor not ready for snapshot");
-      return null;
-    }
-    
-    try {
-      // Get all shape records (drawings) - this is what we want to save
-      const allShapes = editor.getCurrentPageShapes();
-      const shapesData = allShapes.map(shape => editor.getShape(shape.id));
-      
-      // Store it for comparison
-      lastDrawingSnapshot.current = shapesData;
-      console.log("Got snapshot with", shapesData.length, "shapes");
-      return shapesData;
-    } catch (e) {
-      console.warn("Snapshot read failed:", e);
-      return null;
-    }
-  };
-
-  // --- Helper: Load snapshot safely ---
-  const loadDrawingSnapshot = (editor, snapshot) => {
-    if (!editor || !snapshot || !isEditorInitialized(editor)) {
-      console.warn("Cannot load snapshot - editor not ready");
-      return false;
-    }
-    
-    try {
-      // Clear only the shapes on the current page, not the entire store
-      const currentShapes = editor.getCurrentPageShapes();
-      if (currentShapes.length > 0) {
-        editor.deleteShapes(currentShapes.map(s => s.id));
-      }
-      
-      // Create the shapes from the snapshot
-      if (snapshot && snapshot.length > 0) {
-        editor.createShapes(snapshot);
-        console.log("Loaded", snapshot.length, "shapes from snapshot");
-      }
-      
-      return true;
-    } catch (e) {
-      console.warn("Snapshot load failed:", e);
-      return false;
-    }
-  };
-
   // --- Manual Save Button ---
   const handleManualSave = async () => {
     if (!currentNote?._id) return;
@@ -197,22 +139,17 @@ export default function Notebook() {
       setIsSaving(true);
       setSaveStatus("saving");
 
-      let drawingSnapshot = null;
-      
-      // If we're in drawing view and editor is ready, get fresh snapshot
-      if (activeView === "drawing" && editorRef.current && isEditorReady.current) {
-        drawingSnapshot = getDrawingSnapshot(editorRef.current);
-        console.log("Manual save - got drawing snapshot:", !!drawingSnapshot);
-      } else if (lastDrawingSnapshot.current) {
-        // Use last known snapshot if not in drawing view
-        drawingSnapshot = lastDrawingSnapshot.current;
-        console.log("Manual save - using cached snapshot");
+      let drawingData = currentNote.drawing;
+      if (activeView === 'drawing' && excalidrawAPIRef.current) {
+        const elements = excalidrawAPIRef.current.getSceneElements();
+        const appState = excalidrawAPIRef.current.getAppState();
+        drawingData = { elements, appState };
       }
 
       await updateNote(currentNote._id, {
         title: currentNote.title,
         content: currentNote.content,
-        drawing: drawingSnapshot || currentNote.drawing || null,
+        drawing: drawingData,
       });
 
       setSaveStatus("saved");
@@ -227,15 +164,12 @@ export default function Notebook() {
 
   // --- Auto Save Drawings ---
   const handleDrawingChange = useCallback(
-    debounce(async () => {
-      if (!currentNote?._id || !editorRef.current) return;
-      
-      const snapshot = getDrawingSnapshot(editorRef.current);
-      if (!snapshot) return;
+    debounce(async (elements, appState) => {
+      if (!currentNote?._id) return;
 
       setSaveStatus("saving");
       try {
-        await updateNote(currentNote._id, { drawing: snapshot });
+        await updateNote(currentNote._id, { drawing: { elements, appState } });
         setSaveStatus("saved");
         setLastSaved(new Date());
       } catch {
@@ -265,18 +199,9 @@ export default function Notebook() {
   // --- Select Note ---
   const handleSelectNote = async (note) => {
     if (currentNote && currentNote._id !== note._id) {
-      const originalNote = notes.find((n) => n._id === currentNote._id);
-      const hasChanges =
-        currentNote.title !== originalNote?.title ||
-        currentNote.content !== originalNote?.content ||
-        JSON.stringify(currentNote.drawing) !== JSON.stringify(originalNote?.drawing);
-
-      if (hasChanges) await handleManualSave();
+      await handleManualSave();
     }
     
-    // Reset editor state
-    isEditorReady.current = false;
-    lastDrawingSnapshot.current = null;
     setSaveStatus("saved");
     setCurrentNote(note);
     setActiveView("text");
@@ -335,7 +260,7 @@ export default function Notebook() {
     .filter(
       (note) =>
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        note.content.toLowerCase().includes(searchTerm.toLowerCase())
+        (note.content && note.content.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .filter((note) => !selectedTag || (note.tags && note.tags.includes(selectedTag)));
 
@@ -472,7 +397,7 @@ export default function Notebook() {
                 <MDXEditor
                   contentEditableClassName="mxEditor"
                   key={currentNote._id}
-                  markdown={currentNote.content}
+                  markdown={currentNote.content || ""}
                   onChange={(newContent) => {
                     setCurrentNote((prev) => ({ ...prev, content: newContent }));
                     debouncedUpdateNote(currentNote._id, { content: newContent });
@@ -518,49 +443,11 @@ export default function Notebook() {
               {/* Drawing Editor */}
               {activeView === "drawing" && (
                 <div className="relative h-[600px] border rounded-lg overflow-hidden">
-                  <Tldraw
-                    key={`tldraw-${currentNote?._id}`}
-                    onMount={(editor) => {
-                      editorRef.current = editor;
-                      
-                      // Wait for editor to be fully ready
-                      const initializeEditor = () => {
-                        if (!isEditorInitialized(editor)) {
-                          console.log("Editor not ready, waiting...");
-                          setTimeout(initializeEditor, 100);
-                          return;
-                        }
-
-                        isEditorReady.current = true;
-                        console.log("Editor ready, loading snapshot");
-
-                        // Load drawing if it exists
-                        if (currentNote?.drawing) {
-                          const loaded = loadDrawingSnapshot(editor, currentNote.drawing);
-                          if (loaded) {
-                            console.log("Snapshot loaded successfully");
-                          }
-                        }
-
-                        // Zoom to fit after a short delay
-                        setTimeout(() => {
-                          try {
-                            editor.zoomToFit();
-                          } catch (err) {
-                            console.warn("Zoom to fit failed:", err);
-                          }
-                        }, 100);
-                      };
-
-                      // Start initialization
-                      initializeEditor();
-                    }}
-                    onChange={() => {
-                      // Only trigger save if editor is ready
-                      if (isEditorReady.current) {
-                        handleDrawingChange();
-                      }
-                    }}
+                  <Excalidraw
+                    key={currentNote._id}
+                    excalidrawAPI={(api) => (excalidrawAPIRef.current = api)}
+                    initialData={currentNote.drawing}
+                    onChange={handleDrawingChange}
                   />
                 </div>
               )}
