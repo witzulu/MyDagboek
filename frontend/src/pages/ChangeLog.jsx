@@ -192,12 +192,7 @@ const ChangeLog = () => {
 
     return (
         <div className="container mx-auto p-4 flex-1">
-            <ManualReportModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSave={handleSaveEntry}
-                entry={selectedEntry}
-            />
+            
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
             </div>
@@ -272,7 +267,7 @@ const ChangeLog = () => {
                                     </div>
                                     {user && entry.user?._id === user.id && entry.type === 'manual' && (
                                         <>
-                                            <button onClick={() => openEditModal(entry)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
+                                           
                                             <button onClick={() => handleDeleteEntry(entry._id)} className="btn btn-ghost btn-sm text-error"><Trash2 size={16} /></button>
                                         </>
                                     )}
