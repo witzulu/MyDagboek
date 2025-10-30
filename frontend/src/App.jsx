@@ -24,7 +24,6 @@ import Boards from './pages/Boards/Boards';
 import Board from './pages/Board/Board';
 import Snippets from './pages/Snippets/Snippets';
 import ProgressReports from './pages/ProgressReports';
-import ReportDashboard from './pages/ReportDashboard';
 import Team from './components/Team';
 import Diagrams from './pages/Diagrams';
 import ChangeLog from './pages/ChangeLog';
@@ -60,7 +59,6 @@ export default function App() {
               <Route path="projects/:projectId/team" element={<Team />} />
               <Route path="projects/:projectId/diagrams" element={<Diagrams />} />
               <Route path="projects/:projectId/changelog" element={<ChangeLog />} />
-              <Route path="reports-dashboard" element={<ReportDashboard />} />
               <Route path="settings" element={<UserSettings />} />
             </Route>
           </Route>

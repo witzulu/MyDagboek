@@ -23,7 +23,6 @@ const settingsRoutes = require('./src/routes/settings');
 const { projectNotesRouter, noteRouter } = require('./src/routes/notes');
 const { projectLabelsRouter, labelRouter } = require('./src/routes/labels');
 const progressReportRoutes = require('./src/routes/progressReportRoutes');
-const reportRoutes = require('./src/routes/reportRoutes');
 const { projectDiagrams, diagrams } = require('./src/routes/diagramRoutes');
 const { projectChangeLogRouter, changeLogRouter } = require('./src/routes/changeLogRoutes');
 
@@ -187,7 +186,6 @@ app.use('/api/notes', noteRouter);
 app.use('/api/projects/:projectId/labels', projectLabelsRouter);
 app.use('/api/labels', labelRouter);
 app.use('/api/projects/:projectId/progress-report', progressReportRoutes);
-app.use('/api/reports', reportRoutes);
 app.use('/api/projects/:projectId/diagrams', projectDiagrams);
 app.use('/api/diagrams', diagrams);
 app.use('/api/projects/:projectId/changelog', projectChangeLogRouter);
