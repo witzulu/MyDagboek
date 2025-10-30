@@ -133,6 +133,15 @@ exports.getProgressReport = async (req, res, next) => {
     }
     const changelogEntries = await ChangeLog.find(changelogQuery).populate('user', 'name').sort({ createdAt: 'desc' });
 
+    // --- Important Tasks Calculation ---
+    const importantTasksQuery = { ...baseQuery, isImportant: true };
+    if (startDate || endDate) {
+        importantTasksQuery.completedAt = dateFilter;
+    } else {
+        importantTasksQuery.completedAt = { $ne: null };
+    }
+    const completedImportantTasks = await Task.find(importantTasksQuery).sort({ completedAt: 'desc' });
+
 
     // --- Chart Data Calculations ---
     let pieChartData = { done: 0, inProgress: 0, toDo: 0 };
@@ -186,6 +195,7 @@ exports.getProgressReport = async (req, res, next) => {
       barChartData,
       burndownChartData,
       teamInsights,
+      completedImportantTasks,
     });
 
     // Log the report generation after sending the response
@@ -252,7 +262,11 @@ exports.getReportDashboard = async (req, res, next) => {
     .sort({ createdAt: 'desc' })
     .limit(10);
 
-    // 5. Calculate Top 5 Team Insights
+    // 5. Get completed important tasks
+    const importantTasksQuery = { ...baseQuery, isImportant: true, completedAt: { $gte: sevenDaysAgo } };
+    const completedImportantTasks = await Task.find(importantTasksQuery).sort({ completedAt: 'desc' });
+
+    // 6. Calculate Top 5 Team Insights
     const fourteenDaysAgoForInsights = new Date();
     fourteenDaysAgoForInsights.setDate(fourteenDaysAgoForInsights.getDate() - 14);
 
@@ -302,6 +316,7 @@ exports.getReportDashboard = async (req, res, next) => {
       completionTrend,
       totalOverdue,
       recentAchievements,
+      completedImportantTasks,
       teamInsights: memberStats,
     });
 

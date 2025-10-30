@@ -20,6 +20,7 @@ const ProgressReports = () => {
   const burndownChartRef = useRef();
   const changelogRef = useRef();
   const teamInsightsRef = useRef();
+  const importantTasksRef = useRef();
 
   const handleGenerateReport = async () => {
     try {
@@ -208,6 +209,7 @@ const ProgressReports = () => {
     await captureElement(statsRef.current, 'Summary');
     await captureElement(pieChartRef.current, 'Task Status Distribution');
     await captureElement(barChartRef.current, 'Tasks Completed Per Day');
+    await captureElement(importantTasksRef.current, 'Completed Important Tasks');
     await captureElement(teamInsightsRef.current, 'Team Insights');
     await captureElement(burndownChartRef.current, 'Burndown Chart');
 
@@ -258,6 +260,29 @@ const ProgressReports = () => {
                             <StatCard title="Tasks Overdue" value={report.tasksOverdue} />
                             <StatCard title="Tasks In Progress" value={report.tasksInProgress} />
                         </div>
+                        {report.completedImportantTasks && report.completedImportantTasks.length > 0 && (
+                            <div ref={importantTasksRef} className="mt-8 bg-base-200 p-6 rounded-lg">
+                                <h3 className="text-xl font-bold mb-4">Completed Important Tasks</h3>
+                                <div className="max-h-96 overflow-y-auto">
+                                    <table className="table w-full">
+                                        <thead>
+                                            <tr>
+                                                <th>Task</th>
+                                                <th>Completed On</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {report.completedImportantTasks.map(task => (
+                                                <tr key={task._id}>
+                                                    <td>{task.title}</td>
+                                                    <td>{new Date(task.completedAt).toLocaleDateString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
                         {report.changelogEntries && report.changelogEntries.length > 0 && (
                             <div ref={changelogRef} className="mt-8 bg-base-200 p-6 rounded-lg">
                                 <h3 className="text-xl font-bold mb-4">Change Log Summary</h3>
