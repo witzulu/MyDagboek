@@ -1,15 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import Fuse from 'fuse.js';
 
 const AssigneeSelectionModal = ({ isOpen, onClose, members, selectedAssignees, onConfirm }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [localSelection, setLocalSelection] = useState(selectedAssignees);
 
+  useEffect(() => {
+    if (isOpen) {
+        setLocalSelection(selectedAssignees);
+    }
+  }, [isOpen, selectedAssignees]);
+
+  const fuse = useMemo(() => new Fuse(members, {
+    keys: ['user.name'],
+    threshold: 0.3,
+  }), [members]);
+
   const filteredMembers = useMemo(() => {
     if (!searchTerm) return members;
-    return members.filter(member =>
-      member.user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [members, searchTerm]);
+    return fuse.search(searchTerm).map(result => result.item);
+  }, [members, searchTerm, fuse]);
 
   const handleToggle = (memberId) => {
     setLocalSelection(prev =>
@@ -25,7 +35,7 @@ const AssigneeSelectionModal = ({ isOpen, onClose, members, selectedAssignees, o
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-60">
       <div className="bg-base-200 p-6 rounded-lg shadow-xl w-full max-w-md">
         <h2 className="text-2xl font-bold mb-4">Assign Members</h2>
         <input
