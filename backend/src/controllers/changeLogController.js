@@ -27,7 +27,6 @@ exports.getChangeLogEntries = async (req, res) => {
 
     const changeLogs = await ChangeLog.find({ project: req.params.projectId })
       .populate('user', 'name username')
-      .populate('labels')
       .sort({ createdAt: -1 });
 
     res.json(changeLogs);
@@ -40,7 +39,7 @@ exports.getChangeLogEntries = async (req, res) => {
 // @route   POST /api/projects/:projectId/changelog
 // @access  Private (Project members only)
 exports.createChangeLogEntry = async (req, res) => {
-  const { message, labels } = req.body;
+  const { message, tags } = req.body;
   if (!message) {
     return res.status(400).json({ message: 'Message is required' });
   }
@@ -54,14 +53,14 @@ exports.createChangeLogEntry = async (req, res) => {
     const newEntry = new ChangeLog({
       project: req.params.projectId,
       user: req.user.id,
+      title,
       message,
-      labels: labels || [],
+      tags: tags || [],
       type: 'manual',
     });
 
     const savedEntry = await newEntry.save();
     await savedEntry.populate('user', 'name username');
-    await savedEntry.populate('labels');
 
     res.status(201).json(savedEntry);
   } catch (error) {
@@ -73,7 +72,7 @@ exports.createChangeLogEntry = async (req, res) => {
 // @route   PUT /api/changelog/:id
 // @access  Private (Entry owner only)
 exports.updateChangeLogEntry = async (req, res) => {
-    const { message, labels } = req.body;
+    const { message, tags } = req.body;
 
     try {
         let entry = await ChangeLog.findById(req.params.id);
@@ -89,11 +88,10 @@ exports.updateChangeLogEntry = async (req, res) => {
         }
 
         if (message) entry.message = message;
-        if (labels) entry.labels = labels;
+        if (tags) entry.tags = tags;
 
         const updatedEntry = await entry.save();
         await updatedEntry.populate('user', 'name username');
-        await updatedEntry.populate('labels');
 
         res.json(updatedEntry);
     } catch (error) {
@@ -142,14 +140,11 @@ exports.toggleIncludeInReport = async (req, res) => {
         }
 
         entry.includeInReport = !entry.includeInReport;
-        const savedEntry = await entry.save();
+        await entry.save();
 
-        const populatedEntry = await savedEntry.populate([
-            { path: 'user', select: 'name username' },
-            { path: 'labels' }
-        ]);
+        await entry.populate('user', 'name username');
 
-        res.json(populatedEntry);
+        res.json(entry);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
