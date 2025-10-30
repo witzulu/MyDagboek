@@ -51,6 +51,39 @@ exports.getProgressReport = async (req, res, next) => {
     const tasksOverdue = await Task.countDocuments({ ...baseQuery, dueDate: { $lt: new Date() }, completedAt: null });
     const tasksInProgress = await Task.countDocuments({ ...baseQuery, list: { $nin: optionalListIds }, completedAt: null });
 
+    // --- Team Insights Calculation ---
+    const populatedProjectForInsights = await Project.findById(projectId).populate('members.user', 'name');
+    let teamInsights = [];
+
+    if (populatedProjectForInsights && populatedProjectForInsights.members) {
+        for (const member of populatedProjectForInsights.members) {
+            if (!member.user) continue;
+
+            const memberId = member.user._id;
+
+            const completedConditions = { ...baseQuery, assignees: memberId };
+            if (startDate || endDate) {
+                completedConditions.completedAt = dateFilter;
+            } else {
+                completedConditions.completedAt = { $ne: null };
+            }
+
+            const completedCount = await Task.countDocuments(completedConditions);
+
+            const assignedCount = await Task.countDocuments({
+                ...baseQuery,
+                assignees: memberId,
+                completedAt: null,
+            });
+
+            teamInsights.push({
+                userName: member.user.name,
+                tasksCompleted: completedCount,
+                tasksAssigned: assignedCount,
+            });
+        }
+    }
+
     // --- Chart Data Calculations ---
   /*  let pieChartData = { done: 0, inProgress: 0, toDo: 0 };
     let barChartData = [];
@@ -152,6 +185,7 @@ exports.getProgressReport = async (req, res, next) => {
       pieChartData,
       barChartData,
       burndownChartData,
+      teamInsights,
     });
 
     // Log the report generation after sending the response
@@ -218,10 +252,57 @@ exports.getReportDashboard = async (req, res, next) => {
     .sort({ createdAt: 'desc' })
     .limit(10);
 
+    // 5. Calculate Top 5 Team Insights
+    const fourteenDaysAgoForInsights = new Date();
+    fourteenDaysAgoForInsights.setDate(fourteenDaysAgoForInsights.getDate() - 14);
+
+    const memberStats = await Task.aggregate([
+        { $match: { board: { $in: boardIds }, assignees: { $exists: true, $ne: [] } } },
+        { $unwind: "$assignees" },
+        {
+            $group: {
+                _id: "$assignees",
+                tasksCompleted: {
+                    $sum: {
+                        $cond: [{
+                            $and: [
+                                { $gte: ["$completedAt", fourteenDaysAgoForInsights] },
+                                { $lte: ["$completedAt", today] }
+                            ]
+                        }, 1, 0]
+                    }
+                },
+                tasksAssigned: {
+                    $sum: { $cond: [{ $eq: ["$completedAt", null] }, 1, 0] }
+                }
+            }
+        },
+        { $sort: { tasksCompleted: -1 } },
+        { $limit: 5 },
+        {
+            $lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'userDetails'
+            }
+        },
+        { $unwind: "$userDetails" },
+        {
+            $project: {
+                _id: 0,
+                userName: "$userDetails.name",
+                tasksCompleted: "$tasksCompleted",
+                tasksAssigned: "$tasksAssigned"
+            }
+        }
+    ]);
+
     res.status(200).json({
       completionTrend,
       totalOverdue,
       recentAchievements,
+      teamInsights: memberStats,
     });
 
   } catch (error) {

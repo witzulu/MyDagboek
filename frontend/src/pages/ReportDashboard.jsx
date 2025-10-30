@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from 'recharts';
 
 const StatCard = ({ title, value, change }) => (
     <div className="bg-base-100 p-6 rounded-lg shadow-md">
@@ -58,7 +58,7 @@ const ReportDashboard = () => {
         return <div className="p-6">No dashboard data available.</div>;
     }
 
-    const { completionTrend, totalOverdue, recentAchievements } = dashboardData;
+    const { completionTrend, totalOverdue, recentAchievements, teamInsights } = dashboardData;
 
     return (
         <div className="p-6 w-full">
@@ -75,7 +75,7 @@ const ReportDashboard = () => {
                             <LineChart data={completionTrend}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="date" />
-                                <YAxis allowDecals={false} />
+                                <YAxis allowDecimals={false} />
                                 <Tooltip />
                                 <Legend />
                                 <Line type="monotone" dataKey="count" stroke="#8884d8" name="Tasks Completed" />
@@ -88,6 +88,25 @@ const ReportDashboard = () => {
                     )}
                 </div>
             </div>
+
+            {teamInsights && teamInsights.length > 0 && (
+                <div className="mt-8">
+                    <div className="bg-base-200 p-6 rounded-lg shadow-md">
+                        <h3 className="text-xl font-bold mb-4">Top 5 Team Members (Last 14 Days)</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={teamInsights}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="userName" />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="tasksCompleted" fill="#8884d8" name="Tasks Completed" />
+                                <Bar dataKey="tasksAssigned" fill="#82ca9d" name="Tasks Assigned" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            )}
 
             {recentAchievements && recentAchievements.length > 0 && (
                 <div className="mt-8 bg-base-200 p-6 rounded-lg">

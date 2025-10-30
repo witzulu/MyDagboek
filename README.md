@@ -108,19 +108,7 @@ I am currently working on.
      - A 14-day trend chart for task completions.
      - A summary of the total number of overdue tasks.
      - A list of recent major achievements from across your projects.
-10. Change Log
-    - A dedicated page that provides a timeline of all meaningful updates within a project.
-    - **Automatic Event Tracking:** Automatically logs actions for:
-        - **Boards:** Task creation, completion, movement, and deletion.
-        - **Notebook:** Note creation, updates, and deletion.
-        - **Team:** New members joining a project, role changes, and member removal.
-        - **Code Snippets:** Creation and updates of snippets.
-        - **Progress Reports:** Generation of new reports.
-    - **Manual Entries:** Users can create and edit manual entries using a rich Markdown editor.
-    - **Tagging System:** Manual entries can be tagged with custom labels (e.g., `#feature`, `#bugfix`) for better organization.
-    - **Advanced Filtering:** The changelog can be filtered by category, user, date range, and tags.
-    - **Export Options:** The filtered changelog can be exported to Markdown, JSON, or CSV formats.
-11. Diagrams.
+10. Diagrams.
     - Make diagrams like flowcharts
 11. Team Member
     - invite team maembers and manage members for a project
