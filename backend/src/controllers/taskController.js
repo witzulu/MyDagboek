@@ -3,6 +3,8 @@ const List = require('../models/List');
 const Project = require('../models/Project');
 const { logChange } = require('../utils/changeLogService');
 
+const Board = require('../models/Board');
+
 // Middleware to check if user is a member of the project associated with the board
 const checkProjectMembership = async (boardId, userId, userRole) => {
   if (userRole === 'system_admin') {
@@ -36,11 +38,28 @@ exports.createTask = async (req, res, next) => {
       return res.status(404).json({ message: 'List not found' });
     }
 
-    const authCheck = await checkProjectMembership(list.board, req.user.id, req.user.role);
-    if (authCheck.error) {
-      return res.status(authCheck.status).json({ message: authCheck.message });
+    // Get the board to find the project
+    const board = await Board.findById(list.board);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
     }
-    const { project } = authCheck;
+
+    // Get the project from the board's project reference
+    const project = await Project.findById(board.project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found for this board' });
+    }
+
+    // Check if user is a member of the project
+    if (req.user.role !== 'system_admin') {
+      const isMember = project.members.some(member => 
+        member.user && member.user.toString() === req.user.id
+      );
+      
+      if (!isMember && project.user.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'User is not a member of this project' });
+      }
+    }
 
     const task = await Task.create({
       title,
@@ -57,9 +76,14 @@ exports.createTask = async (req, res, next) => {
 
     res.status(201).json(task);
   } catch (error) {
+    console.error('Error creating task:', error);
     next(error);
   }
 };
+
+// @desc    Update a task
+// @route   PUT /api/tasks/:id
+// @access  Private
 
 // @desc    Update a task
 // @route   PUT /api/tasks/:id
@@ -73,26 +97,48 @@ exports.updateTask = async (req, res, next) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    const authCheck = await checkProjectMembership(task.board, req.user.id, req.user.role);
-    if (authCheck.error) {
-      return res.status(authCheck.status).json({ message: authCheck.message });
+    if (!task.board) {
+      return res.status(400).json({ message: 'Task missing board reference' });
     }
-    const { project } = authCheck;
 
+    // Get the board to find the project
+    const board = await Board.findById(task.board);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    // Get the project from the board's project reference
+    const project = await Project.findById(board.project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found for this board' });
+    }
+
+    // Check if user is a member of the project
+    if (req.user.role !== 'system_admin') {
+      const isMember = project.members.some(member => 
+        member.user && member.user.toString() === req.user.id
+      );
+      
+      if (!isMember && project.user.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'User is not a member of this project' });
+      }
+    }
+
+    // Build log message dynamically
     let logMessage = `updated task '${task.title}'`;
     const changes = [];
     if (title && title !== task.title) changes.push(`title to '${title}'`);
     if (description && description !== task.description) changes.push('description');
-    if (dueDate && new Date(dueDate).toISOString() !== new Date(task.dueDate).toISOString()) changes.push('due date');
+    if (dueDate && task.dueDate && new Date(dueDate).toISOString() !== new Date(task.dueDate).toISOString()) changes.push('due date');
     if (labels) changes.push('labels');
     if (assignees) changes.push('assignees');
 
-
-    if(changes.length > 0) {
+    if (changes.length > 0) {
       logMessage += `: ${changes.join(', ')}.`;
       await logChange(project._id, req.user.id, logMessage, 'board');
     }
 
+    // Apply updates
     task.title = title ?? task.title;
     task.description = description ?? task.description;
     task.dueDate = dueDate ?? task.dueDate;
@@ -102,9 +148,12 @@ exports.updateTask = async (req, res, next) => {
     const updatedTask = await task.save();
     res.status(200).json(updatedTask);
   } catch (error) {
+    console.error('❌ Error updating task:', error);
     next(error);
   }
 };
+
+
 
 // @desc    Delete a task
 // @route   DELETE /api/tasks/:id
@@ -117,11 +166,28 @@ exports.deleteTask = async (req, res, next) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    const authCheck = await checkProjectMembership(task.board, req.user.id, req.user.role);
-    if (authCheck.error) {
-      return res.status(authCheck.status).json({ message: authCheck.message });
+    // Get the board to find the project
+    const board = await Board.findById(task.board);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
     }
-    const { project } = authCheck;
+
+    // Get the project from the board's project reference
+    const project = await Project.findById(board.project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found for this board' });
+    }
+
+    // Check if user is a member of the project
+    if (req.user.role !== 'system_admin') {
+      const isMember = project.members.some(member => 
+        member.user && member.user.toString() === req.user.id
+      );
+      
+      if (!isMember && project.user.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'User is not a member of this project' });
+      }
+    }
 
     // Log the change before deleting
     await logChange(project._id, req.user.id, `deleted task '${task.title}'.`, 'board');
@@ -129,6 +195,7 @@ exports.deleteTask = async (req, res, next) => {
     await task.deleteOne();
     res.status(200).json({ message: 'Task removed' });
   } catch (error) {
+    console.error('Error deleting task:', error);
     next(error);
   }
 };
@@ -146,9 +213,27 @@ exports.moveTask = async (req, res, next) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    const { error, status, message, project } = await checkProjectMembership(task.board, req.user.id, req.user.role);
-    if (error) {
-      return res.status(status).json({ message: message });
+    // Get the board to find the project
+    const board = await Board.findById(task.board);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    // Get the project from the board's project reference
+    const project = await Project.findById(board.project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found for this board' });
+    }
+
+    // Check if user is a member of the project
+    if (req.user.role !== 'system_admin') {
+      const isMember = project.members.some(member => 
+        member.user && member.user.toString() === req.user.id
+      );
+      
+      if (!isMember && project.user.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'User is not a member of this project' });
+      }
     }
 
     const originalListId = task.list.toString();
@@ -226,9 +311,128 @@ exports.moveTask = async (req, res, next) => {
     res.status(200).json({ message: 'Task moved successfully' });
 
   } catch (error) {
+    console.error('Error moving task:', error);
     next(error);
   }
 };
+
+// @desc    Move a task within a list or to another list
+// @route   PUT /api/tasks/:id/move
+// @access  Private
+exports.moveTask = async (req, res, next) => {
+  const { newListId, newPosition } = req.body;
+  const taskId = req.params.id;
+
+  try {
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Get the board to find the project
+    const board = await Board.findById(task.board);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    // Get the project from the board's project reference
+    const project = await Project.findById(board.project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found for this board' });
+    }
+
+    // Check if user is a member of the project
+    if (req.user.role !== 'system_admin') {
+      const isMember = project.members.some(member => 
+        member.user && member.user.toString() === req.user.id
+      );
+      
+      if (!isMember && project.user.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'User is not a member of this project' });
+      }
+    }
+
+    const originalListId = task.list.toString();
+    const originalList = await List.findById(originalListId);
+
+    const bulkOps = [];
+
+    if (originalListId === newListId) {
+      // --- MOVING WITHIN THE SAME LIST ---
+       if (task.position !== newPosition) {
+        await logChange(project._id, req.user.id, `reordered task '${task.title}' in list '${originalList.name}'.`, 'board');
+      }
+      const tasksToUpdate = await Task.find({ list: originalListId, _id: { $ne: taskId } }).sort('position');
+      tasksToUpdate.splice(newPosition, 0, task);
+
+      tasksToUpdate.forEach((t, index) => {
+        if (t.position !== index) {
+          bulkOps.push({
+            updateOne: {
+              filter: { _id: t._id },
+              update: { $set: { position: index } }
+            }
+          });
+        }
+      });
+
+    } else {
+      // --- MOVING TO A DIFFERENT LIST ---
+      const newList = await List.findById(newListId);
+      if (!newList) {
+        return res.status(404).json({ message: 'Destination list not found' });
+      }
+      await logChange(project._id, req.user.id, `moved task '${task.title}' from '${originalList.name}' to '${newList.name}'.`, 'board');
+
+      // 1. Update positions in the original list
+      const originalListTasks = await Task.find({ list: originalListId, _id: { $ne: taskId } }).sort('position');
+      originalListTasks.forEach((t, index) => {
+        if (t.position !== index) {
+          bulkOps.push({
+            updateOne: {
+              filter: { _id: t._id },
+              update: { $set: { position: index } }
+            }
+          });
+        }
+      });
+
+      // 2. Update the moved task's list and position
+      task.list = newListId;
+      task.position = newPosition;
+
+      // 3. Update positions in the new list
+      const newListTasks = await Task.find({ list: newListId, _id: { $ne: taskId } }).sort('position');
+      newListTasks.splice(newPosition, 0, task);
+      newListTasks.forEach((t, index) => {
+          bulkOps.push({
+            updateOne: {
+              filter: { _id: t._id },
+              update: { $set: { position: index } }
+            }
+          });
+      });
+       bulkOps.push({
+        updateOne: {
+          filter: { _id: taskId },
+          update: { $set: { list: newListId, position: newPosition, board: newList.board } }
+        }
+      });
+    }
+
+    if (bulkOps.length > 0) {
+      await Task.bulkWrite(bulkOps);
+    }
+
+    res.status(200).json({ message: 'Task moved successfully' });
+
+  } catch (error) {
+    console.error('Error moving task:', error);
+    next(error);
+  }
+};
+
+
 
 
 // @desc    Mark a task as complete
@@ -243,9 +447,27 @@ exports.completeTask = async (req, res) => {
       return res.status(400).json({ message: 'Task missing board reference' });
     }
 
-    const { error, status, message, project } = await checkProjectMembership(task.board, req.user.id, req.user.role);
-    if (error) {
-      return res.status(status).json({ message: message });
+    // Get the board to find the project
+    const board = await Board.findById(task.board);
+    if (!board) {
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    // Get the project from the board's project reference
+    const project = await Project.findById(board.project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found for this board' });
+    }
+
+    // Check if user is a member of the project
+    if (req.user.role !== 'system_admin') {
+      const isMember = project.members.some(member => 
+        member.user && member.user.toString() === req.user.id
+      );
+      
+      if (!isMember && project.user.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'User is not a member of this project' });
+      }
     }
 
     // Check if the task is already completed to avoid duplicate logs and actions
@@ -277,7 +499,6 @@ exports.completeTask = async (req, res) => {
     res.status(500).json({ message: 'Server error completing task', error: error.message });
   }
 };
-
 
 // Not implemented yet
 exports.getTasks = async (req, res, next) => { res.status(501).json({ message: 'Not implemented' }); };

@@ -47,6 +47,12 @@ exports.createBoard = async (req, res, next) => {
       user: req.user.id,
     });
 
+    // ✅ CRITICAL FIX: Add board to project's boards array
+    await Project.findByIdAndUpdate(
+      req.params.projectId,
+      { $push: { boards: board._id } }
+    );
+
     // Create default lists
     const defaultLists = [
       { name: 'To-Do', board: board._id, position: 0 },
@@ -143,6 +149,12 @@ exports.deleteBoard = async (req, res, next) => {
     if (board.user.toString() !== req.user.id) {
       return res.status(401).json({ message: 'User not authorized' });
     }
+
+    // ✅ Remove board from project's boards array
+    await Project.findByIdAndUpdate(
+      board.project,
+      { $pull: { boards: board._id } }
+    );
 
     // Sequentially delete associated documents
     // Delete all tasks associated with the board
