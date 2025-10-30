@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Edit, Trash2, Save, X, Bot, User, Download } from 'lucide-react';
+import { Edit, Trash2, Bot, User, Download, PlusCircle } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import { MDXEditor, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin, markdownShortcutPlugin } from '@mdxeditor/editor';
@@ -192,6 +192,12 @@ const ChangeLog = () => {
 
     return (
         <div className="container mx-auto p-4 flex-1">
+            <ManualReportModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveEntry}
+                entry={selectedEntry}
+            />
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-foreground">Change Log</h1>
             </div>
@@ -253,6 +259,7 @@ const ChangeLog = () => {
                                         <p className="font-bold text-lg text-foreground">{entry.user?.name || 'Unknown'}</p>
                                         <p className="text-xs text-base-content opacity-60">{new Date(entry.createdAt).toLocaleString()}</p>
                                     </div>
+                                    <div className={`badge ${entry.type === 'manual' ? 'badge-info' : 'badge-ghost'}`}>{entry.type}</div>
                                 </div>
                                 <div className="card-actions items-center">
                                     <div className="form-control" title={entry.includeInReport ? 'Include in reports' : 'Exclude from reports'}>
@@ -265,17 +272,8 @@ const ChangeLog = () => {
                                     </div>
                                     {user && entry.user?._id === user.id && entry.type === 'manual' && (
                                         <>
-                                            {editingEntryId === entry._id ? (
-                                                <>
-                                                    <button onClick={() => handleUpdateEntry(entry._id)} className="btn btn-ghost btn-sm"><Save size={16} /></button>
-                                                    <button onClick={() => setEditingEntryId(null)} className="btn btn-ghost btn-sm"><X size={16} /></button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button onClick={() => startEditing(entry)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
-                                                    <button onClick={() => handleDeleteEntry(entry._id)} className="btn btn-ghost btn-sm text-error"><Trash2 size={16} /></button>
-                                                </>
-                                            )}
+                                            <button onClick={() => openEditModal(entry)} className="btn btn-ghost btn-sm"><Edit size={16} /></button>
+                                            <button onClick={() => handleDeleteEntry(entry._id)} className="btn btn-ghost btn-sm text-error"><Trash2 size={16} /></button>
                                         </>
                                     )}
                                 </div>

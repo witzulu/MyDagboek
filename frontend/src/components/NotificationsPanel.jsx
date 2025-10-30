@@ -1,35 +1,8 @@
 import PropTypes from 'prop-types';
 import { Bell } from 'lucide-react';
 
-const NotificationsPanel = ({ notifications, onRespond, onMarkAsRead, onNavigate }) => {
+const NotificationsPanel = ({ notifications, onRespond, onMarkAsRead }) => {
   const unreadCount = notifications.filter(n => n.status === 'unread').length;
-
-  const renderNotificationContent = (notification) => {
-    switch (notification.type) {
-      case 'project_invitation':
-        return (
-          <>
-            <p className="text-sm">
-              <strong>{notification.sender.username}</strong> invited you to join <strong>{notification.project.name}</strong>
-            </p>
-            <div className="mt-2 flex gap-2">
-              <button onClick={() => onRespond(notification._id, 'accept')} className="btn btn-sm btn-success">Accept</button>
-              <button onClick={() => onRespond(notification._id, 'decline')} className="btn btn-sm btn-danger">Decline</button>
-            </div>
-          </>
-        );
-      case 'changelog_entry':
-        return (
-          <div onClick={() => onNavigate(`/projects/${notification.project._id}/changelog`)} className="cursor-pointer">
-            <p className="text-sm">
-              <strong>{notification.sender.username}</strong> posted a new update in <strong>{notification.project.name}</strong>.
-            </p>
-          </div>
-        );
-      default:
-        return <p className="text-sm">Unsupported notification type.</p>;
-    }
-  };
 
   return (
     <div className="absolute right-0 mt-2 w-80 bg-base-100 border border-border rounded-lg shadow-lg z-50">
@@ -42,7 +15,23 @@ const NotificationsPanel = ({ notifications, onRespond, onMarkAsRead, onNavigate
         ) : (
           notifications.map(notification => (
             <div key={notification._id} className={`p-4 border-b border-border ${notification.status === 'unread' ? 'bg-secondary' : ''}`}>
-              {renderNotificationContent(notification)}
+              <p className="text-sm">
+                <strong>{notification.sender.username}</strong> invited you to join <strong>{notification.project.name}</strong>
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => onRespond(notification._id, 'accept')}
+                  className="btn btn-sm btn-success"
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => onRespond(notification._id, 'decline')}
+                  className="btn btn-sm btn-danger"
+                >
+                  Decline
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -62,7 +51,6 @@ NotificationsPanel.propTypes = {
     notifications: PropTypes.array.isRequired,
     onRespond: PropTypes.func.isRequired,
     onMarkAsRead: PropTypes.func.isRequired,
-    onNavigate: PropTypes.func.isRequired,
 };
 
 export default NotificationsPanel;

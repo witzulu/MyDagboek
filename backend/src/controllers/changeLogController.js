@@ -1,7 +1,6 @@
 const ChangeLog = require('../models/ChangeLog');
 const Project = require('../models/Project');
 const mongoose = require('mongoose');
-const Notification = require('../models/Notification');
 
 // Helper to check project membership
 const checkProjectMembership = async (projectId, userId) => {
@@ -54,6 +53,7 @@ exports.createChangeLogEntry = async (req, res) => {
     const newEntry = new ChangeLog({
       project: req.params.projectId,
       user: req.user.id,
+      title,
       message,
       tags: tags || [],
       type: 'manual',
@@ -61,21 +61,6 @@ exports.createChangeLogEntry = async (req, res) => {
 
     const savedEntry = await newEntry.save();
     await savedEntry.populate('user', 'name username');
-
-    // Create notifications for other project members
-    const { project } = await checkProjectMembership(req.params.projectId, req.user.id);
-    const recipients = project.members.filter(member => member.user && !member.user.equals(req.user.id));
-
-    const notifications = recipients.map(recipient => ({
-        recipient: recipient.user,
-        sender: req.user.id,
-        type: 'changelog_entry',
-        project: req.params.projectId,
-    }));
-
-    if (notifications.length > 0) {
-        await Notification.insertMany(notifications);
-    }
 
     res.status(201).json(savedEntry);
   } catch (error) {

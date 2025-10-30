@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Book, Menu, X, Shield, Settings, Bell, LogOut } from 'lucide-react';
 import ThemeSwitcher from './ThemeSwitcher';
 import { useSettings } from '../context/SettingsContext';
@@ -17,12 +17,6 @@ export default function Header({
   const { settings } = useSettings();
   const { notifications, fetchNotifications } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
-  const navigate = useNavigate();
-
-  const handleNavigate = (path) => {
-    setShowNotifications(false);
-    navigate(path);
-  };
 
   const handleRespond = async (notificationId, response) => {
     try {
@@ -134,7 +128,6 @@ export default function Header({
               notifications={notifications || []}
               onRespond={handleRespond}
               onMarkAsRead={handleMarkAsRead}
-              onNavigate={handleNavigate}
             />
           )}
         </div>
