@@ -84,7 +84,7 @@ exports.getNoteById = async (req, res, next) => {
 };
 
 exports.createNote = async (req, res, next) => {
-  const { title, content, tags, isPinned, drawing } = req.body;
+  const { title, content, tags, isPinned, drawing, folder } = req.body;
   try {
     const project = await Project.findById(req.params.projectId);
     if (!project || project.user.toString() !== req.user.id) {
@@ -96,6 +96,7 @@ exports.createNote = async (req, res, next) => {
       tags,
       isPinned,
       drawing,
+      folder,
       project: req.params.projectId,
       user: req.user.id
     });
@@ -112,13 +113,14 @@ exports.createNote = async (req, res, next) => {
 };
 
 exports.updateNote = async (req, res, next) => {
-  const { title, content, tags, isPinned, drawing } = req.body;
+  const { title, content, tags, isPinned, drawing, folder } = req.body;
   const noteFields = {};
   if (title !== undefined) noteFields.title = title;
   if (content !== undefined) noteFields.content = content;
   if (tags !== undefined) noteFields.tags = tags;
   if (isPinned !== undefined) noteFields.isPinned = isPinned;
   if (drawing !== undefined) noteFields.drawing = drawing;
+  if (folder !== undefined) noteFields.folder = folder;
 
   try {
     let note = await Note.findById(req.params.id);

@@ -26,6 +26,7 @@ const progressReportRoutes = require('./src/routes/progressReportRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const { projectDiagrams, diagrams } = require('./src/routes/diagramRoutes');
 const { projectChangeLogRouter, changeLogRouter } = require('./src/routes/changeLogRoutes');
+const { projectFoldersRouter, folderRouter } = require('./src/routes/folders');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -60,6 +61,7 @@ require('./src/models/List');
 require('./src/models/Task');
 require('./src/models/Diagram');
 require('./src/models/ChangeLog');
+require('./src/models/Folder');
 
     await seedAdminUser();
     await migrateProjects();
@@ -192,6 +194,8 @@ app.use('/api/projects/:projectId/diagrams', projectDiagrams);
 app.use('/api/diagrams', diagrams);
 app.use('/api/projects/:projectId/changelog', projectChangeLogRouter);
 app.use('/api/changelog', changeLogRouter);
+app.use('/api/projects/:projectId/folders', projectFoldersRouter);
+app.use('/api/folders', folderRouter);
 
 
 // Health check
