@@ -244,6 +244,14 @@ const Board = () => {
     const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
     const method = taskId ? 'PUT' : 'POST';
 
+    const body = { title, description, dueDate, labels, assignees, listId };
+
+    if (!taskId) {
+      // For new tasks, calculate the position
+      const list = lists.find(l => l._id === listId);
+      body.position = list ? list.tasks.length : 0;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(url, {
@@ -252,7 +260,7 @@ const Board = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, dueDate, labels, assignees, listId }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
