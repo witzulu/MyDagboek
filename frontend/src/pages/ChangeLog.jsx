@@ -25,7 +25,7 @@ const ChangeLog = () => {
     const [projectLabels, setProjectLabels] = useState([]);
 
     // Filtering state
-    const [startDate, setStartDate] useState(() => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0]; });
+    const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().split('T')[0]; });
     const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUserId, setSelectedUserId] = useState('');
