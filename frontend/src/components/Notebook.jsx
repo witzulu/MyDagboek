@@ -3,6 +3,7 @@ import { Plus, Trash2, X, Save } from "lucide-react";
 import { useProject } from "../hooks/useProject";
 import { useParams } from "react-router-dom";
 import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
 import debounce from "lodash.debounce";
 import "@mdxeditor/editor/style.css";
 import '../mdxeditor.css'
