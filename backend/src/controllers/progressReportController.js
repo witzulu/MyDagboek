@@ -47,6 +47,38 @@ exports.getProgressReport = async (req, res, next) => {
     const tasksOverdue = await Task.countDocuments({ ...baseQuery, dueDate: { $lt: new Date() }, completedAt: null });
     const tasksInProgress = await Task.countDocuments({ ...baseQuery, list: { $nin: optionalListIds }, completedAt: null });
 
+    // --- Team Insights Calculation ---
+    const populatedProjectForInsights = await Project.findById(projectId).populate('members.user', 'name');
+    let teamInsights = [];
+
+    if (populatedProjectForInsights && populatedProjectForInsights.members) {
+        for (const member of populatedProjectForInsights.members) {
+            if (!member.user) continue;
+
+            const memberId = member.user._id;
+
+            const completedConditions = { ...baseQuery, assignees: memberId };
+            if (startDate || endDate) {
+                completedConditions.completedAt = dateFilter;
+            } else {
+                completedConditions.completedAt = { $ne: null };
+            }
+            
+            const completedCount = await Task.countDocuments(completedConditions);
+
+            const assignedCount = await Task.countDocuments({
+                ...baseQuery,
+                assignees: memberId,
+                completedAt: null,
+            });
+
+            teamInsights.push({
+                userName: member.user.name,
+                tasksCompleted: completedCount,
+                tasksAssigned: assignedCount,
+            });
+        }
+    }
     // --- Changelog Data ---
     const changelogQuery = { project: projectId, includeInReport: true };
     if (startDate || endDate) {
