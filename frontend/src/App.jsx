@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -38,7 +38,7 @@ export default function App() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <BrowserRouter>
+    <>
       <Toaster position="bottom-right" />
       <div className={`min-h-screen bg-background text-foreground`}>
         <Routes>
@@ -77,6 +77,6 @@ export default function App() {
           <Route path="*" element={<Navigate to={isAuthenticated ? "/projects" : "/login"} />} />
         </Routes>
       </div>
-    </BrowserRouter>
+    </>
   );
 }
