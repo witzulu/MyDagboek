@@ -7,7 +7,7 @@ import "@mdxeditor/editor/style.css";
 import '../mdxeditor.css'
 import {
   MDXEditor,
-  headingsPlugin,
+  headingsPlugin, 
   listsPlugin,
   quotePlugin,
   thematicBreakPlugin,
