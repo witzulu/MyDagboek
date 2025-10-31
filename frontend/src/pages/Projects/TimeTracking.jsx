@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import TimeEntryModal from '../../components/TimeEntry/TimeEntryModal';
 
 const TimeTracking = () => {
   const { projectId } = useParams();
   const [timeEntries, setTimeEntries] = useState([]);
+  const [summaryData, setSummaryData] = useState([]);
+  const [days, setDays] = useState(30);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
 
@@ -27,11 +30,29 @@ const TimeTracking = () => {
     }
   }, [projectId]);
 
+  const fetchSummaryData = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/projects/${projectId}/time-entries/summary?days=${days}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        throw new Error('Failed to fetch summary data');
+      }
+      const data = await res.json();
+      setSummaryData(data);
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load summary data.');
+    }
+  }, [projectId, days]);
+
   useEffect(() => {
     if (projectId) {
       fetchTimeEntries();
+      fetchSummaryData();
     }
-  }, [projectId, fetchTimeEntries]);
+  }, [projectId, fetchTimeEntries, fetchSummaryData]);
 
   const handleSave = () => {
     fetchTimeEntries(); // Re-fetch entries after saving
@@ -80,6 +101,30 @@ const TimeTracking = () => {
         >
           Add Manual Entry
         </button>
+      </div>
+
+      <div className="mb-8 p-4 border rounded-lg bg-base-100">
+        <h2 className="text-xl font-bold mb-4">Daily Summary</h2>
+        <div className="flex space-x-2 mb-4">
+            <button onClick={() => setDays(7)} className={`btn btn-sm ${days === 7 ? 'btn-primary' : ''}`}>Last 7 Days</button>
+            <button onClick={() => setDays(30)} className={`btn btn-sm ${days === 30 ? 'btn-primary' : ''}`}>Last 30 Days</button>
+        </div>
+        {summaryData.length === 0 ? (
+          <div className="flex items-center justify-center h-[300px]">
+            <p>No time entries recorded for the selected period.</p>
+          </div>
+        ) : (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={summaryData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft' }} />
+            <Tooltip formatter={(value) => `${Math.floor(value / 60)}h ${value % 60}m`} />
+            <Legend />
+            <Bar dataKey="totalDuration" fill="#8884d8" name="Total Duration (minutes)" />
+          </BarChart>
+        </ResponsiveContainer>
+        )}
       </div>
 
       <div className="overflow-x-auto">
