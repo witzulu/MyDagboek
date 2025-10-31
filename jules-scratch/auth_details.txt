@@ -1,0 +1,10 @@
+--- SCRIPT FAILED ---
+Error during Playwright execution: TimeoutError
+---------------------
+Screenshot saved to /app/jules-scratch/login-failure-detailed-1761917145283.png
+
+--- BROWSER CONSOLE LOGS ---
+[debug] [vite] connecting...
+[debug] [vite] connected.
+[info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+----------------------------

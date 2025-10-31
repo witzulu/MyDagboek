@@ -33,76 +33,30 @@ const projectTaskRoutes = require('./src/routes/projectTaskRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Dev logging middleware
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
-
-app.use('/uploads', express.static('uploads'));
-
-// Database connection
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dagboek', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-    console.log('✅ MongoDB connected');
-    require('./src/models/User');
-require('./src/models/Project');
-require('./src/models/Board');
-require('./src/models/List');
-require('./src/models/Task');
-require('./src/models/Diagram');
-require('./src/models/ChangeLog');
-require('./src/models/Folder');
-require('./src/models/TimeEntry');
-
-    await seedAdminUser();
-    await migrateProjects();
-    await migrateUsers();
-  } catch (err) {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1);
-  }
-};
-
+// Helper Functions (Seeders & Migrations)
 const seedAdminUser = async () => {
     const User = require('./src/models/User');
     const bcrypt = require('bcryptjs');
-
     try {
         let adminUser = await User.findOne({ email: 'admin@dagboek.com' });
-
         if (adminUser) {
-            // If admin exists but has the wrong role, update it
-            if (adminUser.role !== 'system_admin') {
+            if (adminUser.role !== 'system_admin' || adminUser.status !== 'approved') {
                 adminUser.role = 'system_admin';
+                adminUser.status = 'approved';
                 await adminUser.save();
-                console.log('✅ Admin user role updated to system_admin.');
+                console.log('✅ Admin user role and status corrected.');
             }
         } else {
-            // If no admin user exists, create one
             const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash('password', salt);
-
+            const hashedPassword = await bcrypt.hash('admin', salt); // Changed password for consistency
             adminUser = new User({
-                name: 'Admin User',
+                name: 'Admin',
                 email: 'admin@dagboek.com',
                 username: 'admin',
                 password: hashedPassword,
                 role: 'system_admin',
                 status: 'approved'
             });
-
             await adminUser.save();
             console.log('✅ Default admin user created.');
         }
@@ -114,13 +68,12 @@ const seedAdminUser = async () => {
 const migrateProjects = async () => {
     const Project = require('./src/models/Project');
     try {
-        const projectsToMigrate = await Project.find({ 'members.role': { $ne: 'owner' } });
-
+        const projectsToMigrate = await Project.find({ 'members.0': { $exists: false }, user: { $exists: true } });
         if (projectsToMigrate.length > 0) {
             console.log(`Found ${projectsToMigrate.length} projects to migrate...`);
             for (const project of projectsToMigrate) {
                 const ownerExists = project.members.some(m => m.role === 'owner');
-                if (!ownerExists && project.user) {
+                if (!ownerExists) {
                     project.members.push({ user: project.user, role: 'owner' });
                     await project.save();
                     console.log(`Project ${project.name} migrated.`);
@@ -136,21 +89,7 @@ const migrateProjects = async () => {
 const migrateUsers = async () => {
     const User = require('./src/models/User');
     try {
-        // First, handle role migration for any legacy 'admin' users
-        const legacyAdmins = await User.find({ role: 'admin' });
-        if (legacyAdmins.length > 0) {
-            console.log(`Found ${legacyAdmins.length} legacy admin users to migrate...`);
-            for (const admin of legacyAdmins) {
-                admin.role = 'system_admin';
-                await admin.save({ validateBeforeSave: false }); // Bypass other validators
-                 console.log(`User ${admin.email} role migrated to system_admin.`);
-            }
-            console.log('✅ Admin role migration complete.');
-        }
-
-        // Second, handle username migration
         const usersToMigrate = await User.find({ username: { $exists: false } });
-
         if (usersToMigrate.length > 0) {
             console.log(`Found ${usersToMigrate.length} users to migrate for username...`);
             for (const user of usersToMigrate) {
@@ -172,64 +111,99 @@ const migrateUsers = async () => {
     }
 };
 
-connectDB();
 
-// Mount routers
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/projects/:projectId/boards', projectBoardsRouter);
-app.use('/api/boards', boardRouter);
-app.use('/api/lists', listRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/tasks/:taskId/attachments', taskAttachmentRoutes);
-app.use('/api/tasks/:taskId/checklist', taskChecklistRoutes);
-app.use('/api/tasks/:taskId/comments', taskCommentRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/projects/:projectId/notes', projectNotesRouter);
-app.use('/api/notes', noteRouter);
-app.use('/api/projects/:projectId/labels', projectLabelsRouter);
-app.use('/api/labels', labelRouter);
-app.use('/api/projects/:projectId/progress-report', progressReportRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/projects/:projectId/diagrams', projectDiagrams);
-app.use('/api/diagrams', diagrams);
-app.use('/api/projects/:projectId/changelog', projectChangeLogRouter);
-app.use('/api/changelog', changeLogRouter);
-app.use('/api/projects/:projectId/folders', projectFoldersRouter);
-app.use('/api/folders', folderRouter);
-app.use('/api/projects/:projectId/time-entries', projectTimeEntriesRouter);
-app.use('/api/time-entries', timeEntryRouter);
-app.use('/api/projects/:projectId/tasks', projectTaskRoutes);
+const startServer = async () => {
+  try {
+    // 1. Connect to Database
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dagboek');
+    console.log('✅ MongoDB connected');
 
+    // 2. Register all Mongoose models
+    require('./src/models/User');
+    require('./src/models/Project');
+    require('./src/models/Board');
+    require('./src/models/List');
+    require('./src/models/Task');
+    require('./src/models/Diagram');
+    require('./src/models/ChangeLog');
+    require('./src/models/Folder');
+    require('./src/models/TimeEntry');
+    require('./src/models/Note');
+    require('./src/models/Label');
+    require('./src/models/SiteSettings');
+    require('./src/models/Notification');
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
+    // 3. Run seeders and migrations
+    await seedAdminUser();
+    await migrateProjects();
+    await migrateUsers();
 
-// 404 handler
-app.use((req, res, next) => {
-  const error = new Error(`Route not found: ${req.originalUrl}`);
-  res.status(404);
-  next(error);
-});
+    // 4. Configure Express Middleware
+    app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+    app.use(cors());
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    if (process.env.NODE_ENV === 'development') {
+      app.use(morgan('dev'));
+    }
+    app.use('/uploads', express.static('uploads'));
 
-// Error handler
-app.use((err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode);
-  res.json({
-    error: err.message,
-    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
-  });
-});
+    // 5. Mount all API routers
+    app.use('/api/auth', authRoutes);
+    app.use('/api/users', userRoutes);
+    app.use('/api/notifications', notificationRoutes);
+    app.use('/api/projects', projectRoutes);
+    app.use('/api/projects/:projectId/boards', projectBoardsRouter);
+    app.use('/api/boards', boardRouter);
+    app.use('/api/lists', listRoutes);
+    app.use('/api/tasks', taskRoutes);
+    app.use('/api/tasks/:taskId/attachments', taskAttachmentRoutes);
+    app.use('/api/tasks/:taskId/checklist', taskChecklistRoutes);
+    app.use('/api/tasks/:taskId/comments', taskCommentRoutes);
+    app.use('/api/settings', settingsRoutes);
+    app.use('/api/projects/:projectId/notes', projectNotesRouter);
+    app.use('/api/notes', noteRouter);
+    app.use('/api/projects/:projectId/labels', projectLabelsRouter);
+    app.use('/api/labels', labelRouter);
+    app.use('/api/projects/:projectId/progress-report', progressReportRoutes);
+    app.use('/api/reports', reportRoutes);
+    app.use('/api/projects/:projectId/diagrams', projectDiagrams);
+    app.use('/api/diagrams', diagrams);
+    app.use('/api/projects/:projectId/changelog', projectChangeLogRouter);
+    app.use('/api/changelog', changeLogRouter);
+    app.use('/api/projects/:projectId/folders', projectFoldersRouter);
+    app.use('/api/folders', folderRouter);
+    app.use('/api/projects/:projectId/time-entries', projectTimeEntriesRouter);
+    app.use('/api/time-entries', timeEntryRouter);
+    app.use('/api/projects/:projectId/tasks', projectTaskRoutes);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+    // Health check endpoint
+    app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+    // 6. Configure Error Handlers
+    app.use((req, res, next) => {
+      const error = new Error(`Route not found: ${req.originalUrl}`);
+      res.status(404);
+      next(error);
+    });
+    app.use((err, req, res, next) => {
+      const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+      res.status(statusCode);
+      res.json({
+        error: err.message,
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+      });
+    });
+
+    // 7. Start the server
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
+
+  } catch (err) {
+    console.error('❌ Server startup failed:', err);
+    process.exit(1);
+  }
+};
+
+startServer();

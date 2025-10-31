@@ -1,4 +1,4 @@
-
+const mongoose = require('mongoose');
 const TimeEntry = require('../models/TimeEntry');
 const Project = require('../models/Project');
 
