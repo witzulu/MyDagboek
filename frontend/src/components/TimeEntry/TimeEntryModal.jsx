@@ -178,6 +178,7 @@ const TimeEntryModal = ({ isOpen, onClose, onSave, projectId, timeEntry, task = 
           </div>
         </form>
       </div>
+      </div>
     </div>
   );
 };
