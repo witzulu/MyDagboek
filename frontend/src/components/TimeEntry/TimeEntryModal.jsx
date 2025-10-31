@@ -16,9 +16,6 @@ const TimeEntryModal = ({ isOpen, onClose, onSave, projectId, timeEntry, task = 
       if (projectId) {
         try {
           const token = localStorage.getItem('token');
-          // Note: This endpoint doesn't exist yet, but is required for the dropdown.
-          // This should be `/api/projects/${projectId}/tasks` if it were implemented.
-          // For now, we'll mock or leave it empty. A proper implementation needs this.
           const res = await fetch(`/api/projects/${projectId}/tasks`, {
              headers: { Authorization: `Bearer ${token}` },
           });
@@ -113,9 +110,10 @@ const TimeEntryModal = ({ isOpen, onClose, onSave, projectId, timeEntry, task = 
     <div className="modal modal-open">
       <div className="modal-box">
         <h3 className="font-bold text-lg">{timeEntry ? 'Edit' : 'Log'} Time</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="form-control">
-            <label className="label">
+        <div className="py-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="form-control">
+              <label className="label">
               <span className="label-text">Task</span>
             </label>
             <select
