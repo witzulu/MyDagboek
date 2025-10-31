@@ -15,7 +15,7 @@ const notificationRoutes = require('./src/routes/notifications');
 const projectRoutes = require('./src/routes/projects');
 const { projectBoardsRouter, boardRouter } = require('./src/routes/boards');
 const listRoutes = require('./src/routes/lists');
-const taskRoutes = require('./src/routes/taskRoutes');
+const taskRoutes = require('./src/routes/tasks');
 const taskAttachmentRoutes = require('./src/routes/taskAttachmentRoutes');
 const taskChecklistRoutes = require('./src/routes/taskChecklistRoutes');
 const taskCommentRoutes = require('./src/routes/taskCommentRoutes');
@@ -27,6 +27,7 @@ const reportRoutes = require('./src/routes/reportRoutes');
 const { projectDiagrams, diagrams } = require('./src/routes/diagramRoutes');
 const { projectChangeLogRouter, changeLogRouter } = require('./src/routes/changeLogRoutes');
 const { projectFoldersRouter, folderRouter } = require('./src/routes/folders');
+const { projectTimeEntriesRouter, timeEntryRouter } = require('./src/routes/timeEntryRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -197,6 +198,8 @@ app.use('/api/projects/:projectId/changelog', projectChangeLogRouter);
 app.use('/api/changelog', changeLogRouter);
 app.use('/api/projects/:projectId/folders', projectFoldersRouter);
 app.use('/api/folders', folderRouter);
+app.use('/api/projects/:projectId/time-entries', projectTimeEntriesRouter);
+app.use('/api/time-entries', timeEntryRouter);
 
 
 // Health check

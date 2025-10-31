@@ -24,6 +24,61 @@ exports.getProjectTimeEntries = async (req, res, next) => {
   }
 };
 
+// @desc    Update a time entry
+// @route   PUT /api/time-entries/:id
+// @access  Private
+exports.updateTimeEntry = async (req, res, next) => {
+  try {
+    const { task, date, duration, note } = req.body;
+
+    let timeEntry = await TimeEntry.findById(req.params.id);
+
+    if (!timeEntry) {
+      return res.status(404).json({ message: 'Time entry not found' });
+    }
+
+    // Verify user owns the time entry
+    if (timeEntry.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'User not authorized' });
+    }
+
+    timeEntry.task = task;
+    timeEntry.date = date;
+    timeEntry.duration = duration;
+    timeEntry.note = note;
+
+    timeEntry = await timeEntry.save();
+
+    res.status(200).json(timeEntry);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete a time entry
+// @route   DELETE /api/time-entries/:id
+// @access  Private
+exports.deleteTimeEntry = async (req, res, next) => {
+  try {
+    const timeEntry = await TimeEntry.findById(req.params.id);
+
+    if (!timeEntry) {
+      return res.status(404).json({ message: 'Time entry not found' });
+    }
+
+    // Verify user owns the time entry
+    if (timeEntry.user.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'User not authorized' });
+    }
+
+    await timeEntry.deleteOne();
+
+    res.status(200).json({ message: 'Time entry removed' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Create a time entry for a project
 // @route   POST /api/projects/:projectId/time-entries
 // @access  Private
