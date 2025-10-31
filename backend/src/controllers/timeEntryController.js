@@ -24,6 +24,47 @@ exports.getProjectTimeEntries = async (req, res, next) => {
   }
 };
 
+// @desc    Get time entry summary for a project
+// @route   GET /api/projects/:projectId/time-entries/summary
+// @access  Private
+exports.getTimeEntrySummary = async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const days = parseInt(req.query.days) || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const summary = await TimeEntry.aggregate([
+      {
+        $match: {
+          project: new mongoose.Types.ObjectId(projectId),
+          date: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+          totalDuration: { $sum: '$duration' },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          totalDuration: 1,
+        }
+      }
+    ]);
+
+    res.status(200).json(summary);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Update a time entry
 // @route   PUT /api/time-entries/:id
 // @access  Private

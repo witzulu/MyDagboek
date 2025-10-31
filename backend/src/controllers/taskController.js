@@ -3,6 +3,32 @@ const List = require('../models/List');
 const Project = require('../models/Project');
 const { logChange } = require('../utils/changeLogService');
 
+// Middleware to check task authorization
+const authorizeTaskAccess = async (req, res, next) => {
+    try {
+        const task = await Task.findById(req.params.id).populate({
+            path: 'list',
+            populate: { path: 'board' }
+        });
+
+        if (!task) {
+            return res.status(404).json({ message: 'Task not found' });
+        }
+
+        const project = await Project.findById(task.list.board.project);
+        if (!project.members.some(member => member.user.toString() === req.user.id) && req.user.role !== 'system_admin') {
+            return res.status(403).json({ message: 'User not authorized for this project' });
+        }
+
+        req.task = task; // Pass task to the next controller
+        req.project = project; // Pass project for logging
+        next();
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 // @desc    Get all tasks for a project (for dropdowns, etc.)
 // @route   GET /api/projects/:projectId/tasks
 // @access  Private
@@ -33,6 +59,11 @@ exports.createTask = async (req, res, next) => {
     const list = await List.findById(listId).populate('board');
     if (!list) return res.status(404).json({ message: 'List not found' });
 
+    const project = await Project.findById(list.board.project);
+    if (!project.members.some(member => member.user.toString() === req.user.id) && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized for this project' });
+    }
+
     const task = await Task.create({
       list: listId,
       title,
@@ -45,7 +76,7 @@ exports.createTask = async (req, res, next) => {
       user: req.user.id
     });
 
-    await logChange(list.board.project, req.user.id, `Created task "${title}"`, 'board');
+    await logChange(project._id, req.user.id, `Created task "${title}"`, 'board');
     res.status(201).json(task);
   } catch (error) {
     next(error);
@@ -55,67 +86,50 @@ exports.createTask = async (req, res, next) => {
 // @desc    Get a single task by ID
 // @route   GET /api/tasks/:id
 // @access  Private
-exports.getTaskById = async (req, res, next) => {
-  try {
-    const task = await Task.findById(req.params.id).populate('labels assignees');
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-    res.status(200).json(task);
-  } catch (error) {
-    next(error);
-  }
-};
-
+exports.getTaskById = [authorizeTaskAccess, async (req, res, next) => {
+    try {
+        const task = await req.task.populate('labels assignees');
+        res.status(200).json(task);
+    } catch (error) {
+        next(error);
+    }
+}];
 
 // @desc    Update a task
 // @route   PUT /api/tasks/:id
 // @access  Private
-exports.updateTask = async (req, res, next) => {
+exports.updateTask = [authorizeTaskAccess, async (req, res, next) => {
   try {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-
-    const list = await List.findById(task.list).populate('board');
-    await logChange(list.board.project, req.user.id, `Updated task "${task.title}"`, 'board');
-
-    res.status(200).json(task);
+    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    await logChange(req.project._id, req.user.id, `Updated task "${updatedTask.title}"`, 'board');
+    res.status(200).json(updatedTask);
   } catch (error) {
     next(error);
   }
-};
+}];
 
 // @desc    Delete a task
 // @route   DELETE /api/tasks/:id
 // @access  Private
-exports.deleteTask = async (req, res, next) => {
+exports.deleteTask = [authorizeTaskAccess, async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.id);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-
-    const list = await List.findById(task.list).populate('board');
-    await task.deleteOne();
-
-    await logChange(list.board.project, req.user.id, `Deleted task "${task.title}"`, 'board');
-
+    await req.task.deleteOne();
+    await logChange(req.project._id, req.user.id, `Deleted task "${req.task.title}"`, 'board');
     res.status(200).json({ message: 'Task deleted' });
   } catch (error) {
     next(error);
   }
-};
+}];
 
 // @desc    Move a task
 // @route   PUT /api/tasks/:id/move
 // @access  Private
-exports.moveTask = async (req, res, next) => {
-    // This is a complex operation that recalculates positions.
-    // A simplified version is provided for now.
+exports.moveTask = [authorizeTaskAccess, async (req, res, next) => {
     try {
         const { newListId, newPosition } = req.body;
-        const task = await Task.findById(req.params.id);
-        if (!task) return res.status(404).json({ message: 'Task not found' });
+        const task = req.task;
+        const originalListId = task.list._id;
 
-        const originalListId = task.list;
-
-        // Update other tasks' positions
         await Task.updateMany({ list: originalListId, position: { $gt: task.position } }, { $inc: { position: -1 } });
         await Task.updateMany({ list: newListId, position: { $gte: newPosition } }, { $inc: { position: 1 } });
 
@@ -123,44 +137,37 @@ exports.moveTask = async (req, res, next) => {
         task.position = newPosition;
         await task.save();
 
-        const list = await List.findById(newListId).populate('board');
-        await logChange(list.board.project, req.user.id, `Moved task "${task.title}"`, 'board');
-
+        await logChange(req.project._id, req.user.id, `Moved task "${task.title}"`, 'board');
         res.status(200).json(task);
     } catch (error) {
         next(error);
     }
-};
+}];
 
 // @desc    Mark a task as complete
 // @route   PUT /api/tasks/:id/complete
 // @access  Private
-exports.completeTask = async (req, res, next) => {
+exports.completeTask = [authorizeTaskAccess, async (req, res, next) => {
     try {
-        const task = await Task.findById(req.params.id);
-        if (!task) return res.status(404).json({ message: 'Task not found' });
-
+        const task = req.task;
         task.completedAt = task.completedAt ? null : Date.now();
         await task.save();
 
-        const list = await List.findById(task.list).populate('board');
         const action = task.completedAt ? 'Completed' : 'Reopened';
-        await logChange(list.board.project, req.user.id, `${action} task "${task.title}"`, 'board');
+        await logChange(req.project._id, req.user.id, `${action} task "${task.title}"`, 'board');
 
         res.status(200).json(task);
     } catch(error) {
         next(error);
     }
-};
+}];
 
 // @desc    Update a task's priority
 // @route   PUT /api/tasks/:id/priority
 // @access  Private
-exports.updateTaskPriority = async (req, res, next) => {
+exports.updateTaskPriority = [authorizeTaskAccess, async (req, res, next) => {
     try {
-        const task = await Task.findById(req.params.id);
-        if (!task) return res.status(404).json({ message: 'Task not found' });
-
+        const task = req.task;
         const priorities = ['Low', 'Medium', 'High'];
         const currentPriorityIndex = priorities.indexOf(task.priority);
         const nextPriorityIndex = (currentPriorityIndex + 1) % priorities.length;
@@ -168,11 +175,10 @@ exports.updateTaskPriority = async (req, res, next) => {
 
         await task.save();
 
-        const list = await List.findById(task.list).populate('board');
-        await logChange(list.board.project, req.user.id, `Set priority for "${task.title}" to ${task.priority}`, 'board');
+        await logChange(req.project._id, req.user.id, `Set priority for "${task.title}" to ${task.priority}`, 'board');
 
         res.status(200).json(task);
     } catch (error) {
         next(error);
     }
-};
+}];
