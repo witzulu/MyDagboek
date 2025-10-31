@@ -72,10 +72,15 @@ const TimeEntryModal = ({ isOpen, onClose, onSave, projectId, timeEntry, task = 
     const totalMinutes = hours * 60 + minutes;
 
     const payload = {
-      ...formData,
+      date: formData.date,
       duration: totalMinutes,
+      note: formData.note,
       project: projectId,
     };
+
+    if (formData.task) {
+      payload.task = formData.task;
+    }
 
     const url = timeEntry ? `/api/time-entries/${timeEntry._id}` : `/api/projects/${projectId}/time-entries`;
     const method = timeEntry ? 'PUT' : 'POST';
