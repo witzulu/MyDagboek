@@ -1,171 +1,138 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import TimeEntryModal from '../../components/TimeEntry/TimeEntryModal';
 
 const TimeTracking = () => {
-  const [projects, setProjects] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [selectedProject, setSelectedProject] = useState('');
-  const [selectedTask, setSelectedTask] = useState('');
-  const [date, setDate] = useState('');
-  const [duration, setDuration] = useState('');
-  const [note, setNote] = useState('');
+  const { projectId } = useParams();
   const [timeEntries, setTimeEntries] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState(null);
 
-  useEffect(() => {
-    // Fetch projects
-    const fetchProjects = async () => {
+  const fetchTimeEntries = useCallback(async () => {
+    try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/projects', {
+      const res = await fetch(`/api/projects/${projectId}/time-entries`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) {
+        throw new Error('Failed to fetch time entries');
+      }
       const data = await res.json();
-      setProjects(data);
-    };
-    fetchProjects();
-  }, []);
+      setTimeEntries(data);
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load time entries.');
+      setTimeEntries([]); // Ensure timeEntries is an array on error
+    }
+  }, [projectId]);
 
   useEffect(() => {
-    // Fetch tasks for selected project
-    if (selectedProject) {
-      const fetchTasks = async () => {
+    if (projectId) {
+      fetchTimeEntries();
+    }
+  }, [projectId, fetchTimeEntries]);
+
+  const handleSave = () => {
+    fetchTimeEntries(); // Re-fetch entries after saving
+  };
+
+  const handleEdit = (entry) => {
+    setSelectedEntry(entry);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (entryId) => {
+    if (window.confirm('Are you sure you want to delete this time entry?')) {
+      try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`/api/projects/${selectedProject}/tasks`, {
+        const res = await fetch(`/api/time-entries/${entryId}`, {
+          method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await res.json();
-        setTasks(data);
-      };
-      fetchTasks();
+        if (!res.ok) {
+          throw new Error('Failed to delete time entry');
+        }
+        toast.success('Time entry deleted.');
+        fetchTimeEntries(); // Refresh the list
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to delete time entry.');
+      }
     }
-  }, [selectedProject]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    await fetch('/api/time-entries', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        project: selectedProject,
-        task: selectedTask,
-        date,
-        duration,
-        note,
-      }),
-    });
-    // Clear form
-    setSelectedProject('');
-    setSelectedTask('');
-    setDate('');
-    setDuration('');
-    setNote('');
-    fetchTimeEntries();
   };
 
-  const fetchTimeEntries = async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch('/api/time-entries', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    setTimeEntries(data);
-  };
-
-  useEffect(() => {
-    fetchTimeEntries();
-  }, []);
+  // Defensive check for timeEntries
+  if (!Array.isArray(timeEntries)) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Time Tracking</h1>
-      <form onSubmit={handleSubmit} className="mb-8 p-4 border rounded-lg">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Project</label>
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="w-full p-2 rounded border"
-            >
-              <option value="">Select a project</option>
-              {projects.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Task</label>
-            <select
-              value={selectedTask}
-              onChange={(e) => setSelectedTask(e.target.value)}
-              className="w-full p-2 rounded border"
-              disabled={!selectedProject}
-            >
-              <option value="">Select a task</option>
-              {tasks.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.title}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full p-2 rounded border"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Duration (minutes)</label>
-            <input
-              type="number"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              className="w-full p-2 rounded border"
-            />
-          </div>
-        </div>
-        <div className="mt-4">
-          <label className="block text-sm font-medium mb-1">Note</label>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="w-full p-2 rounded border"
-          />
-        </div>
-        <button type="submit" className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
-          Log Time
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Time Tracking</h1>
+        <button
+          onClick={() => {
+            setSelectedEntry(null);
+            setIsModalOpen(true);
+          }}
+          className="btn btn-primary"
+        >
+          Add Manual Entry
         </button>
-      </form>
-      <div>
-        <h2 className="text-xl font-bold mb-4">Time Entries</h2>
-        <div className="space-y-4">
-          {timeEntries.map((entry) => (
-            <div key={entry._id} className="p-4 border rounded-lg">
-              <div className="flex justify-between">
-                <div>
-                  <p className="font-bold">{entry.project.name} - {entry.task.title}</p>
-                  <p className="text-sm text-gray-500">{new Date(entry.date).toLocaleDateString()}</p>
-                  <p className="text-sm">{entry.duration} minutes</p>
-                  <p className="text-sm italic">{entry.note}</p>
-                </div>
-                <div>
-                  <button className="text-sm text-blue-500">Edit</button>
-                  <button className="ml-4 text-sm text-red-500">Delete</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
+
+      <div className="overflow-x-auto">
+        <table className="table w-full">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Date</th>
+              <th>Duration (HH:MM)</th>
+              <th>Note</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {timeEntries.map((entry) => (
+              <tr key={entry._id}>
+                <td>{entry.task?.title || 'N/A'}</td>
+                <td>{new Date(entry.date).toLocaleDateString()}</td>
+                <td>{`${Math.floor(entry.duration / 60)
+                  .toString()
+                  .padStart(2, '0')}:${(entry.duration % 60)
+                  .toString()
+                  .padStart(2, '0')}`}</td>
+                <td>{entry.note}</td>
+                <td>
+                  <button
+                    onClick={() => handleEdit(entry)}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(entry._id)}
+                    className="btn btn-ghost btn-sm text-red-500"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {isModalOpen && (
+        <TimeEntryModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSave}
+          projectId={projectId}
+          timeEntry={selectedEntry}
+        />
+      )}
     </div>
   );
 };
