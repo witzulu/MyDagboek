@@ -7,6 +7,7 @@ import { CSS } from '@dnd-kit/utilities';
 import Card from '../../components/Board/Card';
 import CardModal from '../../components/Board/CardModal';
 import EditBoardModal from '../../components/Board/EditBoardModal';
+import TimeEntryModal from '../../components/TimeEntry/TimeEntryModal';
 import { MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 
 
@@ -25,6 +26,8 @@ const Board = () => {
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isEditBoardModalOpen, setIsEditBoardModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [timeEntryTask, setTimeEntryTask] = useState(null);
+  const [isTimeEntryModalOpen, setIsTimeEntryModalOpen] = useState(false);
   const [targetListId, setTargetListId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -474,8 +477,28 @@ const Board = () => {
     }
   };
 
+  const handleAddTimeEntry = (task) => {
+    setTimeEntryTask(task);
+    setIsTimeEntryModalOpen(true);
+  };
+
   return (
     <div className="p-6 min-h-screen bg-base-200 text-base-content">
+
+      <TimeEntryModal
+        isOpen={isTimeEntryModalOpen}
+        onClose={() => {
+          setIsTimeEntryModalOpen(false);
+          setTimeEntryTask(null);
+        }}
+        onSave={() => {
+          setIsTimeEntryModalOpen(false);
+          setTimeEntryTask(null);
+          // Optionally refresh board data here if needed
+        }}
+        projectId={projectId}
+        task={timeEntryTask}
+      />
 
       <CardModal
         isOpen={isCardModalOpen}
@@ -521,6 +544,7 @@ const Board = () => {
                   onCompleteTask={handleCompleteTask}
                   onUpdateTask={handleTaskUpdate}
                   onDeleteTask={handleDeleteTask}
+                  onAddTimeEntry={handleAddTimeEntry}
                 />
               ))}
               <div className="w-72 flex-shrink-0">
@@ -534,7 +558,7 @@ const Board = () => {
   );
 };
 
-const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask }) => {
+const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask, onAddTimeEntry }) => {
   const {
     attributes,
     listeners,
@@ -559,13 +583,14 @@ const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask,
         onCompleteTask={onCompleteTask}
         onUpdateTask={onUpdateTask}
         onDeleteTask={onDeleteTask}
+        onAddTimeEntry={onAddTimeEntry}
         dragHandleProps={{...attributes, ...listeners}}
       />
     </div>
   );
 };
 
-const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask, dragHandleProps }) => {
+const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask, onAddTimeEntry, dragHandleProps }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(list.name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -625,7 +650,7 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompl
         <div className="mt-2 space-y-2">
           {list.tasks && list.tasks.map(task => (
             <div key={task._id}>
-              <Card task={task} onEditTask={onEditTask} onCompleteTask={onCompleteTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask}/>
+              <Card task={task} onEditTask={onEditTask} onCompleteTask={onCompleteTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onAddTimeEntry={onAddTimeEntry} />
             </div>
           ))}
         </div>

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Star, CheckSquare, MessageSquare, MoreVertical, Edit, Trash2, Check, GripVertical } from 'lucide-react';
+import { Star, CheckSquare, MessageSquare, MoreVertical, Edit, Trash2, Check, GripVertical, Clock } from 'lucide-react';
 
-const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask }) => {
+const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, onAddTimeEntry }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
     attributes,
@@ -113,6 +113,7 @@ const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask }) 
               {isMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-base-100 rounded-md shadow-lg z-10">
                   <button onClick={(e) => { e.stopPropagation(); onEditTask(task); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Edit size={14} className="inline mr-2" />Edit</button>
+                  <button onClick={(e) => { e.stopPropagation(); onAddTimeEntry(task); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Clock size={14} className="inline mr-2" />Add Time Entry</button>
                   <button onClick={(e) => { e.stopPropagation(); onDeleteTask(task._id); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Trash2 size={14} className="inline mr-2" />Delete</button>
                   <button onClick={(e) => { e.stopPropagation(); onCompleteTask(task._id); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Check size={14} className="inline mr-2" />Mark as Completed</button>
                 </div>

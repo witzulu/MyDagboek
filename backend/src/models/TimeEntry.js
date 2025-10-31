@@ -15,7 +15,7 @@ const timeEntrySchema = new mongoose.Schema({
   task: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Task',
-    required: true,
+    required: false, // Allow manual time entries not linked to a task
   },
   date: {
     type: Date,
