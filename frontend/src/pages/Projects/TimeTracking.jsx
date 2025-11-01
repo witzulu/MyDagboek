@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import TimeEntryModal from '../../components/TimeEntry/TimeEntryModal';
@@ -141,7 +141,15 @@ const TimeTracking = () => {
           <tbody>
             {timeEntries.map((entry) => (
               <tr key={entry._id}>
-                <td>{entry.task?.title || 'N/A'}</td>
+                <td>
+                  {entry.task ? (
+                    <Link to={`/projects/${projectId}/boards/${entry.task.board}?highlight=${entry.task._id}`} className="hover:underline">
+                      {entry.task.title}
+                    </Link>
+                  ) : (
+                    'N/A'
+                  )}
+                </td>
                 <td>{new Date(entry.date).toLocaleDateString()}</td>
                 <td>{`${Math.floor(entry.duration / 60)
                   .toString()

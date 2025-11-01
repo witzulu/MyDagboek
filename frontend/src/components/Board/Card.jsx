@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Star, CheckSquare, MessageSquare, MoreVertical, Edit, Trash2, Check, GripVertical, Clock } from 'lucide-react';
 
-const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, onAddTimeEntry }) => {
+const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, onAddTimeEntry, isHighlighted }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const cardRef = useRef(null);
   const {
     attributes,
     listeners,
@@ -50,11 +51,34 @@ const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, on
 
   const commentsExist = task.comments && task.comments.length > 0;
 
+  useEffect(() => {
+    if (isHighlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isHighlighted]);
+
+  const formatTime = (minutes) => {
+    if (!minutes || minutes < 1) return '';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    let formatted = '';
+    if (hours > 0) {
+      formatted += `${hours}h `;
+    }
+    if (mins > 0) {
+      formatted += `${mins}m`;
+    }
+    return formatted.trim();
+  };
+
   return (
     <div
-      ref={setNodeRef}
+      ref={node => {
+        setNodeRef(node);
+        cardRef.current = node;
+      }}
       style={style}
-      className="p-3 bg-base-100 rounded-md shadow-sm mb-2 flex items-start gap-2"
+      className={`p-3 bg-base-100 rounded-md shadow-sm mb-2 flex items-start gap-2 ${isHighlighted ? 'ring-2 ring-primary ring-offset-2' : ''}`}
     >
       <div {...attributes} {...listeners} className="cursor-move pt-1">
         <GripVertical size={18} className="text-base-content/50" />
@@ -73,6 +97,12 @@ const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, on
 
         <div className="flex justify-between items-center mt-2 text-xs text-base-content/70">
           <div className="flex items-center space-x-2">
+            {task.totalTimeSpent > 0 && (
+              <span className="flex items-center space-x-1">
+                <Clock size={14} />
+                <span>{formatTime(task.totalTimeSpent)}</span>
+              </span>
+            )}
             {commentsExist && (
               <span className="flex items-center space-x-1">
                 <MessageSquare size={14} />
