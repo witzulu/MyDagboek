@@ -16,7 +16,7 @@ const authorizeTaskAccess = async (req, res, next) => {
         }
 
         const project = await Project.findById(task.list.board.project);
-        if (!project.members.some(member => member.user.toString() === req.user.id) && req.user.role !== 'system_admin') {
+        if (!project.members.some(member => member && member.user && member.user.toString() === req.user.id) && req.user.role !== 'system_admin') {
             return res.status(403).json({ message: 'User not authorized for this project' });
         }
 
@@ -38,7 +38,7 @@ exports.getProjectTasks = async (req, res, next) => {
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
-    if (!project.members.some(member => member.user.toString() === req.user.id) && req.user.role !== 'system_admin') {
+    if (!project.members.some(member => member && member.user && member.user.toString() === req.user.id) && req.user.role !== 'system_admin') {
       return res.status(403).json({ message: 'User not authorized for this project' });
     }
     const lists = await List.find({ project: req.params.projectId });
@@ -60,7 +60,10 @@ exports.createTask = async (req, res, next) => {
     if (!list) return res.status(404).json({ message: 'List not found' });
 
     const project = await Project.findById(list.board.project);
-    if (!project.members.some(member => member.user.toString() === req.user.id) && req.user.role !== 'system_admin') {
+    if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+    }
+    if (!project.members.some(member => member && member.user && member.user.toString() === req.user.id) && req.user.role !== 'system_admin') {
       return res.status(403).json({ message: 'User not authorized for this project' });
     }
 
