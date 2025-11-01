@@ -36,24 +36,36 @@ const PORT = process.env.PORT || 5000;
 // Helper Functions (Seeders & Migrations)
 const seedAdminUser = async () => {
     const User = require('./src/models/User');
-    const bcrypt = require('bcryptjs');
     try {
         let adminUser = await User.findOne({ email: 'admin@dagboek.com' });
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash('admin', salt); // Ensure this is always the password
 
         if (adminUser) {
-            adminUser.role = 'system_admin';
-            adminUser.status = 'approved';
-            adminUser.password = hashedPassword; // Always reset password to default
-            await adminUser.save();
-            console.log('✅ Admin user account state has been reset.');
+            // Admin user exists, ensure role and status are correct.
+            // DO NOT reset the password.
+            let needsSave = false;
+            if (adminUser.role !== 'system_admin') {
+                adminUser.role = 'system_admin';
+                needsSave = true;
+            }
+            if (adminUser.status !== 'approved') {
+                adminUser.status = 'approved';
+                needsSave = true;
+            }
+
+            if (needsSave) {
+                await adminUser.save();
+                console.log('✅ Admin user account state has been updated.');
+            } else {
+                console.log('✅ Admin user account verified.');
+            }
         } else {
+            // Admin user does not exist, create it with a default password.
+            // The 'pre' save hook in the User model will hash the password.
             adminUser = new User({
                 name: 'Admin',
                 email: 'admin@dagboek.com',
                 username: 'admin',
-                password: hashedPassword,
+                password: 'admin', // The model hook will hash this.
                 role: 'system_admin',
                 status: 'approved'
             });

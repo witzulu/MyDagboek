@@ -53,9 +53,29 @@ To get a local copy up and running, follow these simple steps.
     ```
     The server will be running on `http://localhost:5000`.
 
-    > **Note:** The first time you run the backend server, it will automatically create a default admin account with the following credentials:
-    > - **Email:** `admin@dagboek.com`
-    > - **Password:** `password`
+    > **Note:** The first time you run the backend server, it will automatically create a default admin account with the email `admin@dagboek.com` and the password `admin`. For security, it is highly recommended to change this password after your first login.
+
+## Admin
+
+### Resetting a User's Password
+
+A command-line tool is provided to reset any user's password. This is useful for regaining access if an admin password is lost.
+
+1.  **Navigate to the backend directory:**
+    ```sh
+    cd backend
+    ```
+2.  **Run the reset script:**
+    ```sh
+    npm run reset-password <user-email> <new-password>
+    ```
+    - Replace `<user-email>` with the email of the user you want to update.
+    - Replace `<new-password>` with the desired new password.
+
+    **Example:**
+    ```sh
+    npm run reset-password admin@dagboek.com aSecureNewPassword
+    ```
 
 ## Status
 
