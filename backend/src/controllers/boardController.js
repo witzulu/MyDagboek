@@ -75,10 +75,19 @@ exports.createBoard = async (req, res, next) => {
 // @access  Private
 exports.getBoardById = async (req, res, next) => {
   try {
-    const board = await Board.findOne({ _id: req.params.id, user: req.user.id });
+    const board = await Board.findById(req.params.id);
 
     if (!board) {
-      return res.status(404).json({ message: 'Board not found or user not authorized' });
+      return res.status(404).json({ message: 'Board not found' });
+    }
+
+    // Authorization check: Ensure user is a member of the project this board belongs to
+    const project = await Project.findById(board.project).select('members');
+    const isMember = project.members.some(member => member.user.toString() === req.user.id);
+
+    // Allow access if the user is a project member OR a system admin
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to access this board' });
     }
 
     const lists = await List.find({ board: board._id })
