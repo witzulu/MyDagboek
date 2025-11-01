@@ -48,7 +48,7 @@ const TimeEntryModal = ({ isOpen, onClose, onSave, projectId, timeEntry, task = 
         task: task._id,
         date: new Date().toISOString().split('T')[0],
         duration: '00:00',
-        note: '',
+        note: `Work on: ${task.title}`,
       });
     } else {
       // Creating a new manual entry

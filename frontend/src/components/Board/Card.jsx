@@ -62,7 +62,7 @@ const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, on
       <div className="flex-grow">
         <div onClick={() => onEditTask(task)} className="cursor-pointer">
           <div className="flex flex-wrap gap-1 mb-2">
-            {task.labels?.map(label => (
+            {task.labels?.filter(l => l).map(label => (
               <span key={label._id} style={{ backgroundColor: label.color }} className="px-2 py-0.5 rounded text-xs text-white">
                 {label.name}
               </span>

@@ -61,7 +61,7 @@ export default function App() {
               <Route path="projects/:projectId/team" element={<Team />} />
               <Route path="projects/:projectId/diagrams" element={<Diagrams />} />
               <Route path="projects/:projectId/changelog" element={<ChangeLog />} />
-              <Route path="projects/:projectId/time" element={<TimeTracking />} />
+              <Route path="projects/:projectId/time-tracking" element={<TimeTracking />} />
               <Route path="reports-dashboard" element={<ReportDashboard />} />
               <Route path="settings" element={<UserSettings />} />
             </Route>
