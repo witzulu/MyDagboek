@@ -142,7 +142,7 @@ exports.createTimeEntry = async (req, res, next) => {
       user: req.user.id,
       project: projectId,
       task,
-      date,
+      date: new Date(date), // Ensure the date is stored as a BSON Date
       duration,
       note,
     });

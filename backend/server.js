@@ -39,16 +39,16 @@ const seedAdminUser = async () => {
     const bcrypt = require('bcryptjs');
     try {
         let adminUser = await User.findOne({ email: 'admin@dagboek.com' });
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash('admin', salt); // Ensure this is always the password
+
         if (adminUser) {
-            if (adminUser.role !== 'system_admin' || adminUser.status !== 'approved') {
-                adminUser.role = 'system_admin';
-                adminUser.status = 'approved';
-                await adminUser.save();
-                console.log('✅ Admin user role and status corrected.');
-            }
+            adminUser.role = 'system_admin';
+            adminUser.status = 'approved';
+            adminUser.password = hashedPassword; // Always reset password to default
+            await adminUser.save();
+            console.log('✅ Admin user account state has been reset.');
         } else {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash('admin', salt); // Changed password for consistency
             adminUser = new User({
                 name: 'Admin',
                 email: 'admin@dagboek.com',
@@ -111,6 +111,23 @@ const migrateUsers = async () => {
     }
 };
 
+const migrateTimeEntries = async () => {
+    const TimeEntry = require('./src/models/TimeEntry');
+    try {
+        const entriesToMigrate = await TimeEntry.find({ date: { $type: "string" } });
+        if (entriesToMigrate.length > 0) {
+            console.log(`Found ${entriesToMigrate.length} time entries to migrate...`);
+            for (const entry of entriesToMigrate) {
+                entry.date = new Date(entry.date);
+                await entry.save();
+            }
+            console.log('✅ Time entry date migration complete.');
+        }
+    } catch (error) {
+        console.error('❌ Error migrating time entries:', error);
+    }
+};
+
 
 const startServer = async () => {
   try {
@@ -137,6 +154,7 @@ const startServer = async () => {
     await seedAdminUser();
     await migrateProjects();
     await migrateUsers();
+    await migrateTimeEntries();
 
     // 4. Configure Express Middleware
     app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
@@ -144,7 +162,7 @@ const startServer = async () => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     if (process.env.NODE_ENV === 'development') {
-      app.use(morgan('dev'));
+      app.use(require('morgan')('dev'));
     }
     app.use('/uploads', express.static('uploads'));
 
