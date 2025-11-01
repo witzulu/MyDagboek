@@ -69,6 +69,7 @@ exports.createTask = async (req, res, next) => {
 
     const task = await Task.create({
       list: listId,
+      board: list.board._id,  // ✅ ADD THIS LINE
       title,
       description,
       dueDate,
@@ -103,6 +104,15 @@ exports.getTaskById = [authorizeTaskAccess, async (req, res, next) => {
 // @access  Private
 exports.updateTask = [authorizeTaskAccess, async (req, res, next) => {
   try {
+    // ✅ If list is being changed, update board reference too
+    if (req.body.list) {
+      const newList = await List.findById(req.body.list).populate('board');
+      if (!newList) {
+        return res.status(404).json({ message: 'List not found' });
+      }
+      req.body.board = newList.board._id;
+    }
+
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     await logChange(req.project._id, req.user.id, `Updated task "${updatedTask.title}"`, 'board');
     res.status(200).json(updatedTask);
@@ -133,10 +143,17 @@ exports.moveTask = [authorizeTaskAccess, async (req, res, next) => {
         const task = req.task;
         const originalListId = task.list._id;
 
+        // ✅ Get the new list to find its board
+        const newList = await List.findById(newListId).populate('board');
+        if (!newList) {
+            return res.status(404).json({ message: 'Target list not found' });
+        }
+
         await Task.updateMany({ list: originalListId, position: { $gt: task.position } }, { $inc: { position: -1 } });
         await Task.updateMany({ list: newListId, position: { $gte: newPosition } }, { $inc: { position: 1 } });
 
         task.list = newListId;
+        task.board = newList.board._id;  // ✅ UPDATE BOARD REFERENCE
         task.position = newPosition;
         await task.save();
 

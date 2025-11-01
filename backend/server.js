@@ -140,6 +140,29 @@ const migrateTimeEntries = async () => {
     }
 };
 
+const migrateTasks = async () => {
+    const Task = require('./src/models/Task');
+    const List = require('./src/models/List');
+    try {
+        const tasksToMigrate = await Task.find({ board: { $exists: false } }).populate('list');
+        if (tasksToMigrate.length > 0) {
+            console.log(`Found ${tasksToMigrate.length} tasks to migrate for board field...`);
+            for (const task of tasksToMigrate) {
+                if (task.list && task.list.board) {
+                    task.board = task.list.board;
+                    await task.save();
+                    console.log(`Task "${task.title}" migrated with board ID ${task.board}.`);
+                } else {
+                    console.log(`Could not migrate task "${task.title}" - list or board not found.`);
+                }
+            }
+            console.log('✅ Task board field migration complete.');
+        }
+    } catch (error) {
+        console.error('❌ Error migrating tasks:', error);
+    }
+};
+
 
 const startServer = async () => {
   try {
@@ -167,6 +190,7 @@ const startServer = async () => {
     await migrateProjects();
     await migrateUsers();
     await migrateTimeEntries();
+    await migrateTasks();
 
     // 4. Configure Express Middleware
     app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
