@@ -83,6 +83,11 @@ exports.getBoardById = async (req, res, next) => {
 
     // Authorization check: Ensure user is a member of the project this board belongs to
     const project = await Project.findById(board.project).select('members');
+
+    if (!project) {
+      return res.status(404).json({ message: 'Parent project for this board not found' });
+    }
+
     const isMember = project.members.some(member => member.user.toString() === req.user.id);
 
     // Allow access if the user is a project member OR a system admin
