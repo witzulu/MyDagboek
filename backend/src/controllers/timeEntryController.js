@@ -13,7 +13,7 @@ exports.getProjectTimeEntries = async (req, res, next) => {
     }
 
     // Verify user is a member of the project
-    if (project.user.toString() !== req.user.id && !project.members.some(member => member.user.toString() === req.user.id)) {
+    if (project.user.toString() !== req.user.id && !project.members.some(member => member && member.user && member.user.toString() === req.user.id)) {
       return res.status(403).json({ message: 'User is not a member of this project' });
     }
 
@@ -134,7 +134,7 @@ exports.createTimeEntry = async (req, res, next) => {
     }
 
     // Verify user is a member of the project
-    if (project.user.toString() !== req.user.id && !project.members.some(member => member.user.toString() === req.user.id)) {
+    if (project.user.toString() !== req.user.id && !project.members.some(member => member && member.user && member.user.toString() === req.user.id)) {
       return res.status(403).json({ message: 'User is not a member of this project' });
     }
 
