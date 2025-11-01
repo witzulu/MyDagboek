@@ -11,6 +11,30 @@ const TimeTracking = () => {
   const [days, setDays] = useState(30);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
+  const [projectTasks, setProjectTasks] = useState([]);
+
+  useEffect(() => {
+    const fetchProjectTasks = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/projects/${projectId}/tasks`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          throw new Error('Failed to fetch project tasks');
+        }
+        const data = await res.json();
+        setProjectTasks(data);
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to load project tasks for the dropdown.');
+      }
+    };
+
+    if (projectId) {
+      fetchProjectTasks();
+    }
+  }, [projectId]);
 
   const fetchTimeEntries = useCallback(async () => {
     try {
@@ -184,6 +208,7 @@ const TimeTracking = () => {
           onSave={handleSave}
           projectId={projectId}
           timeEntry={selectedEntry}
+          projectTasks={projectTasks}
         />
       )}
     </div>

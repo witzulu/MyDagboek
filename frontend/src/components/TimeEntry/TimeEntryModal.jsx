@@ -2,34 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
-const TimeEntryModal = ({ isOpen, onClose, onSave, projectId, timeEntry, task = null }) => {
+const TimeEntryModal = ({ isOpen, onClose, onSave, projectId, timeEntry, task = null, projectTasks = [] }) => {
   const [formData, setFormData] = useState({
     task: '',
     date: new Date().toISOString().split('T')[0],
     duration: '00:00',
     note: '',
   });
-  const [projectTasks, setProjectTasks] = useState([]);
-
-  useEffect(() => {
-    const fetchTasks = async () => {
-      if (projectId) {
-        try {
-          const token = localStorage.getItem('token');
-          const res = await fetch(`/api/projects/${projectId}/tasks`, {
-             headers: { Authorization: `Bearer ${token}` },
-          });
-          if (!res.ok) throw new Error('Failed to fetch tasks');
-          const data = await res.json();
-          setProjectTasks(data);
-        } catch (error) {
-          console.error("Could not fetch project tasks:", error);
-          toast.error("Could not load tasks for project.");
-        }
-      }
-    };
-    fetchTasks();
-  }, [projectId]);
 
   useEffect(() => {
     if (timeEntry) {
