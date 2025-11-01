@@ -1,7 +1,7 @@
 
 const TimeEntry = require('../models/TimeEntry');
 const Project = require('../models/Project');
-
+const mongoose = require('mongoose');
 // @desc    Get all time entries for a project
 // @route   GET /api/projects/:projectId/time-entries
 // @access  Private

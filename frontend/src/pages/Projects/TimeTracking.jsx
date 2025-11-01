@@ -89,7 +89,7 @@ const TimeTracking = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 w-full">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Time Tracking</h1>
         <button
@@ -103,7 +103,7 @@ const TimeTracking = () => {
         </button>
       </div>
 
-      <div className="mb-8 p-4 border rounded-lg bg-base-100">
+      <div className="mb-8 p-4 border rounded-lg bg-base-100 w-full">
         <h2 className="text-xl font-bold mb-4">Daily Summary</h2>
         <div className="flex space-x-2 mb-4">
             <button onClick={() => setDays(7)} className={`btn btn-sm ${days === 7 ? 'btn-primary' : ''}`}>Last 7 Days</button>
