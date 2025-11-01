@@ -18,9 +18,7 @@ exports.register = async (req, res, next) => {
       password,
     });
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-
+    // The password will be hashed automatically by the pre-save hook in the User model
     await user.save();
 
     res.status(201).json({ message: 'User registered successfully. Please wait for admin approval.' });
@@ -44,7 +42,7 @@ exports.login = async (req, res, next) => {
       return res.status(403).json({ error: 'Your account is pending approval.' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
