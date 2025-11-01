@@ -3,6 +3,7 @@ const Board = require('../models/Board');
 const Project = require('../models/Project');
 const List = require('../models/List');
 const Task = require('../models/Task');
+const TimeEntry = require('../models/TimeEntry');
 
 // @desc    Get all boards for a project
 // @route   GET /api/projects/:projectId/boards
@@ -102,7 +103,40 @@ exports.getBoardById = async (req, res, next) => {
         ]
       });
 
-    res.status(200).json({ board, lists });
+    // Get all task IDs from the lists
+    const taskIds = lists.reduce((acc, list) => {
+      return acc.concat(list.tasks.map(task => task._id));
+    }, []);
+
+    // Aggregate time entries to get total duration for each task
+    const timeAggregates = await TimeEntry.aggregate([
+      { $match: { task: { $in: taskIds } } },
+      {
+        $group: {
+          _id: '$task',
+          totalTimeSpent: { $sum: '$duration' }
+        }
+      }
+    ]);
+
+    // Create a map for easy lookup
+    const timeMap = timeAggregates.reduce((acc, curr) => {
+      acc[curr._id] = curr.totalTimeSpent;
+      return acc;
+    }, {});
+
+    // Add totalTimeSpent to each task object
+    const listsWithTime = lists.map(list => {
+      const listObject = list.toObject();
+      listObject.tasks = list.tasks.map(task => {
+        const taskObject = task.toObject();
+        taskObject.totalTimeSpent = timeMap[task._id.toString()] || 0;
+        return taskObject;
+      });
+      return listObject;
+    });
+
+    res.status(200).json({ board, lists: listsWithTime });
   } catch (error) {
     next(error);
   }

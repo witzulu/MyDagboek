@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -31,6 +31,10 @@ const Board = () => {
   const [targetListId, setTargetListId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const highlightTaskId = queryParams.get('highlight');
 
   useEffect(() => {
     const fetchBoardDetails = async () => {
@@ -545,6 +549,7 @@ const Board = () => {
                   onUpdateTask={handleTaskUpdate}
                   onDeleteTask={handleDeleteTask}
                   onAddTimeEntry={handleAddTimeEntry}
+                  highlightTaskId={highlightTaskId}
                 />
               ))}
               <div className="w-72 flex-shrink-0">
@@ -558,7 +563,7 @@ const Board = () => {
   );
 };
 
-const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask, onAddTimeEntry }) => {
+const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask, onAddTimeEntry, highlightTaskId }) => {
   const {
     attributes,
     listeners,
@@ -585,12 +590,13 @@ const SortableList = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask,
         onDeleteTask={onDeleteTask}
         onAddTimeEntry={onAddTimeEntry}
         dragHandleProps={{...attributes, ...listeners}}
+        highlightTaskId={highlightTaskId}
       />
     </div>
   );
 };
 
-const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask, onAddTimeEntry, dragHandleProps }) => {
+const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompleteTask, onUpdateTask, onDeleteTask, onAddTimeEntry, dragHandleProps, highlightTaskId }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(list.name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -650,7 +656,7 @@ const List = ({ list, onUpdateList, onDeleteList, onAddTask, onEditTask, onCompl
         <div className="mt-2 space-y-2">
           {list.tasks && list.tasks.map(task => (
             <div key={task._id}>
-              <Card task={task} onEditTask={onEditTask} onCompleteTask={onCompleteTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onAddTimeEntry={onAddTimeEntry} />
+              <Card task={task} onEditTask={onEditTask} onCompleteTask={onCompleteTask} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} onAddTimeEntry={onAddTimeEntry} isHighlighted={task._id === highlightTaskId} />
             </div>
           ))}
         </div>
