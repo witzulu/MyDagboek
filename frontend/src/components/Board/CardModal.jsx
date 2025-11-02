@@ -38,6 +38,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [activityLog, setActivityLog] = useState([]);
   const [activeTab, setActiveTab] = useState('Details');
+  const [usersToNotify, setUsersToNotify] = useState([]);
   const prevIsOpenRef = useRef();
 
   useEffect(() => {
@@ -91,6 +92,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       setNewComment('');
       setEditingComment(null);
       setEditingCommentText('');
+      setUsersToNotify([]);
     }
   }, [task, isOpen]);
 
@@ -322,12 +324,13 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       const res = await fetch(`/api/tasks/${task._id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-        body: JSON.stringify({ content: newComment }),
+        body: JSON.stringify({ content: newComment, notifyUserIds: usersToNotify }),
       });
       if (res.ok) {
         const updatedComments = await res.json();
         setComments(updatedComments);
         setNewComment('');
+        setUsersToNotify([]);
         onTaskUpdate({ ...task, comments: updatedComments });
       }
     } catch (error) {
@@ -547,6 +550,19 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
 
             {activeTab === 'Comments' && task && (
               <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Notify Users</h3>
+                  <select
+                    multiple
+                    value={usersToNotify}
+                    onChange={(e) => setUsersToNotify(Array.from(e.target.selectedOptions, option => option.value))}
+                    className="w-full p-2 rounded border bg-base-300 h-24"
+                  >
+                    {projectMembers.map(member => (
+                      <option key={member.user._id} value={member.user._id}>{member.user.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <h3 className="text-lg font-semibold">Comments</h3>
                 <div className="bg-base-100/90 p-3 rounded-lg text-2xl ">
                 <MDXEditor
