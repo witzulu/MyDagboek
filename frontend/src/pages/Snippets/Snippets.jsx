@@ -4,6 +4,9 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
 import { html } from '@codemirror/lang-html';
+import { cpp } from '@codemirror/lang-cpp';
+import { css } from '@codemirror/lang-css';
+import { csharp } from '@replit/codemirror-lang-csharp';
 import { okaidia } from '@uiw/codemirror-theme-okaidia';
 import SnippetEditorModal from './SnippetEditorModal';
 
@@ -15,6 +18,12 @@ const getLanguageExtension = (language) => {
       return python();
     case 'html':
       return html();
+    case 'c++':
+      return cpp();
+    case 'c#':
+      return csharp();
+    case 'css':
+        return css();
     case 'javascript':
     default:
       return javascript({ jsx: true });

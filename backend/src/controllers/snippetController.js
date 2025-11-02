@@ -8,12 +8,8 @@ const { logChange } = require('../utils/changeLogService');
 exports.getSnippets = async (req, res, next) => {
   try {
     const project = await Project.findById(req.params.projectId);
-    if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-    }
-    const isMember = project.members.some(member => member.user && member.user.toString() === req.user.id);
-    if (!isMember) {
-      return res.status(401).json({ message: 'User not authorized for this project' });
+    if (!project || !project.members.includes(req.user.id)) {
+      return res.status(404).json({ message: 'Project not found or user not authorized' });
     }
     const snippets = await CodeSnippet.find({ project: req.params.projectId });
     res.status(200).json(snippets);
@@ -32,12 +28,8 @@ exports.getSnippetById = async (req, res, next) => {
       return res.status(404).json({ message: 'Snippet not found' });
     }
     const project = await Project.findById(req.params.projectId);
-    if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-    }
-    const isMember = project.members.some(member => member.user && member.user.toString() === req.user.id);
-    if (!isMember) {
-        return res.status(401).json({ message: 'User not authorized for this project' });
+    if (!project.members.includes(req.user.id)) {
+        return res.status(401).json({ message: 'User not authorized' });
     }
     res.status(200).json(snippet);
   } catch (error) {
@@ -53,12 +45,8 @@ exports.createSnippet = async (req, res, next) => {
     const { title, description, code, language, tags } = req.body;
     const project = await Project.findById(req.params.projectId);
 
-    if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-    }
-    const isMember = project.members.some(member => member.user && member.user.toString() === req.user.id);
-    if (!isMember) {
-      return res.status(401).json({ message: 'User not authorized for this project' });
+    if (!project || !project.members.includes(req.user.id)) {
+      return res.status(404).json({ message: 'Project not found or user not authorized' });
     }
 
     const snippet = await CodeSnippet.create({

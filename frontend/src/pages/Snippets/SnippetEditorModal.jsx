@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
 import { html } from '@codemirror/lang-html';
+import { cpp } from '@codemirror/lang-cpp';
+import { css } from '@codemirror/lang-css';
+import { csharp } from '@replit/codemirror-lang-csharp';
 import { okaidia } from '@uiw/codemirror-theme-okaidia';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github-dark.css'; // Or any other theme
+import debounce from 'lodash.debounce';
 
 const getLanguageExtension = (language) => {
     switch (language.toLowerCase()) {
@@ -11,6 +17,12 @@ const getLanguageExtension = (language) => {
             return python();
         case 'html':
             return html();
+        case 'c++':
+            return cpp();
+        case 'c#':
+            return csharp();
+        case 'css':
+            return css();
         case 'javascript':
         default:
             return javascript({ jsx: true });
@@ -23,6 +35,16 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [tags, setTags] = useState('');
+  const [isAutoDetecting, setIsAutoDetecting] = useState(true);
+
+  const detectLanguage = useCallback(debounce((code) => {
+    if (code && isAutoDetecting) {
+        const result = hljs.highlightAuto(code);
+        if (result.language) {
+            setLanguage(result.language);
+        }
+    }
+  }, 500), [isAutoDetecting]);
 
   useEffect(() => {
     if (isOpen) {
@@ -32,15 +54,21 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
         setCode(snippet.code);
         setLanguage(snippet.language);
         setTags(snippet.tags.join(', '));
+        setIsAutoDetecting(false); // Don't auto-detect on existing snippets
       } else {
         setTitle('');
         setDescription('');
         setCode('');
         setLanguage('javascript');
         setTags('');
+        setIsAutoDetecting(true);
       }
     }
   }, [snippet, isOpen]);
+
+  useEffect(() => {
+      detectLanguage(code);
+  }, [code, detectLanguage]);
 
   if (!isOpen) return null;
 
@@ -54,6 +82,11 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
       snippetId: snippet ? snippet._id : null
     });
     onClose();
+  };
+
+  const handleLanguageChange = (e) => {
+      setLanguage(e.target.value);
+      setIsAutoDetecting(false); // Disable auto-detection on manual change
   };
 
   return (
@@ -84,7 +117,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
           <div className="flex space-x-4">
             <select
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              onChange={handleLanguageChange}
               className="w-full p-2 rounded border select"
             >
               {['javascript', 'python', 'c++', 'c#', 'html', 'css'].map(lang => (
