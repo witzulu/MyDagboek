@@ -166,6 +166,21 @@ exports.updateTask = [authorizeTaskAccess, async (req, res, next) => {
       }
     }
 
+    // Log label changes
+    const originalLabels = originalTask.labels.map(l => l.toString());
+    const updatedLabels = updatedTask.labels.map(l => l.toString());
+
+    for (const labelId of updatedLabels) {
+      if (!originalLabels.includes(labelId)) {
+        await logTaskActivity(updatedTask._id, req.user.id, 'ADD_LABEL', { labelId });
+      }
+    }
+    for (const labelId of originalLabels) {
+      if (!updatedLabels.includes(labelId)) {
+        await logTaskActivity(updatedTask._id, req.user.id, 'REMOVE_LABEL', { labelId });
+      }
+    }
+
     await logChange(req.project._id, req.user.id, `Updated task "${updatedTask.title}"`, 'board');
     res.status(200).json(updatedTask);
   } catch (error) {

@@ -27,6 +27,7 @@ const TaskActivitySchema = new mongoose.Schema({
       'MOVE_TASK',
       'COMPLETE_TASK',
       'ADD_COMMENT',
+      'DELETE_TASK',
     ],
   },
   details: {
