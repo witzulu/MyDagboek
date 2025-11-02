@@ -17,16 +17,21 @@ const CodeSnippetSchema = new mongoose.Schema({
   language: {
     type: String,
     required: true,
+    trim: true,
+    default: 'javascript',
   },
-  tags: [String],
-  project: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
-    required: true,
+  tags: {
+    type: [String],
+    default: [],
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    required: true,
+  },
+  project: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project',
     required: true,
   },
 }, { timestamps: true });

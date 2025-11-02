@@ -8,7 +8,10 @@ import { cpp } from '@codemirror/lang-cpp';
 import { css } from '@codemirror/lang-css';
 import { csharp } from '@replit/codemirror-lang-csharp';
 import { okaidia } from '@uiw/codemirror-theme-okaidia';
+import { githubLight } from '@uiw/codemirror-theme-github';
 import SnippetEditorModal from './SnippetEditorModal';
+import { useTheme } from '../../components/ThemeContext';
+import { Moon } from 'lucide-react';
 
 const languages = [
     { value: 'javascript', label: 'JavaScript' },
@@ -52,6 +55,8 @@ const Snippets = () => {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSnippet, setEditingSnippet] = useState(null);
+  const { currentTheme } = useTheme();
+  const isDarkMode = currentTheme.icon === Moon;
 
   const fetchSnippets = async () => {
     try {
@@ -153,7 +158,7 @@ const Snippets = () => {
               <div className="bg-gray-100 dark:bg-gray-900 rounded-md overflow-hidden max-h-48">
                 <CodeMirror
                   value={snippet.code}
-                  theme={okaidia}
+                  theme={isDarkMode ? okaidia : githubLight}
                   extensions={[getLanguageExtension(snippet.language)]}
                   readOnly
                   className="text-sm"

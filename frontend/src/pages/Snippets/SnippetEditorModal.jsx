@@ -7,9 +7,12 @@ import { cpp } from '@codemirror/lang-cpp';
 import { css } from '@codemirror/lang-css';
 import { csharp } from '@replit/codemirror-lang-csharp';
 import { okaidia } from '@uiw/codemirror-theme-okaidia';
+import { githubLight } from '@uiw/codemirror-theme-github';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
 import debounce from 'lodash.debounce';
+import { useTheme } from '../../components/ThemeContext';
+import { Moon } from 'lucide-react';
 
 const languages = [
     { value: 'javascript', label: 'JavaScript' },
@@ -45,12 +48,13 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
   const [language, setLanguage] = useState('javascript');
   const [tags, setTags] = useState('');
   const [isAutoDetecting, setIsAutoDetecting] = useState(true);
+  const { currentTheme } = useTheme();
+  const isDarkMode = currentTheme.icon === Moon;
 
   const detectLanguage = useCallback(debounce((code) => {
     if (code && isAutoDetecting) {
         const result = hljs.highlightAuto(code);
         const detectedLang = result.language;
-        // Check if the detected language is in our supported list
         if (detectedLang && languages.some(l => l.value === detectedLang)) {
             setLanguage(detectedLang);
         }
@@ -121,7 +125,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
           <CodeMirror
             value={code}
             onChange={(value) => setCode(value)}
-            theme={okaidia}
+            theme={isDarkMode ? okaidia : githubLight}
             extensions={[getLanguageExtension(language)]}
             height="300px"
           />
