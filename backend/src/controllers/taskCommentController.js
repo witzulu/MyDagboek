@@ -1,4 +1,5 @@
 const Task = require('../models/Task');
+const { logTaskActivity } = require('../utils/taskActivityService');
 
 // @desc    Add a comment to a task
 // @route   POST /api/tasks/:taskId/comments
@@ -22,6 +23,8 @@ exports.addComment = async (req, res) => {
 
     task.comments.unshift(newComment); // Add to the beginning for newest first
     await task.save();
+
+    await logTaskActivity(task._id, req.user.id, 'ADD_COMMENT');
 
     // Populate user details before sending back
     const populatedTask = await Task.findById(task._id).populate('comments.user', 'name email');
