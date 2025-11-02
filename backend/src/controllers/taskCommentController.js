@@ -32,7 +32,7 @@ exports.addComment = async (req, res) => {
       const notifications = notifyUserIds.map(userId => ({
         recipient: userId,
         sender: req.user.id,
-        type: 'task_mention',
+        type: 'mention',
         project: task.board.project,
         task: task._id,
       }));
