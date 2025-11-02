@@ -185,6 +185,7 @@ const startServer = async () => {
     require('./src/models/Label');
     require('./src/models/SiteSettings');
     require('./src/models/Notification');
+    require('./src/models/CodeSnippet');
 
     // 3. Run seeders and migrations
     await seedAdminUser();
