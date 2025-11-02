@@ -1,4 +1,5 @@
 const Task = require('../models/Task');
+const Notification = require('../models/Notification');
 const { logTaskActivity } = require('../utils/taskActivityService');
 
 // @desc    Add a comment to a task
@@ -6,12 +7,12 @@ const { logTaskActivity } = require('../utils/taskActivityService');
 // @access  Private
 exports.addComment = async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, notifyUserIds } = req.body;
     if (!content) {
       return res.status(400).json({ message: 'Comment content is required' });
     }
 
-    const task = await Task.findById(req.params.taskId);
+    const task = await Task.findById(req.params.taskId).populate('board');
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
@@ -25,6 +26,18 @@ exports.addComment = async (req, res) => {
     await task.save();
 
     await logTaskActivity(task._id, req.user.id, 'ADD_COMMENT');
+
+    // Create notifications for mentioned users
+    if (notifyUserIds && notifyUserIds.length > 0) {
+      const notifications = notifyUserIds.map(userId => ({
+        recipient: userId,
+        sender: req.user.id,
+        type: 'task_mention',
+        project: task.board.project,
+        task: task._id,
+      }));
+      await Notification.insertMany(notifications);
+    }
 
     // Populate user details before sending back
     const populatedTask = await Task.findById(task._id).populate('comments.user', 'name email');
