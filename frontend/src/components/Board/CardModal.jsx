@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import LabelManager from './LabelManager';
 import AssigneeSelectionModal from './AssigneeSelectionModal';
 import { Plus, Trash2, Edit2, UserPlus } from 'lucide-react';
@@ -38,12 +38,17 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [activityLog, setActivityLog] = useState([]);
   const [activeTab, setActiveTab] = useState('Details');
+  const prevIsOpenRef = useRef();
 
   useEffect(() => {
+    // Only reset tab when modal is newly opened
+    if (isOpen && !prevIsOpenRef.current) {
+      setActiveTab('Details');
+    }
+    prevIsOpenRef.current = isOpen;
+
     if (isOpen) {
-      setActiveTab('Details'); // Reset to details tab on open
       if (task) {
-        // Fetch activity log
         const fetchActivityLog = async () => {
           try {
             const token = localStorage.getItem('token');
@@ -59,6 +64,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
           }
         };
         fetchActivityLog();
+
         setTitle(task.title);
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
