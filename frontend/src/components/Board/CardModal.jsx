@@ -2,17 +2,17 @@ import React, { useState, useEffect, useContext } from 'react';
 import LabelManager from './LabelManager';
 import AssigneeSelectionModal from './AssigneeSelectionModal';
 import { Plus, Trash2, Edit2, UserPlus } from 'lucide-react';
-import { 
-  MDXEditor, 
-  UndoRedo, 
-  BoldItalicUnderlineToggles, 
-  linkPlugin, 
-  headingsPlugin, 
-  listsPlugin, 
-  quotePlugin, 
+import {
+  MDXEditor,
+  UndoRedo,
+  BoldItalicUnderlineToggles,
+  linkPlugin,
+  headingsPlugin,
+  listsPlugin,
+  quotePlugin,
   thematicBreakPlugin,
   diffSourcePlugin,
-   DiffSourceToggleWrapper, 
+   DiffSourceToggleWrapper,
   toolbarPlugin
 } from '@mdxeditor/editor';
 import '../../mdxeditor.css'
@@ -36,10 +36,27 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [editingComment, setEditingComment] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
+  const [activityLog, setActivityLog] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
       if (task) {
+        // Fetch activity log
+        const fetchActivityLog = async () => {
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/tasks/${task._id}/activity`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (response.ok) {
+              const data = await response.json();
+              setActivityLog(data);
+            }
+          } catch (error) {
+            console.error('Error fetching activity log:', error);
+          }
+        };
+        fetchActivityLog();
         setTitle(task.title);
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
@@ -58,6 +75,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setAttachments([]);
         setChecklist([]);
         setComments([]);
+        setActivityLog([]);
       }
       setNewChecklistItem('');
       setEditingChecklistItem(null);
@@ -123,6 +141,33 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
     });
     onClose();
   };
+
+  const renderActivity = (activity) => {
+    const userName = activity.user?.name || 'A user';
+    switch (activity.action) {
+      case 'CREATE_TASK':
+        return `created this task in list "${activity.details.listName}".`;
+      case 'UPDATE_TITLE':
+        return `updated the title from "${activity.details.from}" to "${activity.details.to}".`;
+      case 'MOVE_TASK':
+        return `moved this task from "${activity.details.fromList}" to "${activity.details.toList}".`;
+      case 'UPDATE_PRIORITY':
+        return `changed the priority from ${activity.details.from} to ${activity.details.to}.`;
+      case 'ADD_ASSIGNEE':
+        const addedUser = projectMembers.find(m => m.user?._id === activity.details.userId)?.user?.name || 'a user';
+        return `assigned this to ${addedUser}.`;
+      case 'REMOVE_ASSIGNEE':
+        const removedUser = projectMembers.find(m => m.user?._id === activity.details.userId)?.user?.name || 'a user';
+        return `unassigned ${removedUser}.`;
+      case 'COMPLETE_TASK':
+        return `completed this task.`;
+      case 'DELETE_TASK':
+          return `deleted this task.`;
+      default:
+        return `made an update to this task.`;
+    }
+  };
+
 
   const handleLabelToggle = (labelId) => {
     const isAssigned = assignedLabels.some(l => l._id === labelId);
@@ -544,6 +589,26 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                           <button onClick={() => handleDeleteComment(comment._id)} className="text-xs text-red-500 hover:underline">Delete</button>
                         </div>
                       )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Activity Log Section */}
+            {task && activityLog.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Activity</h3>
+                <div className="space-y-3 max-h-48 overflow-y-auto p-2 bg-base-100/50 rounded-lg">
+                  {activityLog.map(activity => (
+                    <div key={activity._id} className="text-sm">
+                      <p>
+                        <span className="font-semibold">{activity.user?.name || 'A user'}</span>{' '}
+                        {renderActivity(activity)}
+                      </p>
+                      <p className="text-xs text-base-content/70">
+                        {new Date(activity.createdAt).toLocaleString()}
+                      </p>
                     </div>
                   ))}
                 </div>
