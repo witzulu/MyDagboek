@@ -10,6 +10,15 @@ import { csharp } from '@replit/codemirror-lang-csharp';
 import { okaidia } from '@uiw/codemirror-theme-okaidia';
 import SnippetEditorModal from './SnippetEditorModal';
 
+const languages = [
+    { value: 'javascript', label: 'JavaScript' },
+    { value: 'python', label: 'Python' },
+    { value: 'cpp', label: 'C++' },
+    { value: 'csharp', label: 'C#' },
+    { value: 'html', label: 'HTML' },
+    { value: 'css', label: 'CSS' },
+];
+
 const getLanguageExtension = (language) => {
   if (!language || typeof language !== 'string') return javascript({ jsx: true }); // default fallback
 
@@ -18,9 +27,9 @@ const getLanguageExtension = (language) => {
       return python();
     case 'html':
       return html();
-    case 'c++':
+    case 'cpp':
       return cpp();
-    case 'c#':
+    case 'csharp':
       return csharp();
     case 'css':
         return css();
@@ -28,6 +37,11 @@ const getLanguageExtension = (language) => {
     default:
       return javascript({ jsx: true });
   }
+};
+
+const getLanguageLabel = (value) => {
+    const lang = languages.find(l => l.value === value);
+    return lang ? lang.label : value;
 };
 
 
@@ -133,7 +147,7 @@ const Snippets = () => {
             <div>
               <div className="flex justify-between items-start mb-2">
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{snippet.title}</h2>
-                <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full text-xs capitalize">{snippet.language}</span>
+                <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full text-xs capitalize">{getLanguageLabel(snippet.language)}</span>
               </div>
               <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">{snippet.description}</p>
               <div className="bg-gray-100 dark:bg-gray-900 rounded-md overflow-hidden max-h-48">

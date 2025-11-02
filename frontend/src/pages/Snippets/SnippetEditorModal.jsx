@@ -8,8 +8,17 @@ import { css } from '@codemirror/lang-css';
 import { csharp } from '@replit/codemirror-lang-csharp';
 import { okaidia } from '@uiw/codemirror-theme-okaidia';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github-dark.css'; // Or any other theme
+import 'highlight.js/styles/github-dark.css';
 import debounce from 'lodash.debounce';
+
+const languages = [
+    { value: 'javascript', label: 'JavaScript' },
+    { value: 'python', label: 'Python' },
+    { value: 'cpp', label: 'C++' },
+    { value: 'csharp', label: 'C#' },
+    { value: 'html', label: 'HTML' },
+    { value: 'css', label: 'CSS' },
+];
 
 const getLanguageExtension = (language) => {
     switch (language.toLowerCase()) {
@@ -17,9 +26,9 @@ const getLanguageExtension = (language) => {
             return python();
         case 'html':
             return html();
-        case 'c++':
+        case 'cpp':
             return cpp();
-        case 'c#':
+        case 'csharp':
             return csharp();
         case 'css':
             return css();
@@ -40,8 +49,10 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
   const detectLanguage = useCallback(debounce((code) => {
     if (code && isAutoDetecting) {
         const result = hljs.highlightAuto(code);
-        if (result.language) {
-            setLanguage(result.language);
+        const detectedLang = result.language;
+        // Check if the detected language is in our supported list
+        if (detectedLang && languages.some(l => l.value === detectedLang)) {
+            setLanguage(detectedLang);
         }
     }
   }, 500), [isAutoDetecting]);
@@ -54,7 +65,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
         setCode(snippet.code);
         setLanguage(snippet.language);
         setTags(snippet.tags.join(', '));
-        setIsAutoDetecting(false); // Don't auto-detect on existing snippets
+        setIsAutoDetecting(false);
       } else {
         setTitle('');
         setDescription('');
@@ -86,7 +97,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
 
   const handleLanguageChange = (e) => {
       setLanguage(e.target.value);
-      setIsAutoDetecting(false); // Disable auto-detection on manual change
+      setIsAutoDetecting(false);
   };
 
   return (
@@ -120,8 +131,8 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
               onChange={handleLanguageChange}
               className="w-full p-2 rounded border select"
             >
-              {['javascript', 'python', 'c++', 'c#', 'html', 'css'].map(lang => (
-                <option key={lang} value={lang}>{lang}</option>
+              {languages.map(lang => (
+                <option key={lang.value} value={lang.value}>{lang.label}</option>
               ))}
             </select>
             <input
