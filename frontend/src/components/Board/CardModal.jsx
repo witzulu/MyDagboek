@@ -40,6 +40,27 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
+  const getToken = () => localStorage.getItem('token');
+
+  const debouncedSearch = useCallback(debounce(async (term) => {
+    if (term && task && task.board) {
+      const res = await fetch(`/api/projects/${task.board.project}/tasks/search?term=${term}`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data);
+      }
+    } else {
+      setSearchResults([]);
+    }
+  }, 300), [task]);
+
+  useEffect(() => {
+    debouncedSearch(searchTerm);
+    return () => debouncedSearch.cancel();
+  }, [searchTerm, debouncedSearch]);
+
   useEffect(() => {
     if (isOpen) {
       if (task) {
@@ -72,8 +93,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   }, [task, isOpen]);
 
   if (!isOpen) return null;
-
-  const getToken = () => localStorage.getItem('token');
 
   const handleCompleteTask = async () => {
   if (!task || !task._id) {
@@ -310,25 +329,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   };
 
   const checklistProgress = checklist.length > 0 ? (checklist.filter(item => item.done).length / checklist.length) * 100 : 0;
-
-  const debouncedSearch = useCallback(debounce(async (term) => {
-    if (term && task && task.board) {
-      const res = await fetch(`/api/projects/${task.board.project}/tasks/search?term=${term}`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSearchResults(data);
-      }
-    } else {
-      setSearchResults([]);
-    }
-  }, 300), [task]);
-
-  useEffect(() => {
-    debouncedSearch(searchTerm);
-    return () => debouncedSearch.cancel();
-  }, [searchTerm, debouncedSearch]);
 
   const addDependency = (dependencyId, type) => {
     const body = { [type]: dependencyId };
