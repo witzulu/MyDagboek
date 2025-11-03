@@ -113,6 +113,16 @@ exports.getBoardById = async (req, res, next) => {
             path: 'comments.user',
             model: 'User',
             select: 'name email'
+          },
+          {
+            path: 'dependsOn',
+            model: 'Task',
+            select: 'title'
+          },
+          {
+            path: 'blocking',
+            model: 'Task',
+            select: 'title'
           }
         ]
       });
