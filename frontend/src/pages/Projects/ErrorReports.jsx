@@ -33,7 +33,10 @@ const ErrorReports = () => {
 
   const handleSaveReport = async (reportData) => {
     try {
-      const newReport = await api.post(`/projects/${projectId}/errors`, reportData);
+      const newReport = await api(`/projects/${projectId}/errors`, {
+        method: 'POST',
+        body: reportData,
+      });
       setErrorReports((prevReports) => [...prevReports, newReport]);
       toast.success('Error report created successfully!');
     } catch (err) {
