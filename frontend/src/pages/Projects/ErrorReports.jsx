@@ -174,19 +174,25 @@ const ErrorReports = () => {
                       {report.status}
                     </span>
                   </td>
-                  <td>{report.createdBy?.username || 'N/A'}</td>
+                  <td>{report.createdBy?.name || 'N/A'}</td>
                   <td>
-                    {report.assignedTo ? (
-                      <div className="tooltip" data-tip={report.assignedTo.username}>
-                        <div className="avatar">
-                          <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
-                            {report.assignedTo.username.charAt(0)}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      'N/A'
-                    )}
+                    <div className="avatar-group -space-x-6">
+                      {report.assignedTo && report.assignedTo.length > 0 ? (
+                        report.assignedTo.map(assignee => (
+                          assignee && typeof assignee.name === 'string' ? (
+                            <div key={assignee._id} className="tooltip" data-tip={assignee.name}>
+                              <div className="avatar">
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
+                                  {assignee.name.charAt(0)}
+                                </div>
+                              </div>
+                            </div>
+                          ) : null
+                        ))
+                      ) : (
+                        'N/A'
+                      )}
+                    </div>
                   </td>
                   <td>{new Date(report.createdAt).toLocaleDateString()}</td>
                   <td>
