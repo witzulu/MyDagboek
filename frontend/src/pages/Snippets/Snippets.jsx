@@ -62,6 +62,8 @@ const Snippets = () => {
   const isDarkMode = currentTheme.icon === Moon;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [selectedTag, setSelectedTag] = useState('');
+  const [projectTags, setProjectTags] = useState([]);
   const snippetRefs = useRef({});
 
   const fetchSnippets = async () => {
@@ -84,7 +86,23 @@ const Snippets = () => {
   };
 
   useEffect(() => {
+    const fetchTags = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/projects/${projectId}/snippets/tags`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setProjectTags(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch project tags", error);
+        }
+    };
+
     fetchSnippets();
+    fetchTags();
   }, [projectId]);
 
   useEffect(() => {
@@ -109,6 +127,10 @@ const Snippets = () => {
       result = result.filter(snippet => snippet.language === selectedLanguage);
     }
 
+    if (selectedTag) {
+      result = result.filter(snippet => snippet.tags.includes(selectedTag));
+    }
+
     if (searchQuery) {
       const fuse = new Fuse(result, {
         keys: ['title', 'description', 'tags'],
@@ -118,7 +140,7 @@ const Snippets = () => {
     }
 
     return result;
-  }, [snippets, searchQuery, selectedLanguage]);
+  }, [snippets, searchQuery, selectedLanguage, selectedTag]);
 
   if (loading) return <div>Loading snippets...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
@@ -197,6 +219,16 @@ const Snippets = () => {
                     <option value="">All Languages</option>
                     {languages.map(lang => (
                         <option key={lang.value} value={lang.value}>{lang.label}</option>
+                    ))}
+                </select>
+                <select
+                    value={selectedTag}
+                    onChange={(e) => setSelectedTag(e.target.value)}
+                    className="p-2 rounded border select"
+                >
+                    <option value="">All Tags</option>
+                    {projectTags.map(tag => (
+                        <option key={tag} value={tag}>{tag}</option>
                     ))}
                 </select>
             </div>
