@@ -152,3 +152,42 @@ exports.deleteSnippet = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Delete multiple snippets
+// @route   DELETE /api/projects/:projectId/snippets
+// @access  Private
+exports.deleteMultipleSnippets = async (req, res, next) => {
+    try {
+        const { snippetIds } = req.body;
+
+        if (!snippetIds || !Array.isArray(snippetIds) || snippetIds.length === 0) {
+            return res.status(400).json({ message: 'Snippet IDs are required' });
+        }
+
+        // Ensure user has permission to delete these snippets
+        const snippets = await CodeSnippet.find({
+            _id: { $in: snippetIds },
+            project: req.params.projectId,
+        });
+
+        if (snippets.length !== snippetIds.length) {
+            return res.status(404).json({ message: 'One or more snippets not found or not part of this project' });
+        }
+
+        for (const snippet of snippets) {
+            if (snippet.user.toString() !== req.user.id) {
+                return res.status(401).json({ message: 'User not authorized to delete one or more of these snippets' });
+            }
+        }
+
+        await CodeSnippet.deleteMany({
+            _id: { $in: snippetIds },
+            user: req.user.id,
+            project: req.params.projectId,
+        });
+
+        res.status(200).json({ message: 'Snippets removed' });
+    } catch (error) {
+        next(error);
+    }
+};

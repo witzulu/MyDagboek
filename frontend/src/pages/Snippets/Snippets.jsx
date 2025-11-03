@@ -63,6 +63,7 @@ const Snippets = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [projectTags, setProjectTags] = useState([]);
+  const [selectedSnippets, setSelectedSnippets] = useState([]);
   const snippetRefs = useRef({});
 
   const fetchSnippets = async () => {
@@ -198,8 +199,54 @@ const Snippets = () => {
     toast.success('Share link copied!');
   };
 
+  const handleSelectSnippet = (snippetId) => {
+    setSelectedSnippets(prev =>
+        prev.includes(snippetId)
+            ? prev.filter(id => id !== snippetId)
+            : [...prev, snippetId]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (window.confirm(`Are you sure you want to delete ${selectedSnippets.length} selected snippets?`)) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`/api/projects/${projectId}/snippets`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ snippetIds: selectedSnippets }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete snippets');
+            }
+
+            setSnippets(prev => prev.filter(snippet => !selectedSnippets.includes(snippet._id)));
+            setSelectedSnippets([]);
+            toast.success('Snippets deleted successfully');
+        } catch (err) {
+            setError(err.message);
+            toast.error(err.message);
+        }
+    }
+  };
+
   return (
     <div className="p-4">
+        {selectedSnippets.length > 0 && (
+            <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-2 rounded-md mb-4">
+                <span>{selectedSnippets.length} snippet(s) selected</span>
+                <button
+                    onClick={handleBulkDelete}
+                    className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
+                >
+                    Delete Selected
+                </button>
+            </div>
+        )}
         <div className="flex justify-between items-center mb-4 gap-4">
             <h1 className="text-2xl font-bold">Code Snippets</h1>
             <div className="flex-grow flex justify-center items-center gap-4">
@@ -251,8 +298,14 @@ const Snippets = () => {
           <div
             key={snippet._id}
             ref={el => snippetRefs.current[snippet._id] = el}
-            className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-md flex flex-col justify-between"
+            className={`relative bg-white dark:bg-gray-800 rounded-lg p-3 shadow-md flex flex-col justify-between border-2 ${selectedSnippets.includes(snippet._id) ? 'border-blue-500' : 'border-transparent'}`}
           >
+            <input
+                type="checkbox"
+                className="absolute top-2 right-2 h-5 w-5"
+                checked={selectedSnippets.includes(snippet._id)}
+                onChange={() => handleSelectSnippet(snippet._id)}
+            />
             <div>
               <div className="flex justify-between items-start mb-1">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{snippet.title}</h2>
