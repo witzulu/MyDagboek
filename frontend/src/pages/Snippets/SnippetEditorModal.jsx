@@ -4,6 +4,9 @@ import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
 import { html } from '@codemirror/lang-html';
 import { okaidia } from '@uiw/codemirror-theme-okaidia';
+import hljs from 'highlight.js';
+import { toast } from 'react-hot-toast';
+
 
 const getLanguageExtension = (language) => {
     switch (language.toLowerCase()) {
@@ -23,6 +26,9 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [tags, setTags] = useState('');
+  const [manualLanguageChange, setManualLanguageChange] = useState(false);
+
+  const supportedLanguages = ['javascript', 'python', 'cpp', 'csharp', 'html', 'css'];
 
   useEffect(() => {
     if (isOpen) {
@@ -39,8 +45,32 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
         setLanguage('javascript');
         setTags('');
       }
+      setManualLanguageChange(false); // Reset on open
     }
   }, [snippet, isOpen]);
+
+  // Debounced language detection
+  useEffect(() => {
+    if (manualLanguageChange || !code || code.trim().length < 20) {
+      return;
+    }
+
+    const handler = setTimeout(() => {
+      const result = hljs.highlightAuto(code, supportedLanguages);
+      const detectedLanguage = result.language;
+
+      if (detectedLanguage && result.relevance > 10 && supportedLanguages.includes(detectedLanguage) && detectedLanguage !== language) {
+        setLanguage(detectedLanguage);
+        const langLabel = detectedLanguage.charAt(0).toUpperCase() + detectedLanguage.slice(1).replace('sharp', '#').replace('pp', '++');
+        toast.success(`Language detected: ${langLabel}`);
+      }
+    }, 500); // 500ms delay
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [code, language, manualLanguageChange]);
+
 
   if (!isOpen) return null;
 
@@ -54,6 +84,11 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
       snippetId: snippet ? snippet._id : null
     });
     onClose();
+  };
+
+  const handleLanguageChange = (e) => {
+    setLanguage(e.target.value);
+    setManualLanguageChange(true);
   };
 
   return (
@@ -84,7 +119,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
           <div className="flex space-x-4">
             <select
               value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              onChange={handleLanguageChange}
               className="w-full p-2 rounded border select"
             >
               {[{value: 'javascript', label: 'JavaScript'}, {value: 'python', label: 'Python'}, {value: 'cpp', label: 'C++'}, {value: 'csharp', label: 'C#'}, {value: 'html', label: 'HTML'}, {value: 'css', label: 'CSS'}].map(lang => (

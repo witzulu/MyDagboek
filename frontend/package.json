@@ -23,6 +23,7 @@
     "@uiw/react-codemirror": "^4.25.2",
     "@xyflow/react": "^12.9.1",
     "fuse.js": "^7.1.0",
+    "highlight.js": "^11.11.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
