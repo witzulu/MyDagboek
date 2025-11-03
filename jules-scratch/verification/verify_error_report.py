@@ -6,12 +6,8 @@ def run(playwright):
     context = browser.new_context()
     page = context.new_page()
 
-    # Capture console logs
-    page.on("console", lambda msg: print(f"PAGE LOG: {msg.text}"))
-
     # Log in
     page.goto("http://localhost:5173/login")
-    page.wait_for_selector('input[name="email"]', timeout=60000) # Wait up to 60 seconds for the email input
     page.get_by_label("Email").fill("admin@dagboek.com")
     page.get_by_label("Password").fill("admin")
     page.get_by_role("button", name="Sign In").click()
@@ -36,6 +32,19 @@ def run(playwright):
 
     # Verify the new report is in the table
     expect(page.get_by_text("Test Error Report")).to_be_visible()
+
+    # Edit the new report
+    page.get_by_role("row", name=re.compile("Test Error Report")).get_by_role("button", name="Edit").click()
+    page.get_by_label("Title").fill("Test Error Report - Edited")
+    page.get_by_label("Description").fill("This is a test error report that has been edited.")
+    page.get_by_label("Severity").select_option("Critical")
+    page.get_by_label("Status").select_option("In Progress")
+    page.get_by_role("button", name="Save Changes").click()
+
+    # Verify the edited report is in the table
+    expect(page.get_by_text("Test Error Report - Edited")).to_be_visible()
+    expect(page.get_by_text("Critical")).to_be_visible()
+    expect(page.get_by_text("In Progress")).to_be_visible()
 
     page.screenshot(path="jules-scratch/verification/error-report.png")
 

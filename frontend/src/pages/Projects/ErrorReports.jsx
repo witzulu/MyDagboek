@@ -9,6 +9,7 @@ const ErrorReports = () => {
   const { projectId } = useParams();
   const [errorReports, setErrorReports] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -33,16 +34,34 @@ const ErrorReports = () => {
 
   const handleSaveReport = async (reportData) => {
     try {
-      const newReport = await api(`/projects/${projectId}/errors`, {
-        method: 'POST',
-        body: reportData,
-      });
-      setErrorReports((prevReports) => [...prevReports, newReport]);
-      toast.success('Error report created successfully!');
+      if (reportData._id) {
+        // Update existing report
+        const updatedReport = await api(`/errors/${reportData._id}`, {
+          method: 'PUT',
+          body: reportData,
+        });
+        setErrorReports((prevReports) =>
+          prevReports.map((r) => (r._id === updatedReport._id ? updatedReport : r))
+        );
+        toast.success('Error report updated successfully!');
+      } else {
+        // Create new report
+        const newReport = await api(`/projects/${projectId}/errors`, {
+          method: 'POST',
+          body: reportData,
+        });
+        setErrorReports((prevReports) => [...prevReports, newReport]);
+        toast.success('Error report created successfully!');
+      }
     } catch (err) {
-      toast.error('Failed to create error report.');
+      toast.error(`Failed to ${reportData._id ? 'update' : 'create'} error report.`);
       console.error(err);
     }
+  };
+
+  const openEditModal = (report) => {
+    setEditingReport(report);
+    setIsModalOpen(true);
   };
 
   const getSeverityBadge = (severity) => {
@@ -103,7 +122,13 @@ const ErrorReports = () => {
           <AlertTriangle className="mr-3 text-error" />
           Error Reports
         </h2>
-        <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+        <button
+          onClick={() => {
+            setEditingReport(null);
+            setIsModalOpen(true);
+          }}
+          className="btn btn-primary"
+        >
           New Report
         </button>
       </div>
@@ -112,6 +137,7 @@ const ErrorReports = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveReport}
+        report={editingReport}
       />
 
       <div className="overflow-x-auto bg-base-100 rounded-lg shadow">
@@ -123,6 +149,7 @@ const ErrorReports = () => {
               <th>Status</th>
               <th>Reported By</th>
               <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -142,11 +169,19 @@ const ErrorReports = () => {
                   </td>
                   <td>{report.createdBy?.username || 'N/A'}</td>
                   <td>{new Date(report.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <button
+                      onClick={() => openEditModal(report)}
+                      className="btn btn-ghost btn-xs"
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="text-center">
+                <td colSpan="6" className="text-center">
                   No error reports found.
                 </td>
               </tr>
