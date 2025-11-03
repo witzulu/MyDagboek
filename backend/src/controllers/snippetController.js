@@ -22,6 +22,26 @@ exports.getSnippets = async (req, res, next) => {
   }
 };
 
+// @desc    Get all unique tags for a project's snippets
+// @route   GET /api/projects/:projectId/snippets/tags
+// @access  Private
+exports.getProjectTags = async (req, res, next) => {
+    try {
+        const project = await Project.findById(req.params.projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        const isMember = project.members.some(member => member.user && member.user.toString() === req.user.id);
+        if (!isMember) {
+            return res.status(401).json({ message: 'User not authorized for this project' });
+        }
+        const tags = await CodeSnippet.distinct('tags', { project: req.params.projectId });
+        res.status(200).json(tags || []);
+    } catch (error) {
+        next(error);
+    }
+};
+
 // @desc    Get a single snippet by ID
 // @route   GET /api/projects/:projectId/snippets/:snippetId
 // @access  Private
