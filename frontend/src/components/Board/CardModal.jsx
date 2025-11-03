@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { debounce } from 'lodash';
 import LabelManager from './LabelManager';
 import AssigneeSelectionModal from './AssigneeSelectionModal';
 import { Plus, Trash2, Edit2, UserPlus } from 'lucide-react';
@@ -36,6 +37,8 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [editingComment, setEditingComment] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -308,6 +311,45 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
 
   const checklistProgress = checklist.length > 0 ? (checklist.filter(item => item.done).length / checklist.length) * 100 : 0;
 
+  const debouncedSearch = useCallback(debounce(async (term) => {
+    if (term && task && task.board) {
+      const res = await fetch(`/api/projects/${task.board.project}/tasks/search?term=${term}`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data);
+      }
+    } else {
+      setSearchResults([]);
+    }
+  }, 300), [task]);
+
+  useEffect(() => {
+    debouncedSearch(searchTerm);
+    return () => debouncedSearch.cancel();
+  }, [searchTerm, debouncedSearch]);
+
+  const addDependency = (dependencyId, type) => {
+    const body = { [type]: dependencyId };
+
+    // Optimistically update the UI
+    const updatedTask = { ...task, [type]: [...(task[type] || []), dependencyId] };
+    onTaskUpdate(updatedTask);
+
+    // Make the API call
+    fetch(`/api/tasks/${task._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+      body: JSON.stringify(body),
+    }).catch(error => {
+      console.error('Failed to add dependency:', error);
+      // Revert optimistic update on failure
+      onTaskUpdate(task);
+    });
+  };
+
+
   return (
     <>
       <AssigneeSelectionModal
@@ -549,6 +591,51 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                 </div>
               </div>
             )}
+
+            {/* Dependencies Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Manage Dependencies</h3>
+              <input
+                type="text"
+                placeholder="Search for a task to add as a dependency..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full p-2 rounded border bg-base-100"
+              />
+              {searchResults.length > 0 && (
+                <ul className="menu bg-base-100 w-full rounded-box">
+                  {searchResults.map(result => (
+                    <li key={result._id}>
+                      <div className="flex justify-between items-center">
+                        <span>{result.title}</span>
+                        <div>
+                          <button onClick={() => addDependency(result._id, 'dependsOn')} className="btn btn-xs btn-primary mr-2">Depends On</button>
+                          <button onClick={() => addDependency(result._id, 'blocking')} className="btn btn-xs btn-secondary">Blocking</button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold">Depends On</h4>
+                  <ul>
+                    {task.dependsOn?.map(depId => (
+                      <li key={depId}>{/* Ideally, you'd fetch and show the task title */}Task {depId.slice(-4)}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Blocking</h4>
+                  <ul>
+                    {task.blocking?.map(blockId => (
+                      <li key={blockId}>{/* Ideally, you'd fetch and show the task title */}Task {blockId.slice(-4)}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
 
           </div>
           <div className="mt-6 flex justify-between items-center">

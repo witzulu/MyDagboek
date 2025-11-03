@@ -1,5 +1,6 @@
 const Task = require('../models/Task');
 const List = require('../models/List');
+const Board = require('../models/Board');
 const Project = require('../models/Project');
 const { logChange } = require('../utils/changeLogService');
 
@@ -99,21 +100,71 @@ exports.getTaskById = [authorizeTaskAccess, async (req, res, next) => {
     }
 }];
 
+// @desc    Search for tasks within a project
+// @route   GET /api/projects/:projectId/tasks/search
+// @access  Private
+exports.searchTasks = async (req, res, next) => {
+  try {
+    const { projectId } = req.params;
+    const { term } = req.query;
+
+    if (!term) {
+      return res.status(200).json([]);
+    }
+
+    // First, verify project access for the user
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    if (!project.members.some(member => member && member.user && member.user.toString() === req.user.id) && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized for this project' });
+    }
+
+    // Find all boards within the project
+    const boards = await Board.find({ project: projectId });
+    const boardIds = boards.map(board => board._id);
+
+    // Search for tasks within those boards that match the term
+    const tasks = await Task.find({
+      board: { $in: boardIds },
+      title: { $regex: term, $options: 'i' }
+    }).select('title').limit(10);
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Update a task
 // @route   PUT /api/tasks/:id
 // @access  Private
 exports.updateTask = [authorizeTaskAccess, async (req, res, next) => {
   try {
-    // ✅ If list is being changed, update board reference too
-    if (req.body.list) {
-      const newList = await List.findById(req.body.list).populate('board');
+    const { dependsOn, blocking, ...otherUpdates } = req.body;
+    const taskId = req.params.id;
+
+    // Handle dependency updates
+    if (dependsOn) {
+      await Task.findByIdAndUpdate(taskId, { $addToSet: { dependsOn: dependsOn } });
+      await Task.findByIdAndUpdate(dependsOn, { $addToSet: { blocking: taskId } });
+    }
+    if (blocking) {
+      await Task.findByIdAndUpdate(taskId, { $addToSet: { blocking: blocking } });
+      await Task.findByIdAndUpdate(blocking, { $addToSet: { dependsOn: taskId } });
+    }
+
+    // Handle other updates
+    if (otherUpdates.list) {
+      const newList = await List.findById(otherUpdates.list).populate('board');
       if (!newList) {
         return res.status(404).json({ message: 'List not found' });
       }
-      req.body.board = newList.board._id;
+      otherUpdates.board = newList.board._id;
     }
 
-    const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updatedTask = await Task.findByIdAndUpdate(taskId, otherUpdates, { new: true, runValidators: true });
     await logChange(req.project._id, req.user.id, `Updated task "${updatedTask.title}"`, 'board');
     res.status(200).json(updatedTask);
   } catch (error) {
@@ -147,6 +198,21 @@ exports.moveTask = [authorizeTaskAccess, async (req, res, next) => {
         const newList = await List.findById(newListId).populate('board');
         if (!newList) {
             return res.status(404).json({ message: 'Target list not found' });
+        }
+
+        // Check for dependencies if moving to a "Done" list
+        if (newList.name.toLowerCase() === 'done') {
+            const incompleteDependencies = await Task.find({
+                _id: { $in: task.dependsOn },
+                completedAt: null
+            });
+
+            if (incompleteDependencies.length > 0) {
+                return res.status(400).json({
+                    message: 'Cannot complete this task. It is blocked by the following incomplete tasks:',
+                    blockingTasks: incompleteDependencies.map(t => t.title)
+                });
+            }
         }
 
         await Task.updateMany({ list: originalListId, position: { $gt: task.position } }, { $inc: { position: -1 } });
