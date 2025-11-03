@@ -519,6 +519,7 @@ const Board = () => {
         projectLabels={projectLabels}
         projectMembers={projectMembers}
         onNewLabel={handleNewLabel}
+        projectId={projectId}
       />
       <EditBoardModal
         isOpen={isEditBoardModalOpen}
