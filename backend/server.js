@@ -34,6 +34,7 @@ const {
   projectErrorReports,
   errorReportRouter,
 } = require('./src/routes/errorReportRoutes');
+const errorReportAttachmentRoutes = require('./src/routes/errorReportAttachmentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -240,6 +241,7 @@ const startServer = async () => {
     app.use('/api/projects/:projectId/snippets', snippetRoutes);
     app.use('/api/projects/:projectId/errors', projectErrorReports);
     app.use('/api/errors', errorReportRouter);
+    app.use('/api/errors/:id/attachments', errorReportAttachmentRoutes);
 
     // Health check endpoint
     app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
