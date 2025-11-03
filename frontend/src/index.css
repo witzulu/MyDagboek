@@ -9,6 +9,15 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+@keyframes highlight-animation {
+  0% { background-color: rgba(255, 255, 0, 0.5); }
+  100% { background-color: transparent; }
+}
+
+.highlight {
+  animation: highlight-animation 3s ease-out;
+}
 /*
 .prose pre {
     background-color: var(--code-bg);
