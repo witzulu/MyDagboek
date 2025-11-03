@@ -27,6 +27,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
   const [language, setLanguage] = useState('javascript');
   const [tags, setTags] = useState('');
   const [manualLanguageChange, setManualLanguageChange] = useState(false);
+  const [titleError, setTitleError] = useState(false);
 
   const supportedLanguages = ['javascript', 'python', 'cpp', 'csharp', 'html', 'css'];
 
@@ -46,6 +47,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
         setTags('');
       }
       setManualLanguageChange(false); // Reset on open
+      setTitleError(false); // Reset error on open
     }
   }, [snippet, isOpen]);
 
@@ -75,6 +77,11 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
   if (!isOpen) return null;
 
   const handleSubmit = () => {
+    if (!title.trim()) {
+        toast.error('Title is required.');
+        setTitleError(true);
+        return;
+    }
     onSave({
       title,
       description,
@@ -91,6 +98,13 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
     setManualLanguageChange(true);
   };
 
+  const handleTitleChange = (e) => {
+    setTitle(e.target.value);
+    if (titleError) {
+        setTitleError(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-base-100/75  flex justify-center items-center z-50">
       <div className="card bg-base-100 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -100,8 +114,8 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
             type="text"
             placeholder="Snippet title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 rounded border"
+            onChange={handleTitleChange}
+            className={`w-full p-2 rounded border ${titleError ? 'border-red-500' : ''}`}
           />
           <textarea
             placeholder="Description"
