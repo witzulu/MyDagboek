@@ -179,8 +179,27 @@ const Snippets = () => {
 
   return (
     <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 gap-4">
             <h1 className="text-2xl font-bold">Code Snippets</h1>
+            <div className="flex-grow flex justify-center items-center gap-4">
+                <input
+                    type="text"
+                    placeholder="Search snippets..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full max-w-xs p-2 rounded border"
+                />
+                <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    className="p-2 rounded border select"
+                >
+                    <option value="">All Languages</option>
+                    {languages.map(lang => (
+                        <option key={lang.value} value={lang.value}>{lang.label}</option>
+                    ))}
+                </select>
+            </div>
             <button
                 onClick={() => { setEditingSnippet(null); setIsModalOpen(true); }}
                 className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
@@ -196,40 +215,20 @@ const Snippets = () => {
             snippet={editingSnippet}
         />
 
-        <div className="flex justify-between items-center mb-4">
-            <input
-                type="text"
-                placeholder="Search snippets..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-1/2 p-2 rounded border"
-            />
-            <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="p-2 rounded border select"
-            >
-                <option value="">All Languages</option>
-                {languages.map(lang => (
-                    <option key={lang.value} value={lang.value}>{lang.label}</option>
-                ))}
-            </select>
-        </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {filteredSnippets.map((snippet) => (
           <div
             key={snippet._id}
             ref={el => snippetRefs.current[snippet._id] = el}
-            className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md flex flex-col justify-between"
+            className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-md flex flex-col justify-between"
           >
             <div>
-              <div className="flex justify-between items-start mb-2">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{snippet.title}</h2>
+              <div className="flex justify-between items-start mb-1">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{snippet.title}</h2>
                 <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full text-xs capitalize">{getLanguageLabel(snippet.language)}</span>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">{snippet.description}</p>
-              <div className="bg-gray-100 dark:bg-gray-900 rounded-md overflow-hidden max-h-48">
+              <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm">{snippet.description}</p>
+              <div className="bg-gray-100 dark:bg-gray-900 rounded-md overflow-hidden max-h-40">
                 <CodeMirror
                   value={snippet.code}
                   theme={isDarkMode ? okaidia : githubLight}
