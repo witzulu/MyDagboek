@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
@@ -13,6 +13,7 @@ import SnippetEditorModal from './SnippetEditorModal';
 import { useTheme } from '../../components/ThemeContext';
 import { Moon } from 'lucide-react';
 import Fuse from 'fuse.js';
+import { toast } from 'react-hot-toast';
 
 const languages = [
     { value: 'javascript', label: 'JavaScript' },
@@ -51,6 +52,7 @@ const getLanguageLabel = (value) => {
 
 const Snippets = () => {
   const { projectId } = useParams();
+  const location = useLocation();
   const [snippets, setSnippets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -60,6 +62,7 @@ const Snippets = () => {
   const isDarkMode = currentTheme.icon === Moon;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
+  const snippetRefs = useRef({});
 
   const fetchSnippets = async () => {
     try {
@@ -83,6 +86,21 @@ const Snippets = () => {
   useEffect(() => {
     fetchSnippets();
   }, [projectId]);
+
+  useEffect(() => {
+    if (loading) return;
+    const params = new URLSearchParams(location.search);
+    const highlightId = params.get('highlight');
+
+    if (highlightId && snippetRefs.current[highlightId]) {
+      const element = snippetRefs.current[highlightId];
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('highlight');
+      setTimeout(() => {
+        element.classList.remove('highlight');
+      }, 3000); // Highlight for 3 seconds
+    }
+  }, [loading, location.search, snippets]);
 
   const filteredSnippets = useMemo(() => {
     let result = snippets;
@@ -148,6 +166,17 @@ const Snippets = () => {
     }
   };
 
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    toast.success('Code copied to clipboard!');
+  };
+
+  const handleShare = (snippetId) => {
+    const url = `${window.location.origin}/projects/${projectId}/snippets?highlight=${snippetId}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Share link copied!');
+  };
+
   return (
     <div className="p-4">
         <div className="flex justify-between items-center mb-4">
@@ -189,7 +218,11 @@ const Snippets = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredSnippets.map((snippet) => (
-          <div key={snippet._id} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md flex flex-col justify-between">
+          <div
+            key={snippet._id}
+            ref={el => snippetRefs.current[snippet._id] = el}
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md flex flex-col justify-between"
+          >
             <div>
               <div className="flex justify-between items-start mb-2">
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{snippet.title}</h2>
@@ -215,7 +248,8 @@ const Snippets = () => {
                 ))}
               </div>
               <div className="flex justify-end space-x-2">
-                <button onClick={() => navigator.clipboard.writeText(snippet.code)} className="text-gray-500 hover:text-gray-700 dark:hover:text-white">Copy</button>
+                <button onClick={() => handleCopyCode(snippet.code)} className="text-gray-500 hover:text-gray-700 dark:hover:text-white">Copy</button>
+                <button onClick={() => handleShare(snippet._id)} className="text-gray-500 hover:text-gray-700 dark:hover:text-white">Share</button>
                 <button onClick={() => { setEditingSnippet(snippet); setIsModalOpen(true); }} className="text-gray-500 hover:text-gray-700 dark:hover:text-white">Edit</button>
                 <button onClick={() => handleDeleteSnippet(snippet._id)} className="text-red-500 hover:text-red-700 dark:hover:text-red-400">Delete</button>
               </div>
