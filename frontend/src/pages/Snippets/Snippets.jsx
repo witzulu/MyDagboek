@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
@@ -12,6 +12,7 @@ import { githubLight } from '@uiw/codemirror-theme-github';
 import SnippetEditorModal from './SnippetEditorModal';
 import { useTheme } from '../../components/ThemeContext';
 import { Moon } from 'lucide-react';
+import Fuse from 'fuse.js';
 
 const languages = [
     { value: 'javascript', label: 'JavaScript' },
@@ -57,6 +58,8 @@ const Snippets = () => {
   const [editingSnippet, setEditingSnippet] = useState(null);
   const { currentTheme } = useTheme();
   const isDarkMode = currentTheme.icon === Moon;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
 
   const fetchSnippets = async () => {
     try {
@@ -80,6 +83,24 @@ const Snippets = () => {
   useEffect(() => {
     fetchSnippets();
   }, [projectId]);
+
+  const filteredSnippets = useMemo(() => {
+    let result = snippets;
+
+    if (selectedLanguage) {
+      result = result.filter(snippet => snippet.language === selectedLanguage);
+    }
+
+    if (searchQuery) {
+      const fuse = new Fuse(result, {
+        keys: ['title', 'description', 'tags'],
+        threshold: 0.4,
+      });
+      result = fuse.search(searchQuery).map(item => item.item);
+    }
+
+    return result;
+  }, [snippets, searchQuery, selectedLanguage]);
 
   if (loading) return <div>Loading snippets...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
@@ -146,8 +167,28 @@ const Snippets = () => {
             snippet={editingSnippet}
         />
 
+        <div className="flex justify-between items-center mb-4">
+            <input
+                type="text"
+                placeholder="Search snippets..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-1/2 p-2 rounded border"
+            />
+            <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="p-2 rounded border select"
+            >
+                <option value="">All Languages</option>
+                {languages.map(lang => (
+                    <option key={lang.value} value={lang.value}>{lang.label}</option>
+                ))}
+            </select>
+        </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {snippets.map((snippet) => (
+        {filteredSnippets.map((snippet) => (
           <div key={snippet._id} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-start mb-2">
