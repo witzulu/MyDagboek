@@ -298,18 +298,20 @@ const Snippets = () => {
           <div
             key={snippet._id}
             ref={el => snippetRefs.current[snippet._id] = el}
-            className={`relative bg-white dark:bg-gray-800 rounded-lg p-3 shadow-md flex flex-col justify-between border-2 ${selectedSnippets.includes(snippet._id) ? 'border-blue-500' : 'border-transparent'}`}
+            className={`bg-white dark:bg-gray-800 rounded-lg p-3 shadow-md flex flex-col justify-between border-2 ${selectedSnippets.includes(snippet._id) ? 'border-blue-500' : 'border-transparent'}`}
           >
-            <input
-                type="checkbox"
-                className="absolute top-2 right-2 h-5 w-5"
-                checked={selectedSnippets.includes(snippet._id)}
-                onChange={() => handleSelectSnippet(snippet._id)}
-            />
             <div>
               <div className="flex justify-between items-start mb-1">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{snippet.title}</h2>
-                <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full text-xs capitalize">{getLanguageLabel(snippet.language)}</span>
+                <div className="flex items-center gap-2">
+                    <span className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full text-xs capitalize">{getLanguageLabel(snippet.language)}</span>
+                    <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded-full text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                        checked={selectedSnippets.includes(snippet._id)}
+                        onChange={() => handleSelectSnippet(snippet._id)}
+                    />
+                </div>
               </div>
               <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm">{snippet.description}</p>
               <div className="bg-gray-100 dark:bg-gray-900 rounded-md overflow-hidden max-h-40">
