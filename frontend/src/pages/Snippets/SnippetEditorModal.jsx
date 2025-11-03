@@ -87,8 +87,8 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
               onChange={(e) => setLanguage(e.target.value)}
               className="w-full p-2 rounded border select"
             >
-              {['javascript', 'python', 'c++', 'c#', 'html', 'css'].map(lang => (
-                <option key={lang} value={lang}>{lang}</option>
+              {[{value: 'javascript', label: 'JavaScript'}, {value: 'python', label: 'Python'}, {value: 'cpp', label: 'C++'}, {value: 'csharp', label: 'C#'}, {value: 'html', label: 'HTML'}, {value: 'css', label: 'CSS'}].map(lang => (
+                <option key={lang.value} value={lang.value}>{lang.label}</option>
               ))}
             </select>
             <input
