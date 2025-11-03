@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { debounce } from 'lodash';
 import LabelManager from './LabelManager';
 import AssigneeSelectionModal from './AssigneeSelectionModal';
+import DependencySelectionModal from './DependencySelectionModal';
 import { Plus, Trash2, Edit2, UserPlus } from 'lucide-react';
 import {
   MDXEditor,
@@ -19,7 +20,7 @@ import {
 import '../../mdxeditor.css'
 import { AuthContext } from '../../context/AuthContext';
 
-const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers }) => {
+const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers, projectId }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -37,29 +38,9 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [editingComment, setEditingComment] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [isDependencyModalOpen, setIsDependencyModalOpen] = useState(false);
 
   const getToken = () => localStorage.getItem('token');
-
-  const debouncedSearch = useCallback(debounce(async (term) => {
-    if (term && task && task.board) {
-      const res = await fetch(`/api/projects/${task.board.project}/tasks/search?term=${term}`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSearchResults(data);
-      }
-    } else {
-      setSearchResults([]);
-    }
-  }, 300), [task]);
-
-  useEffect(() => {
-    debouncedSearch(searchTerm);
-    return () => debouncedSearch.cancel();
-  }, [searchTerm, debouncedSearch]);
 
   useEffect(() => {
     if (isOpen) {
@@ -359,6 +340,15 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         selectedAssignees={assignees}
         onConfirm={setAssignees}
       />
+      {task && (
+        <DependencySelectionModal
+          isOpen={isDependencyModalOpen}
+          onClose={() => setIsDependencyModalOpen(false)}
+          onAddDependency={addDependency}
+          projectId={projectId}
+          currentTask={task}
+        />
+      )}
       <div className="fixed inset-0 bg-base-200/50 flex justify-center items-center z-50">
         <div className="bg-base-300  p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto  border border-accent/50 shadow-lg">
           <div className="flex justify-between items-center mb-4">
@@ -593,31 +583,13 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             )}
 
             {/* Dependencies Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Manage Dependencies</h3>
-              <input
-                type="text"
-                placeholder="Search for a task to add as a dependency..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full p-2 rounded border bg-base-100"
-              />
-              {searchResults.length > 0 && (
-                <ul className="menu bg-base-100 w-full rounded-box">
-                  {searchResults.map(result => (
-                    <li key={result._id}>
-                      <div className="flex justify-between items-center">
-                        <span>{result.title}</span>
-                        <div>
-                          <button onClick={() => addDependency(result._id, 'dependsOn')} className="btn btn-xs btn-primary mr-2">Depends On</button>
-                          <button onClick={() => addDependency(result._id, 'blocking')} className="btn btn-xs btn-secondary">Blocking</button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <div className="grid grid-cols-2 gap-4">
+            {task && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">Dependencies</h3>
+                  <button onClick={() => setIsDependencyModalOpen(true)} className="btn btn-sm btn-outline">Add Dependency</button>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-semibold">Depends On</h4>
                   <ul>
