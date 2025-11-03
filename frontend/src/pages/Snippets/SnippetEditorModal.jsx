@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import CreatableSelect from 'react-select/creatable';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
@@ -21,35 +23,53 @@ const getLanguageExtension = (language) => {
 };
 
 const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
+  const { projectId } = useParams();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState([]);
   const [manualLanguageChange, setManualLanguageChange] = useState(false);
   const [titleError, setTitleError] = useState(false);
+  const [projectTags, setProjectTags] = useState([]);
 
   const supportedLanguages = ['javascript', 'python', 'cpp', 'csharp', 'html', 'css'];
 
   useEffect(() => {
     if (isOpen) {
-      if (snippet) {
-        setTitle(snippet.title);
-        setDescription(snippet.description || '');
-        setCode(snippet.code);
-        setLanguage(snippet.language);
-        setTags(snippet.tags.join(', '));
-      } else {
-        setTitle('');
-        setDescription('');
-        setCode('');
-        setLanguage('javascript');
-        setTags('');
-      }
-      setManualLanguageChange(false); // Reset on open
-      setTitleError(false); // Reset error on open
+        const fetchProjectTags = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`/api/projects/${projectId}/snippets/tags`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setProjectTags(data.map(tag => ({ value: tag, label: tag })));
+                }
+            } catch (error) {
+                console.error("Failed to fetch project tags", error);
+            }
+        };
+        fetchProjectTags();
+
+        if (snippet) {
+            setTitle(snippet.title);
+            setDescription(snippet.description || '');
+            setCode(snippet.code);
+            setLanguage(snippet.language);
+            setTags(snippet.tags.map(tag => ({ value: tag, label: tag })));
+        } else {
+            setTitle('');
+            setDescription('');
+            setCode('');
+            setLanguage('javascript');
+            setTags([]);
+        }
+        setManualLanguageChange(false);
+        setTitleError(false);
     }
-  }, [snippet, isOpen]);
+  }, [snippet, isOpen, projectId]);
 
   // Debounced language detection
   useEffect(() => {
@@ -87,7 +107,7 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
       description,
       code,
       language,
-      tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
+      tags: tags.map(tag => tag.value),
       snippetId: snippet ? snippet._id : null
     });
     onClose();
@@ -140,12 +160,13 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
                 <option key={lang.value} value={lang.value}>{lang.label}</option>
               ))}
             </select>
-            <input
-              type="text"
-              placeholder="Tags (comma-separated)"
+            <CreatableSelect
+              isMulti
+              options={projectTags}
               value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              className="w-full p-2 rounded border"
+              onChange={setTags}
+              className="w-full"
+              placeholder="Select or create tags..."
             />
           </div>
         </div>
