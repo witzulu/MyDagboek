@@ -29,6 +29,7 @@ const { projectChangeLogRouter, changeLogRouter } = require('./src/routes/change
 const { projectFoldersRouter, folderRouter } = require('./src/routes/folders');
 const { projectTimeEntriesRouter, timeEntryRouter } = require('./src/routes/timeEntryRoutes');
 const projectTaskRoutes = require('./src/routes/projectTaskRoutes');
+const snippetRoutes = require('./src/routes/snippets');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -184,6 +185,7 @@ const startServer = async () => {
     require('./src/models/Label');
     require('./src/models/SiteSettings');
     require('./src/models/Notification');
+    require('./src/models/CodeSnippet');
 
     // 3. Run seeders and migrations
     await seedAdminUser();
@@ -230,6 +232,7 @@ const startServer = async () => {
     app.use('/api/projects/:projectId/time-entries', projectTimeEntriesRouter);
     app.use('/api/time-entries', timeEntryRouter);
     app.use('/api/projects/:projectId/tasks', projectTaskRoutes);
+    app.use('/api/projects/:projectId/snippets', snippetRoutes);
 
     // Health check endpoint
     app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
