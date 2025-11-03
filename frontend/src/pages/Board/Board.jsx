@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { DndContext, closestCenter } from '@dnd-kit/core';
-import FilterBar from '../../components/Board/FilterBar';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -32,8 +31,6 @@ const Board = () => {
   const [targetListId, setTargetListId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({});
-  const [sortConfig, setSortConfig] = useState({ key: 'position', direction: 'asc' });
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -91,60 +88,9 @@ const Board = () => {
     }
   }, [boardId, projectId]);
 
-  const filteredAndSortedLists = useMemo(() => {
-    let newLists = JSON.parse(JSON.stringify(lists));
-
-    // Filtering
-    if (Object.keys(filters).length > 0) {
-      newLists = newLists.map(list => {
-        const filteredTasks = list.tasks.filter(task => {
-          const assigneeMatch = !filters.assignee || task.assignees?.some(a => a._id === filters.assignee);
-          const labelMatch = !filters.label || task.labels?.some(l => l._id === filters.label);
-          const priorityMatch = !filters.priority || task.priority === filters.priority;
-          return assigneeMatch && labelMatch && priorityMatch;
-        });
-        return { ...list, tasks: filteredTasks };
-      });
-    }
-
-    // Sorting
-    if (sortConfig.key !== 'position') {
-       newLists.forEach(list => {
-        list.tasks.sort((a, b) => {
-          if (sortConfig.key === 'title') {
-            return a.title.localeCompare(b.title);
-          }
-          if (sortConfig.key === 'dueDate') {
-            return new Date(a.dueDate) - new Date(b.dueDate);
-          }
-          if (sortConfig.key === 'priority') {
-            const priorityOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
-            return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
-          }
-          return 0;
-        });
-      });
-    }
-
-    return newLists;
-  }, [lists, filters, sortConfig]);
-
   if (loading) return <div className="p-4">Loading board...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
   if (!board) return <div className="p-4">Board not found.</div>;
-
-  const handleFilterChange = (name, value) => {
-    setFilters(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSortChange = (key) => {
-    setSortConfig({ key, direction: 'asc' }); // Simple sort for now
-  };
-
-  const handleClearFilters = () => {
-    setFilters({});
-    setSortConfig({ key: 'position', direction: 'asc' });
-  };
 
   const handleCreateList = async (listName) => {
     try {
@@ -587,29 +533,11 @@ const Board = () => {
           <button onClick={handleDeleteBoard} className="btn btn-error rounded-md">Delete</button>
         </div>
       </div>
-
-      <FilterBar
-        members={projectMembers}
-        labels={projectLabels}
-        priorities={['Low', 'Medium', 'High']}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        sortOptions={[
-          { value: 'position', label: 'Default' },
-          { value: 'title', label: 'Title' },
-          { value: 'dueDate', label: 'Due Date' },
-          { value: 'priority', label: 'Priority' },
-        ]}
-        sortConfig={sortConfig}
-        onSortChange={handleSortChange}
-        onClear={handleClearFilters}
-      />
-
       <div className="flex-1 overflow-x-auto">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={lists.map(l => l._id)} strategy={horizontalListSortingStrategy}>
             <div className="inline-flex h-full items-start space-x-4 pb-4">
-              {filteredAndSortedLists.map(list => (
+              {lists.map(list => (
                 <SortableList
                   key={list._id}
                   list={list}

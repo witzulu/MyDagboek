@@ -84,6 +84,14 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  dependsOn: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task'
+  }],
+  blocking: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Task'
+  }],
   attachments: [attachmentSchema],
   checklist: [checklistItemSchema],
   comments: [commentSchema],

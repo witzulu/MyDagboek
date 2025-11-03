@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Star, CheckSquare, MessageSquare, MoreVertical, Edit, Trash2, Check, GripVertical, Clock } from 'lucide-react';
+import { Star, CheckSquare, MessageSquare, MoreVertical, Edit, Trash2, Check, GripVertical, Clock, Lock } from 'lucide-react';
 
 const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, onAddTimeEntry, isHighlighted }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -97,6 +97,11 @@ const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, on
 
         <div className="flex justify-between items-center mt-2 text-xs text-base-content/70">
           <div className="flex items-center space-x-2">
+            {task.dependsOn && task.dependsOn.length > 0 && (
+              <span className="flex items-center space-x-1 text-yellow-600 tooltip" data-tip="This task is blocked">
+                <Lock size={14} />
+              </span>
+            )}
             {task.totalTimeSpent > 0 && (
               <span className="flex items-center space-x-1">
                 <Clock size={14} />

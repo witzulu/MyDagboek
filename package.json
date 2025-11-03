@@ -2,6 +2,7 @@
   "dependencies": {
     "@playwright/test": "^1.56.1",
     "@replit/codemirror-lang-csharp": "^6.2.0",
+    "lodash": "^4.17.21",
     "playwright": "^1.56.1"
   }
 }
