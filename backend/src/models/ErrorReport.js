@@ -39,6 +39,12 @@ const errorReportSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    attachments: [
+      {
+        filename: String,
+        filepath: String,
+      },
+    ],
   },
   {
     timestamps: true,

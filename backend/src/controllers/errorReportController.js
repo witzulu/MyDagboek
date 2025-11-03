@@ -77,6 +77,9 @@ exports.updateErrorReport = async (req, res) => {
     if (assignedTo !== undefined) {
       report.assignedTo = assignedTo;
     }
+    if (req.body.attachments !== undefined) {
+      report.attachments = req.body.attachments;
+    }
 
     const updatedReport = await report.save();
     await updatedReport.populate('createdBy', 'name');
