@@ -1,29 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-const CreateErrorReportModal = ({ isOpen, onClose, onSave }) => {
+const CreateErrorReportModal = ({ isOpen, onClose, onSave, report }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState('Medium');
   const [status, setStatus] = useState('New');
 
+  useEffect(() => {
+    if (isOpen && report) {
+      setTitle(report.title || '');
+      setDescription(report.description || '');
+      setSeverity(report.severity || 'Medium');
+      setStatus(report.status || 'New');
+    } else if (isOpen) {
+      // Reset form for new report
+      setTitle('');
+      setDescription('');
+      setSeverity('Medium');
+      setStatus('New');
+    }
+  }, [isOpen, report]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({ title, description, severity, status });
+    onSave({ ...report, title, description, severity, status });
     onClose();
-    // Reset form
-    setTitle('');
-    setDescription('');
-    setSeverity('Medium');
-    setStatus('New');
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-base-100/75">
       <div className="card bg-base-100 rounded-xl border p-6 w-full max-w-lg">
-        <h2 className="text-2xl font-bold mb-4">New Error Report</h2>
+        <h2 className="text-2xl font-bold mb-4">{report ? 'Edit Error Report' : 'New Error Report'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div className="form-control">
@@ -88,7 +98,7 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave }) => {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary">
-              Create Report
+              {report ? 'Save Changes' : 'Create Report'}
             </button>
           </div>
         </form>
@@ -101,6 +111,7 @@ CreateErrorReportModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
+  report: PropTypes.object,
 };
 
 export default CreateErrorReportModal;
