@@ -29,6 +29,7 @@ import Team from './components/Team';
 import Diagrams from './pages/Diagrams';
 import ChangeLog from './pages/ChangeLog';
 import TimeTracking from './pages/Projects/TimeTracking';
+import ErrorReports from './pages/Projects/ErrorReports';
 
 // Auth Components
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -62,6 +63,7 @@ export default function App() {
               <Route path="projects/:projectId/diagrams" element={<Diagrams />} />
               <Route path="projects/:projectId/changelog" element={<ChangeLog />} />
               <Route path="projects/:projectId/time" element={<TimeTracking />} />
+              <Route path="projects/:projectId/errors" element={<ErrorReports />} />
               <Route path="reports-dashboard" element={<ReportDashboard />} />
               <Route path="settings" element={<UserSettings />} />
             </Route>
