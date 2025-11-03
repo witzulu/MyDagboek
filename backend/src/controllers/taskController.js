@@ -1,9 +1,7 @@
 const Task = require('../models/Task');
-const TaskActivity = require('../models/TaskActivity');
 const List = require('../models/List');
 const Project = require('../models/Project');
 const { logChange } = require('../utils/changeLogService');
-const { logTaskActivity } = require('../utils/taskActivityService');
 
 // Middleware to check task authorization
 const authorizeTaskAccess = async (req, res, next) => {
@@ -83,10 +81,6 @@ exports.createTask = async (req, res, next) => {
     });
 
     await logChange(project._id, req.user.id, `Created task "${title}"`, 'board');
-    await logTaskActivity(task._id, req.user.id, 'CREATE_TASK', {
-      title: task.title,
-      listName: list.name,
-    });
     res.status(201).json(task);
   } catch (error) {
     next(error);
@@ -105,28 +99,12 @@ exports.getTaskById = [authorizeTaskAccess, async (req, res, next) => {
     }
 }];
 
-// @desc    Get activity for a single task
-// @route   GET /api/tasks/:id/activity
-// @access  Private
-exports.getTaskActivity = [authorizeTaskAccess, async (req, res, next) => {
-  try {
-    const activities = await TaskActivity.find({ task: req.params.id })
-      .sort({ createdAt: -1 })
-      .populate('user', 'name');
-    res.status(200).json(activities);
-  } catch (error) {
-    next(error);
-  }
-}];
-
 // @desc    Update a task
 // @route   PUT /api/tasks/:id
 // @access  Private
 exports.updateTask = [authorizeTaskAccess, async (req, res, next) => {
   try {
-    const originalTask = await Task.findById(req.params.id);
-
-    // If list is being changed, update board reference too
+    // ✅ If list is being changed, update board reference too
     if (req.body.list) {
       const newList = await List.findById(req.body.list).populate('board');
       if (!newList) {
@@ -136,51 +114,6 @@ exports.updateTask = [authorizeTaskAccess, async (req, res, next) => {
     }
 
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-
-    // --- Granular Activity Logging ---
-    if (originalTask.title !== updatedTask.title) {
-      await logTaskActivity(updatedTask._id, req.user.id, 'UPDATE_TITLE', { from: originalTask.title, to: updatedTask.title });
-    }
-    if (originalTask.description !== updatedTask.description) {
-      await logTaskActivity(updatedTask._id, req.user.id, 'UPDATE_DESCRIPTION');
-    }
-    if (originalTask.priority !== updatedTask.priority) {
-      await logTaskActivity(updatedTask._id, req.user.id, 'UPDATE_PRIORITY', { from: originalTask.priority, to: updatedTask.priority });
-    }
-    if (String(originalTask.dueDate) !== String(updatedTask.dueDate)) {
-      await logTaskActivity(updatedTask._id, req.user.id, 'UPDATE_DUE_DATE', { to: updatedTask.dueDate });
-    }
-
-    // Log assignee changes
-    const originalAssignees = originalTask.assignees.map(a => a.toString());
-    const updatedAssignees = updatedTask.assignees.map(a => a.toString());
-
-    for (const userId of updatedAssignees) {
-      if (!originalAssignees.includes(userId)) {
-        await logTaskActivity(updatedTask._id, req.user.id, 'ADD_ASSIGNEE', { userId });
-      }
-    }
-    for (const userId of originalAssignees) {
-      if (!updatedAssignees.includes(userId)) {
-        await logTaskActivity(updatedTask._id, req.user.id, 'REMOVE_ASSIGNEE', { userId });
-      }
-    }
-
-    // Log label changes
-    const originalLabels = originalTask.labels.map(l => l.toString());
-    const updatedLabels = updatedTask.labels.map(l => l.toString());
-
-    for (const labelId of updatedLabels) {
-      if (!originalLabels.includes(labelId)) {
-        await logTaskActivity(updatedTask._id, req.user.id, 'ADD_LABEL', { labelId });
-      }
-    }
-    for (const labelId of originalLabels) {
-      if (!updatedLabels.includes(labelId)) {
-        await logTaskActivity(updatedTask._id, req.user.id, 'REMOVE_LABEL', { labelId });
-      }
-    }
-
     await logChange(req.project._id, req.user.id, `Updated task "${updatedTask.title}"`, 'board');
     res.status(200).json(updatedTask);
   } catch (error) {
@@ -193,10 +126,8 @@ exports.updateTask = [authorizeTaskAccess, async (req, res, next) => {
 // @access  Private
 exports.deleteTask = [authorizeTaskAccess, async (req, res, next) => {
   try {
-    const deletedTitle = req.task.title;
-    await logTaskActivity(req.task._id, req.user.id, 'DELETE_TASK', { title: deletedTitle });
     await req.task.deleteOne();
-    await logChange(req.project._id, req.user.id, `Deleted task "${deletedTitle}"`, 'board');
+    await logChange(req.project._id, req.user.id, `Deleted task "${req.task.title}"`, 'board');
     res.status(200).json({ message: 'Task deleted' });
   } catch (error) {
     next(error);
@@ -211,9 +142,8 @@ exports.moveTask = [authorizeTaskAccess, async (req, res, next) => {
         const { newListId, newPosition } = req.body;
         const task = req.task;
         const originalListId = task.list._id;
-        const originalList = await List.findById(originalListId);
 
-        // Get the new list to find its board
+        // ✅ Get the new list to find its board
         const newList = await List.findById(newListId).populate('board');
         if (!newList) {
             return res.status(404).json({ message: 'Target list not found' });
@@ -223,16 +153,9 @@ exports.moveTask = [authorizeTaskAccess, async (req, res, next) => {
         await Task.updateMany({ list: newListId, position: { $gte: newPosition } }, { $inc: { position: 1 } });
 
         task.list = newListId;
-        task.board = newList.board._id;
+        task.board = newList.board._id;  // ✅ UPDATE BOARD REFERENCE
         task.position = newPosition;
         await task.save();
-
-        if (originalListId.toString() !== newListId.toString()) {
-            await logTaskActivity(task._id, req.user.id, 'MOVE_TASK', {
-                fromList: originalList.name,
-                toList: newList.name,
-            });
-        }
 
         await logChange(req.project._id, req.user.id, `Moved task "${task.title}"`, 'board');
         res.status(200).json(task);
@@ -252,9 +175,7 @@ exports.completeTask = [authorizeTaskAccess, async (req, res, next) => {
 
         const action = task.completedAt ? 'Completed' : 'Reopened';
         await logChange(req.project._id, req.user.id, `${action} task "${task.title}"`, 'board');
-        if (task.completedAt) {
-          await logTaskActivity(task._id, req.user.id, 'COMPLETE_TASK');
-        }
+
         res.status(200).json(task);
     } catch(error) {
         next(error);
@@ -267,18 +188,12 @@ exports.completeTask = [authorizeTaskAccess, async (req, res, next) => {
 exports.updateTaskPriority = [authorizeTaskAccess, async (req, res, next) => {
     try {
         const task = req.task;
-        const originalPriority = task.priority;
         const priorities = ['Low', 'Medium', 'High'];
-        const currentPriorityIndex = priorities.indexOf(originalPriority);
+        const currentPriorityIndex = priorities.indexOf(task.priority);
         const nextPriorityIndex = (currentPriorityIndex + 1) % priorities.length;
         task.priority = priorities[nextPriorityIndex];
 
         await task.save();
-
-        await logTaskActivity(task._id, req.user.id, 'UPDATE_PRIORITY', {
-          from: originalPriority,
-          to: task.priority,
-        });
 
         await logChange(req.project._id, req.user.id, `Set priority for "${task.title}" to ${task.priority}`, 'board');
 
