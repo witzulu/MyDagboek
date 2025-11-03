@@ -10,17 +10,22 @@ const ErrorReports = () => {
   const [errorReports, setErrorReports] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
+  const [projectMembers, setProjectMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchErrorReports = async () => {
+    const fetchPageData = async () => {
       try {
         setLoading(true);
-        const data = await api(`/projects/${projectId}/errors`);
-        setErrorReports(data);
+        const [reportsData, membersData] = await Promise.all([
+          api(`/projects/${projectId}/errors`),
+          api(`/projects/${projectId}/members`),
+        ]);
+        setErrorReports(reportsData);
+        setProjectMembers(membersData);
       } catch (err) {
-        setError('Failed to load error reports.');
+        setError('Failed to load page data.');
         console.error(err);
       } finally {
         setLoading(false);
@@ -28,7 +33,7 @@ const ErrorReports = () => {
     };
 
     if (projectId) {
-      fetchErrorReports();
+      fetchPageData();
     }
   }, [projectId]);
 
@@ -138,6 +143,7 @@ const ErrorReports = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveReport}
         report={editingReport}
+        projectMembers={projectMembers}
       />
 
       <div className="overflow-x-auto bg-base-100 rounded-lg shadow">
@@ -148,6 +154,7 @@ const ErrorReports = () => {
               <th>Severity</th>
               <th>Status</th>
               <th>Reported By</th>
+              <th>Assigned To</th>
               <th>Date</th>
               <th>Actions</th>
             </tr>
@@ -168,6 +175,19 @@ const ErrorReports = () => {
                     </span>
                   </td>
                   <td>{report.createdBy?.username || 'N/A'}</td>
+                  <td>
+                    {report.assignedTo ? (
+                      <div className="tooltip" data-tip={report.assignedTo.username}>
+                        <div className="avatar">
+                          <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
+                            {report.assignedTo.username.charAt(0)}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      'N/A'
+                    )}
+                  </td>
                   <td>{new Date(report.createdAt).toLocaleDateString()}</td>
                   <td>
                     <button
