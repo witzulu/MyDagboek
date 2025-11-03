@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import LabelManager from './LabelManager';
 import AssigneeSelectionModal from './AssigneeSelectionModal';
 import { Plus, Trash2, Edit2, UserPlus } from 'lucide-react';
@@ -36,36 +36,10 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [editingComment, setEditingComment] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
-  const [activityLog, setActivityLog] = useState([]);
-  const [activeTab, setActiveTab] = useState('Details');
-  const [usersToNotify, setUsersToNotify] = useState([]);
-  const prevIsOpenRef = useRef();
 
   useEffect(() => {
-    // Only reset tab when modal is newly opened
-    if (isOpen && !prevIsOpenRef.current) {
-      setActiveTab('Details');
-    }
-    prevIsOpenRef.current = isOpen;
-
     if (isOpen) {
       if (task) {
-        const fetchActivityLog = async () => {
-          try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`/api/tasks/${task._id}/activity`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (response.ok) {
-              const data = await response.json();
-              setActivityLog(data);
-            }
-          } catch (error) {
-            console.error('Error fetching activity log:', error);
-          }
-        };
-        fetchActivityLog();
-
         setTitle(task.title);
         setDescription(task.description);
         setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : null);
@@ -84,7 +58,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         setAttachments([]);
         setChecklist([]);
         setComments([]);
-        setActivityLog([]);
       }
       setNewChecklistItem('');
       setEditingChecklistItem(null);
@@ -92,7 +65,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       setNewComment('');
       setEditingComment(null);
       setEditingCommentText('');
-      setUsersToNotify([]);
     }
   }, [task, isOpen]);
 
@@ -151,45 +123,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
     });
     onClose();
   };
-
-  const renderActivity = (activity) => {
-    const userName = activity.user?.name || 'A user';
-    switch (activity.action) {
-      case 'CREATE_TASK':
-        return `created this task in list "${activity.details.listName}".`;
-      case 'UPDATE_TITLE':
-        return `updated the title from "${activity.details.from}" to "${activity.details.to}".`;
-      case 'UPDATE_DESCRIPTION':
-        return `updated the description.`;
-      case 'UPDATE_DUE_DATE':
-        return `changed the due date to ${new Date(activity.details.to).toLocaleDateString()}.`;
-      case 'MOVE_TASK':
-        return `moved this task from "${activity.details.fromList}" to "${activity.details.toList}".`;
-      case 'UPDATE_PRIORITY':
-        return `changed the priority from ${activity.details.from} to ${activity.details.to}.`;
-      case 'ADD_ASSIGNEE':
-        const addedUser = projectMembers.find(m => m.user?._id === activity.details.userId)?.user?.name || 'a user';
-        return `assigned this to ${addedUser}.`;
-      case 'REMOVE_ASSIGNEE':
-        const removedUser = projectMembers.find(m => m.user?._id === activity.details.userId)?.user?.name || 'a user';
-        return `unassigned ${removedUser}.`;
-      case 'ADD_LABEL':
-        const addedLabel = projectLabels.find(l => l._id === activity.details.labelId)?.name || 'a label';
-        return `added the label "${addedLabel}".`;
-      case 'REMOVE_LABEL':
-        const removedLabel = projectLabels.find(l => l._id === activity.details.labelId)?.name || 'a label';
-        return `removed the label "${removedLabel}".`;
-      case 'ADD_COMMENT':
-        return `added a comment.`;
-      case 'COMPLETE_TASK':
-        return `completed this task.`;
-      case 'DELETE_TASK':
-          return `deleted this task.`;
-      default:
-        return `made an update to this task.`;
-    }
-  };
-
 
   const handleLabelToggle = (labelId) => {
     const isAssigned = assignedLabels.some(l => l._id === labelId);
@@ -324,13 +257,12 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
       const res = await fetch(`/api/tasks/${task._id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-        body: JSON.stringify({ content: newComment, notifyUserIds: usersToNotify }),
+        body: JSON.stringify({ content: newComment }),
       });
       if (res.ok) {
         const updatedComments = await res.json();
         setComments(updatedComments);
         setNewComment('');
-        setUsersToNotify([]);
         onTaskUpdate({ ...task, comments: updatedComments });
       }
     } catch (error) {
@@ -386,117 +318,102 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         onConfirm={setAssignees}
       />
       <div className="fixed inset-0 bg-base-200/50 flex justify-center items-center z-50">
-        <div className="bg-base-300 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col border border-accent/50 shadow-lg">
-          <div className="flex-shrink-0">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">{task ? 'Edit Card' : 'Create Card'}</h2>
-              {task && (
-                <button onClick={handleCompleteTask} className="px-4 py-2 rounded bg-green-500 text-white">
-                  Mark as Complete
-                </button>
-              )}
-            </div>
-
-            <div role="tablist" className="tabs tabs-bordered">
-              <a role="tab" className={`tab ${activeTab === 'Details' ? 'tab-active' : ''}`} onClick={() => setActiveTab('Details')}>Details</a>
-              <a role="tab" className={`tab ${activeTab === 'Checklist' ? 'tab-active' : ''}`} onClick={() => setActiveTab('Checklist')}>Checklist</a>
-              <a role="tab" className={`tab ${activeTab === 'Attachments' ? 'tab-active' : ''}`} onClick={() => setActiveTab('Attachments')}>Attachments</a>
-              <a role="tab" className={`tab ${activeTab === 'Comments' ? 'tab-active' : ''}`} onClick={() => setActiveTab('Comments')}>Comments</a>
-              <a role="tab" className={`tab ${activeTab === 'Activity' ? 'tab-active' : ''}`} onClick={() => setActiveTab('Activity')}>Activity</a>
-            </div>
+        <div className="bg-base-300  p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto  border border-accent/50 shadow-lg">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">{task ? 'Edit Card' : 'Create Card'}</h2>
+            {task && (
+              <button onClick={handleCompleteTask} className="px-4 py-2 rounded bg-green-500 text-white">
+                Mark as Complete
+              </button>
+            )}
           </div>
-
-          <div className="flex-grow overflow-y-auto mt-4 pr-2">
-            {activeTab === 'Details' && (
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Card title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-2 rounded border bg-base-100 "
-                />
-                <textarea
-                  placeholder="Card description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-2 rounded border h-32 bg-base-300"
-                />
-                <div>
-                  <label className="block text-sm font-medium ">Due Date</label>
-                  <input
-                    type="date"
-                    value={dueDate || ''}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="mt-1 block w-full p-2 rounded border bg-base-300"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium ">Priority</label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    className="mt-1 block w-full p-2 rounded border bg-base-300"
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
-                <LabelManager
-                  projectLabels={projectLabels}
-                  assignedLabels={assignedLabels.map(l => l._id || l)}
-                  onLabelToggle={handleLabelToggle}
-                  onNewLabel={onNewLabel}
-                />
-                <div>
-                  <h3 className="font-semibold mb-2">Assignees</h3>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex -space-x-2">
-                      {assignees.map(assigneeId => {
-                          const member = projectMembers.find(m => m.user && m.user._id === assigneeId);
-                          return member && member.user ? (
-                              <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
-                                  <div className="avatar">
-                                      <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
-                                          {member.user.name.charAt(0)}
-                                      </div>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Card title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full p-2 rounded border bg-base-100 "
+            />
+            <textarea
+              placeholder="Card description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full p-2 rounded border h-32 bg-base-300"
+            />
+            <div>
+              <label className="block text-sm font-medium ">Due Date</label>
+              <input
+                type="date"
+                value={dueDate || ''}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="mt-1 block w-full p-2 rounded border bg-base-300"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium ">Priority</label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="mt-1 block w-full p-2 rounded border bg-base-300"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <LabelManager
+              projectLabels={projectLabels}
+              assignedLabels={assignedLabels.map(l => l._id || l)}
+              onLabelToggle={handleLabelToggle}
+              onNewLabel={onNewLabel}
+            />
+            <div>
+              <h3 className="font-semibold mb-2">Assignees</h3>
+              <div className="flex items-center space-x-2">
+                <div className="flex -space-x-2">
+                  {assignees.map(assigneeId => {
+                      const member = projectMembers.find(m => m.user && m.user._id === assigneeId);
+                      return member && member.user ? (
+                          <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
+                              <div className="avatar">
+                                  <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
+                                      {member.user.name.charAt(0)}
                                   </div>
                               </div>
-                          ) : null;
-                      })}
-                    </div>
-                    <button onClick={() => setIsAssigneeModalOpen(true)} className="btn btn-outline btn-circle btn-sm">
-                        <UserPlus size={16} />
+                          </div>
+                      ) : null;
+                  })}
+                </div>
+                <button onClick={() => setIsAssigneeModalOpen(true)} className="btn btn-outline btn-circle btn-sm">
+                    <UserPlus size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Attachments Section */}
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Attachments</h3>
+              <div className="space-y-2">
+                {attachments.map(file => (
+                  <div key={file._id} className="flex items-center justify-between p-2 rounded">
+                    <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
+                    <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
+                      <Trash2 size={16} />
                     </button>
                   </div>
-                </div>
+                ))}
               </div>
-            )}
-
-            {activeTab === 'Attachments' && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Attachments</h3>
-                <div className="space-y-2">
-                  {attachments.map(file => (
-                    <div key={file._id} className="flex items-center justify-between p-2 rounded">
-                      <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
-                      <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2">
-                  <label className="w-full flex items-center px-4 py-2  rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
-                    <span className="text-base leading-normal">Select a file</span>
-                    <input type='file' className="hidden" onChange={handleFileChange} />
-                  </label>
-                </div>
+              <div className="mt-2">
+                <label className="w-full flex items-center px-4 py-2  rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
+                  <span className="text-base leading-normal">Select a file</span>
+                  <input type='file' className="hidden" onChange={handleFileChange} />
+                </label>
               </div>
-            )}
+            </div>
 
-            {activeTab === 'Checklist' && task && (
+            {/* Checklist Section */}
+            {task && (
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Checklist</h3>
                 {checklist.length > 0 && (
@@ -548,21 +465,9 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               </div>
             )}
 
-            {activeTab === 'Comments' && task && (
+            {/* Comments Section */}
+            {task && (
               <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Notify Users</h3>
-                  <select
-                    multiple
-                    value={usersToNotify}
-                    onChange={(e) => setUsersToNotify(Array.from(e.target.selectedOptions, option => option.value))}
-                    className="w-full p-2 rounded border bg-base-300 h-24"
-                  >
-                    {projectMembers.map(member => (
-                      <option key={member.user._id} value={member.user._id}>{member.user.name}</option>
-                    ))}
-                  </select>
-                </div>
                 <h3 className="text-lg font-semibold">Comments</h3>
                 <div className="bg-base-100/90 p-3 rounded-lg text-2xl ">
                 <MDXEditor
@@ -645,27 +550,8 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               </div>
             )}
 
-            {activeTab === 'Activity' && task && activityLog.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Activity</h3>
-                <div className="space-y-3 max-h-48 overflow-y-auto p-2 bg-base-100/50 rounded-lg">
-                  {activityLog.map(activity => (
-                    <div key={activity._id} className="text-sm">
-                      <p>
-                        <span className="font-semibold">{activity.user?.name || 'A user'}</span>{' '}
-                        {renderActivity(activity)}
-                      </p>
-                      <p className="text-xs text-base-content/70">
-                        {new Date(activity.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
-
-          <div className="flex-shrink-0 mt-6 flex justify-between items-center">
+          <div className="mt-6 flex justify-between items-center">
             <div>
               {task && (
                 <button onClick={() => onDelete(task._id)} className="px-4 py-2 rounded bg-red-500 text-white">
