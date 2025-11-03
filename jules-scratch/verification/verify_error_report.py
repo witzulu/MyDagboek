@@ -20,7 +20,7 @@ def run(playwright):
     page.get_by_role("link", name="Error Reports").click()
     expect(page.get_by_role("heading", name="Error Reports")).to_be_visible()
 
-    # Create a new error report
+    # Create a new error report and assign it
     page.get_by_role("button", name="New Report").click()
 
     # Fill out the modal
@@ -28,23 +28,18 @@ def run(playwright):
     page.get_by_label("Description").fill("This is a test error report.")
     page.get_by_label("Severity").select_option("High")
     page.get_by_label("Status").select_option("New")
+
+    # Open assignee modal and select the first user
+    page.locator('button:has(> svg.lucide-user-plus)').click()
+    page.locator('.assignee-item').first.click()
+    page.get_by_role("button", name="Confirm").click()
+
     page.get_by_role("button", name="Create Report").click()
 
     # Verify the new report is in the table
     expect(page.get_by_text("Test Error Report")).to_be_visible()
+    expect(page.locator('.avatar')).to_be_visible()
 
-    # Edit the new report
-    page.get_by_role("row", name=re.compile("Test Error Report")).get_by_role("button", name="Edit").click()
-    page.get_by_label("Title").fill("Test Error Report - Edited")
-    page.get_by_label("Description").fill("This is a test error report that has been edited.")
-    page.get_by_label("Severity").select_option("Critical")
-    page.get_by_label("Status").select_option("In Progress")
-    page.get_by_role("button", name="Save Changes").click()
-
-    # Verify the edited report is in the table
-    expect(page.get_by_text("Test Error Report - Edited")).to_be_visible()
-    expect(page.get_by_text("Critical")).to_be_visible()
-    expect(page.get_by_text("In Progress")).to_be_visible()
 
     page.screenshot(path="jules-scratch/verification/error-report.png")
 

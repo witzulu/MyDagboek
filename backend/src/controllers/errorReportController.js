@@ -6,7 +6,7 @@ const Project = require('../models/Project');
 // @access  Private
 exports.createErrorReport = async (req, res) => {
   try {
-    const { title, description, severity, status } = req.body;
+    const { title, description, severity, status, assignedTo } = req.body;
     const { projectId } = req.params;
     const userId = req.user.id;
 
@@ -27,6 +27,7 @@ exports.createErrorReport = async (req, res) => {
       description,
       severity,
       status,
+      assignedTo,
       project: projectId,
       createdBy: userId,
     });
@@ -44,7 +45,7 @@ exports.createErrorReport = async (req, res) => {
 // @access  Private
 exports.updateErrorReport = async (req, res) => {
   try {
-    const { title, description, severity, status } = req.body;
+    const { title, description, severity, status, assignedTo } = req.body;
     const { id } = req.params;
     const userId = req.user.id;
 
@@ -68,9 +69,12 @@ exports.updateErrorReport = async (req, res) => {
 
     // Update fields
     report.title = title || report.title;
-    report.description = description || report.description;
-    report.severity = severity || report.severity;
-    report.status = status || report.status;
+    report.description = description !== undefined ? description : report.description;
+    report.severity = severity !== undefined ? severity : report.severity;
+    report.status = status !== undefined ? status : report.status;
+    if (assignedTo !== undefined) {
+      report.assignedTo = assignedTo;
+    }
 
     const updatedReport = await report.save();
     res.json(updatedReport);
@@ -100,7 +104,9 @@ exports.getErrorReports = async (req, res) => {
       return res.status(401).json({ msg: 'Not authorized to view reports for this project' });
     }
 
-    const errorReports = await ErrorReport.find({ project: projectId }).populate('createdBy', 'username');
+    const errorReports = await ErrorReport.find({ project: projectId })
+      .populate('createdBy', 'username')
+      .populate('assignedTo', 'username');
     res.json(errorReports);
   } catch (err) {
     console.error(err.message);
