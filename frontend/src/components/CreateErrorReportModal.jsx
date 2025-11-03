@@ -21,10 +21,10 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-      <div className="modal-box w-full max-w-lg">
-        <h3 className="font-bold text-lg">New Error Report</h3>
-        <form onSubmit={handleSubmit} className="py-4">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-base-100/75">
+      <div className="card bg-base-100 rounded-xl border p-6 w-full max-w-lg">
+        <h2 className="text-2xl font-bold mb-4">New Error Report</h2>
+        <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div className="form-control">
               <label className="label">
@@ -83,8 +83,8 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave }) => {
               </select>
             </div>
           </div>
-          <div className="modal-action mt-6">
-            <button type="button" onClick={onClose} className="btn">
+          <div className="mt-6 flex justify-end gap-4">
+            <button type="button" onClick={onClose} className="btn btn-ghost">
               Cancel
             </button>
             <button type="submit" className="btn btn-primary">
