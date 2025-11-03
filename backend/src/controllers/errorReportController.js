@@ -33,6 +33,8 @@ exports.createErrorReport = async (req, res) => {
     });
 
     const errorReport = await newReport.save();
+    await errorReport.populate('createdBy', 'name');
+    await errorReport.populate('assignedTo', 'name');
     res.status(201).json(errorReport);
   } catch (err) {
     console.error(err.message);
@@ -77,6 +79,8 @@ exports.updateErrorReport = async (req, res) => {
     }
 
     const updatedReport = await report.save();
+    await updatedReport.populate('createdBy', 'name');
+    await updatedReport.populate('assignedTo', 'name');
     res.json(updatedReport);
   } catch (err) {
     console.error(err.message);
@@ -105,8 +109,8 @@ exports.getErrorReports = async (req, res) => {
     }
 
     const errorReports = await ErrorReport.find({ project: projectId })
-      .populate('createdBy', 'username')
-      .populate('assignedTo', 'username');
+      .populate('createdBy', 'name')
+      .populate('assignedTo', 'name');
     res.json(errorReports);
   } catch (err) {
     console.error(err.message);

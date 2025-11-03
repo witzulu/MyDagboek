@@ -8,7 +8,7 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave, report, projectMember
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState('Medium');
   const [status, setStatus] = useState('New');
-  const [assignedTo, setAssignedTo] = useState(null);
+  const [assignedTo, setAssignedTo] = useState([]);
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
 
   useEffect(() => {
@@ -17,14 +17,14 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave, report, projectMember
       setDescription(report.description || '');
       setSeverity(report.severity || 'Medium');
       setStatus(report.status || 'New');
-      setAssignedTo(report.assignedTo ? report.assignedTo._id : null);
+      setAssignedTo(report.assignedTo ? report.assignedTo.map(a => a._id) : []);
     } else if (isOpen) {
       // Reset form for new report
       setTitle('');
       setDescription('');
       setSeverity('Medium');
       setStatus('New');
-      setAssignedTo(null);
+      setAssignedTo([]);
     }
   }, [isOpen, report]);
 
@@ -37,11 +37,11 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave, report, projectMember
   };
 
   const handleAssigneeConfirm = (selected) => {
-    setAssignedTo(selected.length > 0 ? selected[0] : null);
+    setAssignedTo(selected);
     setIsAssigneeModalOpen(false);
   };
 
-  const assignedMember = projectMembers.find(m => m.user && m.user._id === assignedTo);
+  const assignedMembers = projectMembers.filter(m => m.user && assignedTo.includes(m.user._id));
 
   return (
     <>
@@ -49,9 +49,9 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave, report, projectMember
         isOpen={isAssigneeModalOpen}
         onClose={() => setIsAssigneeModalOpen(false)}
         members={projectMembers}
-        selectedAssignees={assignedTo ? [assignedTo] : []}
+        selectedAssignees={assignedTo}
         onConfirm={handleAssigneeConfirm}
-        multiSelect={false}
+        multiSelect={true}
       />
       <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-base-100/75">
         <div className="card bg-base-100 rounded-xl border p-6 w-full max-w-lg">
@@ -117,17 +117,19 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave, report, projectMember
             <div>
               <h3 className="font-semibold mb-2">Assigned To</h3>
               <div className="flex items-center space-x-2">
-                {assignedMember && assignedMember.user ? (
-                  <div className="tooltip" data-tip={assignedMember.user.name}>
-                    <div className="avatar">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
-                        {assignedMember.user.name.charAt(0)}
+                <div className="avatar-group -space-x-4">
+                  {assignedMembers.map(member => (
+                    member.user ? (
+                      <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
+                        <div className="avatar">
+                          <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
+                            {member.user.name.charAt(0)}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-base-200 flex items-center justify-center text-xs">?</div>
-                )}
+                    ) : null
+                  ))}
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsAssigneeModalOpen(true)}
@@ -149,6 +151,7 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave, report, projectMember
         </form>
       </div>
     </div>
+    </>
   );
 };
 
