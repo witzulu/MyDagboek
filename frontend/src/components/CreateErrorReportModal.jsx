@@ -148,7 +148,7 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave, report, projectMember
           </div>
         </form>
       </div>
-    </>
+    </div>
   );
 };
 

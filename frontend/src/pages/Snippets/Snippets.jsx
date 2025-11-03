@@ -8,7 +8,6 @@ import { cpp } from '@codemirror/lang-cpp';
 import { css } from '@codemirror/lang-css';
 import { csharp } from '@replit/codemirror-lang-csharp';
 import { okaidia } from '@uiw/codemirror-theme-okaidia';
-import { githubLight } from '@uiw/codemirror-theme-github';
 import SnippetEditorModal from './SnippetEditorModal';
 import { useTheme } from '../../components/ThemeContext';
 import { Moon } from 'lucide-react';
