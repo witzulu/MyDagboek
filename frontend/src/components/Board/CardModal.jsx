@@ -621,16 +621,16 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                 <div>
                   <h4 className="font-semibold">Depends On</h4>
                   <ul>
-                    {task.dependsOn?.map(depId => (
-                      <li key={depId}>{/* Ideally, you'd fetch and show the task title */}Task {depId.slice(-4)}</li>
+                      {task.dependsOn?.map(dep => (
+                        <li key={dep._id}>{dep.title}</li>
                     ))}
                   </ul>
                 </div>
                 <div>
                   <h4 className="font-semibold">Blocking</h4>
                   <ul>
-                    {task.blocking?.map(blockId => (
-                      <li key={blockId}>{/* Ideally, you'd fetch and show the task title */}Task {blockId.slice(-4)}</li>
+                      {task.blocking?.map(block => (
+                        <li key={block._id}>{block.title}</li>
                     ))}
                   </ul>
                 </div>
