@@ -311,31 +311,39 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const checklistProgress = checklist.length > 0 ? (checklist.filter(item => item.done).length / checklist.length) * 100 : 0;
 
   const addDependency = async (dependencyId, type) => {
-    const body = {
-      dependencyId,
-      type
-    };
+    // Get the current list of dependency IDs, ensuring we handle populated objects
+    const currentDependencyIds = task[type]?.map(dep => dep._id) || [];
+    // Create the new list of IDs
+    const newDependencyIds = [...currentDependencyIds, dependencyId];
+
+    // Create the body for the generic task update endpoint
+    const updateBody = { [type]: newDependencyIds };
 
     try {
-      const res = await fetch(`/api/tasks/${task._id}/dependency`, {
+      // Use the correct, existing endpoint for updating a task
+      const res = await fetch(`/api/tasks/${task._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getToken()}`
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(updateBody),
       });
 
       if (!res.ok) {
-        throw new Error('Failed to add dependency');
+        const errorText = await res.text();
+        throw new Error(`Failed to add dependency: ${errorText}`);
       }
 
+      // The backend should return the fully populated and updated task
       const updatedTask = await res.json();
-      onTaskUpdate(updatedTask); // Update the UI with the full, correct task from the server
-      setIsDependencyModalOpen(false); // Close the modal on success
+      // Update the parent component's state with the authoritative server response
+      onTaskUpdate(updatedTask);
+      // Close the dependency modal on success
+      setIsDependencyModalOpen(false);
     } catch (error) {
       console.error('Error adding dependency:', error);
-      // Optionally, show an error to the user
+      // Optionally, add a user-facing error notification here
     }
   };
 
