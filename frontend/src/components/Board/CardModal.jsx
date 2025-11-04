@@ -334,8 +334,8 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">{task ? 'Edit Card' : 'Create Card'}</h2>
             {task && (
-              <button onClick={() => { onComplete(task._id); onClose(); }} className="px-4 py-2 rounded bg-green-500 text-white">
-                Mark as Complete
+              <button onClick={() => { onComplete(task._id); onClose(); }} className={`px-4 py-2 rounded text-white ${task.completedAt ? 'bg-yellow-500' : 'bg-green-500'}`}>
+                {task.completedAt ? 'Reopen Task' : 'Mark as Complete'}
               </button>
             )}
           </div>

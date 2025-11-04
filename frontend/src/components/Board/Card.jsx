@@ -153,7 +153,10 @@ const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask = (
                   <button onClick={(e) => { e.stopPropagation(); onEditTask(task); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Edit size={14} className="inline mr-2" />Edit</button>
                   <button onClick={(e) => { e.stopPropagation(); onAddTimeEntry(task); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Clock size={14} className="inline mr-2" />Add Time Entry</button>
                   <button onClick={(e) => { e.stopPropagation(); onDeleteTask(task._id); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Trash2 size={14} className="inline mr-2" />Delete</button>
-                  <button onClick={(e) => { e.stopPropagation(); onCompleteTask(task._id); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary"><Check size={14} className="inline mr-2" />Mark as Completed</button>
+                  <button onClick={(e) => { e.stopPropagation(); onCompleteTask(task._id); setIsMenuOpen(false); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-secondary">
+                    <Check size={14} className="inline mr-2" />
+                    {task.completedAt ? 'Reopen Task' : 'Mark as Completed'}
+                  </button>
                 </div>
               )}
             </div>
