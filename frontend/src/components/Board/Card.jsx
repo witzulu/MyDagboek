@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Star, CheckSquare, MessageSquare, MoreVertical, Edit, Trash2, Check, GripVertical, Clock, Lock } from 'lucide-react';
 
-const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, onAddTimeEntry, isHighlighted }) => {
+const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask = () => {}, onAddTimeEntry, isHighlighted }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const cardRef = useRef(null);
   const {
@@ -92,7 +92,10 @@ const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask, on
               </span>
             ))}
           </div>
-          <p className="text-sm text-base-content">{task.title}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-base-content">{task.title}</p>
+            {task.completedAt && <Check size={16} className="text-green-500" />}
+          </div>
         </div>
 
         <div className="flex justify-between items-center mt-2 text-xs text-base-content/70">

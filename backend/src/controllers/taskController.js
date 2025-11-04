@@ -236,11 +236,26 @@ exports.moveTask = [authorizeTaskAccess, async (req, res, next) => {
 exports.completeTask = [authorizeTaskAccess, async (req, res, next) => {
     try {
         const task = req.task;
-        task.completedAt = task.completedAt ? null : Date.now();
+
+        // Find the "Done" list for the current board
+        const doneList = await List.findOne({ board: task.list.board._id, name: 'Done' });
+        if (!doneList) {
+            return res.status(404).json({ message: 'The "Done" list for this board could not be found.' });
+        }
+
+        const originalListId = task.list._id;
+        const newPosition = doneList.tasks ? doneList.tasks.length : 0;
+
+        // Decrement positions in the old list
+        await Task.updateMany({ list: originalListId, position: { $gt: task.position } }, { $inc: { position: -1 } });
+
+        // Update the task
+        task.list = doneList._id;
+        task.position = newPosition;
+        task.completedAt = Date.now();
         await task.save();
 
-        const action = task.completedAt ? 'Completed' : 'Reopened';
-        await logChange(req.project._id, req.user.id, `${action} task "${task.title}"`, 'board');
+        await logChange(req.project._id, req.user.id, `Completed task "${task.title}"`, 'board');
 
         res.status(200).json(task);
     } catch(error) {

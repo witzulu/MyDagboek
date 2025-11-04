@@ -20,7 +20,7 @@ import {
 import '../../mdxeditor.css'
 import { AuthContext } from '../../context/AuthContext';
 
-const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers, projectId }) => {
+const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers, projectId }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -75,43 +75,6 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   }, [task, isOpen]);
 
   if (!isOpen) return null;
-
-  const handleCompleteTask = async () => {
-    if (!task || !task._id) {
-      console.error('No task provided for completion');
-      return;
-    }
-
-    const token = getToken();
-    if (!token) {
-      console.error('No auth token found. Please log in again.');
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/tasks/${task._id}/complete`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        console.error(`Failed to complete task: ${res.status}`);
-        return;
-      }
-
-      let updatedTask = null;
-      try {
-        updatedTask = await res.json();
-      } catch {
-        console.warn('No JSON returned from /complete endpoint');
-      }
-
-      if (updatedTask && onTaskUpdate) onTaskUpdate(updatedTask);
-      onClose();
-    } catch (error) {
-      console.error('Error completing task:', error);
-    }
-  };
 
   const handleSubmit = () => {
     onSave({
@@ -371,7 +334,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">{task ? 'Edit Card' : 'Create Card'}</h2>
             {task && (
-              <button onClick={handleCompleteTask} className="px-4 py-2 rounded bg-green-500 text-white">
+              <button onClick={() => { onComplete(task._id); onClose(); }} className="px-4 py-2 rounded bg-green-500 text-white">
                 Mark as Complete
               </button>
             )}

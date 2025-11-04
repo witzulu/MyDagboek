@@ -415,50 +415,15 @@ const Board = () => {
         throw new Error('Failed to complete task');
       }
 
-      const updatedTask = await response.json();
-
-      // Manually repopulate labels on the client-side
-      if (updatedTask.labels && projectLabels.length > 0) {
-        updatedTask.labels = updatedTask.labels.map(labelId =>
-          projectLabels.find(l => l._id === labelId)
-        ).filter(Boolean);
-      }
-      if (updatedTask.assignees && projectMembers.length > 0) {
-        updatedTask.assignees = updatedTask.assignees.map(assigneeId =>
-            projectMembers.find(m => m.user._id === assigneeId)?.user
-        ).filter(Boolean);
-      }
-
-      // Find the source list and destination list ('Done')
-      const sourceListId = findList(updatedTask._id)?._id;
-      const doneList = lists.find(l => l.name === 'Done');
-
-      setLists(prevLists => {
-        const newLists = JSON.parse(JSON.stringify(prevLists));
-
-        // Remove from old list
-        if (sourceListId) {
-          const sourceListIndex = newLists.findIndex(l => l._id === sourceListId);
-          if (sourceListIndex !== -1) {
-            const taskIndex = newLists[sourceListIndex].tasks.findIndex(t => t._id === taskId);
-            if (taskIndex !== -1) {
-              newLists[sourceListIndex].tasks.splice(taskIndex, 1);
-            }
-          }
-        }
-
-        // Add to 'Done' list
-        if (doneList) {
-          const doneListIndex = newLists.findIndex(l => l._id === doneList._id);
-          if (doneListIndex !== -1) {
-             if (!newLists[doneListIndex].tasks) {
-                newLists[doneListIndex].tasks = [];
-            }
-            newLists[doneListIndex].tasks.push(updatedTask);
-          }
-        }
-        return newLists;
+      // Re-fetch the board details to get the updated state from the server
+      const boardRes = await fetch(`/api/boards/${boardId}`, {
+        headers: { "Authorization": `Bearer ${token}` },
       });
+      if (!boardRes.ok) {
+        throw new Error(`Failed to re-fetch board details: ${boardRes.status}`);
+      }
+      const boardData = await boardRes.json();
+      setLists(boardData.lists);
 
     } catch (err) {
       setError(err.message);
@@ -513,6 +478,7 @@ const Board = () => {
         }}
         onSave={handleSaveTask}
         onDelete={handleDeleteTask}
+        onComplete={handleCompleteTask}
         onTaskUpdate={handleTaskUpdate}
         task={editingTask}
         listId={targetListId}
