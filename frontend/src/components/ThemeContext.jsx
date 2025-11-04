@@ -154,17 +154,12 @@ export function ThemeProvider({ children }) {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    let initialTheme;
-    if (isAuthenticated && user?.theme) {
-      initialTheme = user.theme;
-    } else {
-      const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
-    }
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
     _setTheme(initialTheme);
     applyTheme(initialTheme);
-  }, [isAuthenticated, user, applyTheme]);
+  }, [applyTheme]);
 
   useEffect(() => {
     applyTheme(theme);
