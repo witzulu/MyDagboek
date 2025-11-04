@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, approveUser, blockUser, unblockUser, updateUserProfile, updateUserRole, searchUsers } = require('../controllers/userController');
+const { getUsers, approveUser, blockUser, unblockUser, updateUserProfile, updateUserTheme, updateUserRole, searchUsers } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const { admin } = require('../middleware/adminMiddleware');
 
@@ -38,5 +38,10 @@ router.put('/:id/unblock', [protect, admin], unblockUser);
 // @desc    Update user profile
 // @access  Private
 router.put('/profile', protect, updateUserProfile);
+
+// @route   PUT api/users/theme
+// @desc    Update user theme
+// @access  Private
+router.put('/theme', protect, updateUserTheme);
 
 module.exports = router;

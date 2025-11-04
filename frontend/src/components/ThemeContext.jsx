@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Moon, Sun, Cloud, Sparkles, Leaf, Zap } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 export const themes = [
   // daisyUI themes
@@ -106,7 +108,8 @@ export const useTheme = () => {
 };
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('dark');
+  const { user, isAuthenticated } = useAuth();
+  const [theme, _setTheme] = useState('dark');
 
   const applyTheme = useCallback((themeId) => {
     const themeData = themes.find(t => t.id === themeId);
@@ -117,16 +120,12 @@ export function ThemeProvider({ children }) {
     }
 
     const root = document.documentElement;
-
-    // Clear styles from other theme systems
     root.removeAttribute('style');
     root.classList.remove(...themes.filter(t => !t.isDaisyUI).map(t => `${t.id}-theme`));
 
     if (themeData.isDaisyUI) {
-      // Handle daisyUI themes
       root.setAttribute('data-theme', themeId);
     } else {
-      // Handle original custom themes
       root.removeAttribute('data-theme');
       root.classList.add(`${themeId}-theme`);
       Object.entries(themeData.colors).forEach(([key, value]) => {
@@ -134,36 +133,48 @@ export function ThemeProvider({ children }) {
       });
     }
 
-    localStorage.setItem('theme', themeId);
     window.dispatchEvent(new CustomEvent('themeChange', { detail: themeId }));
   }, []);
 
-  useEffect(() => {
-    try {
-      const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
-      setTheme(initialTheme);
-    } catch (error) {
-      console.error('Error in theme initialization:', error);
-      setTheme('dark'); // Fallback
+  const setTheme = useCallback(async (themeId) => {
+    _setTheme(themeId);
+    if (isAuthenticated) {
+      try {
+        await api('/users/theme', {
+          method: 'PUT',
+          body: JSON.stringify({ theme: themeId }),
+        });
+        localStorage.setItem('theme', themeId);
+      } catch (error) {
+        console.error('Failed to save theme:', error);
+      }
+    } else {
+      localStorage.setItem('theme', themeId);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    try {
-      applyTheme(theme);
-    } catch (error) {
-      console.error('Error applying theme:', error);
+    let initialTheme;
+    if (isAuthenticated && user?.theme) {
+      initialTheme = user.theme;
+    } else {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
     }
+    _setTheme(initialTheme);
+    applyTheme(initialTheme);
+  }, [isAuthenticated, user, applyTheme]);
+
+  useEffect(() => {
+    applyTheme(theme);
   }, [theme, applyTheme]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = (e) => {
-      // Only change theme if user hasn't set one manually
       if (!localStorage.getItem('theme')) {
-        setTheme(e.matches ? 'dark' : 'light');
+        _setTheme(e.matches ? 'dark' : 'light');
       }
     };
 

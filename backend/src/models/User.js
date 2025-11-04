@@ -35,6 +35,10 @@ const UserSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'blocked'],
     default: 'pending'
   },
+  theme: {
+    type: String,
+    default: 'dark'
+  },
   projects: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project'

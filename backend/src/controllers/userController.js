@@ -14,6 +14,35 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
+// @desc    Update user theme
+// @route   PUT /api/users/theme
+// @access  Private
+exports.updateUserTheme = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    user.theme = req.body.theme || user.theme;
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      status: updatedUser.status,
+      theme: updatedUser.theme,
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
 // @desc    Search for users by username or name
 // @route   GET /api/users/search
 // @access  Private
