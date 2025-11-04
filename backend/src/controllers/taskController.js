@@ -236,26 +236,41 @@ exports.moveTask = [authorizeTaskAccess, async (req, res, next) => {
 exports.completeTask = [authorizeTaskAccess, async (req, res, next) => {
     try {
         const task = req.task;
-
-        // Find the "Done" list for the current board
-        const doneList = await List.findOne({ board: task.list.board._id, name: 'Done' });
-        if (!doneList) {
-            return res.status(404).json({ message: 'The "Done" list for this board could not be found.' });
-        }
-
         const originalListId = task.list._id;
-        const newPosition = doneList.tasks ? doneList.tasks.length : 0;
 
-        // Decrement positions in the old list
-        await Task.updateMany({ list: originalListId, position: { $gt: task.position } }, { $inc: { position: -1 } });
+        if (task.completedAt) {
+            // Task is already complete, so reopen it
+            const inProgressList = await List.findOne({ board: task.list.board._id, name: 'In Progress' });
+            if (!inProgressList) {
+                return res.status(404).json({ message: 'The "In Progress" list for this board could not be found.' });
+            }
 
-        // Update the task
-        task.list = doneList._id;
-        task.position = newPosition;
-        task.completedAt = Date.now();
-        await task.save();
+            const newPosition = inProgressList.tasks ? inProgressList.tasks.length : 0;
+            await Task.updateMany({ list: originalListId, position: { $gt: task.position } }, { $inc: { position: -1 } });
 
-        await logChange(req.project._id, req.user.id, `Completed task "${task.title}"`, 'board');
+            task.list = inProgressList._id;
+            task.position = newPosition;
+            task.completedAt = null;
+            await task.save();
+
+            await logChange(req.project._id, req.user.id, `Reopened task "${task.title}"`, 'board');
+        } else {
+            // Task is not complete, so complete it
+            const doneList = await List.findOne({ board: task.list.board._id, name: 'Done' });
+            if (!doneList) {
+                return res.status(404).json({ message: 'The "Done" list for this board could not be found.' });
+            }
+
+            const newPosition = doneList.tasks ? doneList.tasks.length : 0;
+            await Task.updateMany({ list: originalListId, position: { $gt: task.position } }, { $inc: { position: -1 } });
+
+            task.list = doneList._id;
+            task.position = newPosition;
+            task.completedAt = Date.now();
+            await task.save();
+
+            await logChange(req.project._id, req.user.id, `Completed task "${task.title}"`, 'board');
+        }
 
         res.status(200).json(task);
     } catch(error) {
