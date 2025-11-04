@@ -142,7 +142,7 @@ export function ThemeProvider({ children }) {
       try {
         await api('/users/theme', {
           method: 'PUT',
-          body: JSON.stringify({ theme: themeId }),
+          body: { theme: themeId },
         });
         localStorage.setItem('theme', themeId);
       } catch (error) {
