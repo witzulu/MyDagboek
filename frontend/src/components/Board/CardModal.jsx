@@ -14,7 +14,7 @@ import {
   quotePlugin,
   thematicBreakPlugin,
   diffSourcePlugin,
-   DiffSourceToggleWrapper,
+  DiffSourceToggleWrapper,
   toolbarPlugin
 } from '@mdxeditor/editor';
 import '../../mdxeditor.css'
@@ -76,42 +76,41 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   if (!isOpen) return null;
 
   const handleCompleteTask = async () => {
-  if (!task || !task._id) {
-    console.error('No task provided for completion');
-    return;
-  }
-
-  const token = getToken();
-  if (!token) {
-    console.error('No auth token found. Please log in again.');
-    return;
-  }
-
-  try {
-    const res = await fetch(`/api/tasks/${task._id}/complete`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-
-    if (!res.ok) {
-      console.error(`Failed to complete task: ${res.status}`);
+    if (!task || !task._id) {
+      console.error('No task provided for completion');
       return;
     }
 
-    let updatedTask = null;
-    try {
-      updatedTask = await res.json();
-    } catch {
-      console.warn('No JSON returned from /complete endpoint');
+    const token = getToken();
+    if (!token) {
+      console.error('No auth token found. Please log in again.');
+      return;
     }
 
-    if (updatedTask && onTaskUpdate) onTaskUpdate(updatedTask);
-    onClose();
-  } catch (error) {
-    console.error('Error completing task:', error);
-  }
-};
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/complete`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
 
+      if (!res.ok) {
+        console.error(`Failed to complete task: ${res.status}`);
+        return;
+      }
+
+      let updatedTask = null;
+      try {
+        updatedTask = await res.json();
+      } catch {
+        console.warn('No JSON returned from /complete endpoint');
+      }
+
+      if (updatedTask && onTaskUpdate) onTaskUpdate(updatedTask);
+      onClose();
+    } catch (error) {
+      console.error('Error completing task:', error);
+    }
+  };
 
   const handleSubmit = () => {
     onSave({
@@ -130,10 +129,10 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const handleLabelToggle = (labelId) => {
     const isAssigned = assignedLabels.some(l => l._id === labelId);
     if (isAssigned) {
-        setAssignedLabels(prev => prev.filter(l => l._id !== labelId));
+      setAssignedLabels(prev => prev.filter(l => l._id !== labelId));
     } else {
-        const labelToAdd = projectLabels.find(l => l._id === labelId);
-        if(labelToAdd) setAssignedLabels(prev => [...prev, labelToAdd]);
+      const labelToAdd = projectLabels.find(l => l._id === labelId);
+      if(labelToAdd) setAssignedLabels(prev => [...prev, labelToAdd]);
     }
   };
 
@@ -311,25 +310,34 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
 
   const checklistProgress = checklist.length > 0 ? (checklist.filter(item => item.done).length / checklist.length) * 100 : 0;
 
-  const addDependency = (dependencyId, type) => {
-    const body = { [type]: dependencyId };
+  const addDependency = async (dependencyId, type) => {
+    const body = {
+      dependencyId,
+      type
+    };
 
-    // Optimistically update the UI
-    const updatedTask = { ...task, [type]: [...(task[type] || []), dependencyId] };
-    onTaskUpdate(updatedTask);
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/dependency`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(body),
+      });
 
-    // Make the API call
-    fetch(`/api/tasks/${task._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-      body: JSON.stringify(body),
-    }).catch(error => {
-      console.error('Failed to add dependency:', error);
-      // Revert optimistic update on failure
-      onTaskUpdate(task);
-    });
+      if (!res.ok) {
+        throw new Error('Failed to add dependency');
+      }
+
+      const updatedTask = await res.json();
+      onTaskUpdate(updatedTask); // Update the UI with the full, correct task from the server
+      setIsDependencyModalOpen(false); // Close the modal on success
+    } catch (error) {
+      console.error('Error adding dependency:', error);
+      // Optionally, show an error to the user
+    }
   };
-
 
   return (
     <>
@@ -350,7 +358,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
         />
       )}
       <div className="fixed inset-0 bg-base-200/50 flex justify-center items-center z-50">
-        <div className="bg-base-300  p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto  border border-accent/50 shadow-lg">
+        <div className="bg-base-300 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-accent/50 shadow-lg">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">{task ? 'Edit Card' : 'Create Card'}</h2>
             {task && (
@@ -365,7 +373,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               placeholder="Card title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-2 rounded border bg-base-100 "
+              className="w-full p-2 rounded border bg-base-100"
             />
             <textarea
               placeholder="Card description"
@@ -374,7 +382,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               className="w-full p-2 rounded border h-32 bg-base-300"
             />
             <div>
-              <label className="block text-sm font-medium ">Due Date</label>
+              <label className="block text-sm font-medium">Due Date</label>
               <input
                 type="date"
                 value={dueDate || ''}
@@ -383,7 +391,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               />
             </div>
             <div>
-              <label className="block text-sm font-medium ">Priority</label>
+              <label className="block text-sm font-medium">Priority</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
@@ -405,20 +413,20 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               <div className="flex items-center space-x-2">
                 <div className="flex -space-x-2">
                   {assignees.map(assigneeId => {
-                      const member = projectMembers.find(m => m.user && m.user._id === assigneeId);
-                      return member && member.user ? (
-                          <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
-                              <div className="avatar">
-                                  <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
-                                      {member.user.name.charAt(0)}
-                                  </div>
-                              </div>
+                    const member = projectMembers.find(m => m.user && m.user._id === assigneeId);
+                    return member && member.user ? (
+                      <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
+                        <div className="avatar">
+                          <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
+                            {member.user.name.charAt(0)}
                           </div>
-                      ) : null;
+                        </div>
+                      </div>
+                    ) : null;
                   })}
                 </div>
                 <button onClick={() => setIsAssigneeModalOpen(true)} className="btn btn-outline btn-circle btn-sm">
-                    <UserPlus size={16} />
+                  <UserPlus size={16} />
                 </button>
               </div>
             </div>
@@ -437,7 +445,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                 ))}
               </div>
               <div className="mt-2">
-                <label className="w-full flex items-center px-4 py-2  rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
+                <label className="w-full flex items-center px-4 py-2 rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
                   <span className="text-base leading-normal">Select a file</span>
                   <input type='file' className="hidden" onChange={handleFileChange} />
                 </label>
@@ -450,7 +458,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                 <h3 className="text-lg font-semibold">Checklist</h3>
                 {checklist.length > 0 && (
                   <div className="w-full rounded-full h-2.5">
-                    <div className=" h-2.5 rounded-full" style={{ width: `${checklistProgress}%` }}></div>
+                    <div className="h-2.5 rounded-full" style={{ width: `${checklistProgress}%` }}></div>
                   </div>
                 )}
                 <div className="space-y-1">
@@ -469,7 +477,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                           onChange={(e) => setEditingText(e.target.value)}
                           onBlur={() => handleUpdateChecklistItem(item._id)}
                           onKeyDown={(e) => e.key === 'Enter' && handleUpdateChecklistItem(item._id)}
-                          className="ml-2 flex-grow p-1 rounded border "
+                          className="ml-2 flex-grow p-1 rounded border"
                           autoFocus
                         />
                       ) : (
@@ -501,70 +509,66 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             {task && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Comments</h3>
-                <div className="bg-base-100/90 p-3 rounded-lg text-2xl ">
-                <MDXEditor
-                contentEditableClassName="mxEditor"
-                  markdown={newComment}
-                  onChange={setNewComment}
-                  plugins={[
-
-                    toolbarPlugin({
-                      toolbarContents: () => (
-                        <>
-                          <UndoRedo />
-                          <BoldItalicUnderlineToggles />
-                          <DiffSourceToggleWrapper />
-                        </>
-                      )
-                    }),
-                    listsPlugin(),
-                    quotePlugin(),
-                    headingsPlugin(),
-                    linkPlugin(),
-                    thematicBreakPlugin(),
-                     diffSourcePlugin(),
-
-                  ]}
-                />
+                <div className="bg-base-100/90 p-3 rounded-lg text-2xl">
+                  <MDXEditor
+                    contentEditableClassName="mxEditor"
+                    markdown={newComment}
+                    onChange={setNewComment}
+                    plugins={[
+                      toolbarPlugin({
+                        toolbarContents: () => (
+                          <>
+                            <UndoRedo />
+                            <BoldItalicUnderlineToggles />
+                            <DiffSourceToggleWrapper />
+                          </>
+                        )
+                      }),
+                      listsPlugin(),
+                      quotePlugin(),
+                      headingsPlugin(),
+                      linkPlugin(),
+                      thematicBreakPlugin(),
+                      diffSourcePlugin(),
+                    ]}
+                  />
                 </div>
-                <button onClick={handleAddComment} className="px-4 py-2 rounded bg-accent ">Comment</button>
-                <div className="space-y-4 ">
+                <button onClick={handleAddComment} className="px-4 py-2 rounded bg-accent">Comment</button>
+                <div className="space-y-4">
                   {comments.map(comment => (
-                    <div key={comment._id} className=" p-3 rounded-lg">
+                    <div key={comment._id} className="p-3 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold">{comment.user.name}</span>
-                        <span className="text-xs ">{new Date(comment.createdAt).toLocaleString()}</span>
+                        <span className="text-xs">{new Date(comment.createdAt).toLocaleString()}</span>
                       </div>
                       {editingComment === comment._id ? (
-                        <div >
+                        <div>
                           <MDXEditor
-                             contentEditableClassName="mxEditor"
+                            contentEditableClassName="mxEditor"
                             markdown={editingCommentText}
                             onChange={setEditingCommentText}
                             className="mxEditor"
-                             plugins={[
-                                toolbarPlugin({
-                                  toolbarContents: () => (
-                                    <>
-                                      <UndoRedo />
-                                      <BoldItalicUnderlineToggles />
-                                      <ListsToggles />
-                                      <diffSourcePlugin.DiffSourceToggle />
-
-                                    </>
-                                  )
-                                }),
-                                listsPlugin(),
-                                quotePlugin(),
-                                headingsPlugin(),
-                                linkPlugin(),
-                                thematicBreakPlugin(),
-                                diffSourcePlugin()
-                              ]}
+                            plugins={[
+                              toolbarPlugin({
+                                toolbarContents: () => (
+                                  <>
+                                    <UndoRedo />
+                                    <BoldItalicUnderlineToggles />
+                                    <DiffSourceToggleWrapper />
+                                  </>
+                                )
+                              }),
+                              listsPlugin(),
+                              quotePlugin(),
+                              headingsPlugin(),
+                              linkPlugin(),
+                              thematicBreakPlugin(),
+                              diffSourcePlugin()
+                            ]}
                           />
                           <div className="flex justify-end space-x-2 mt-2">
-                             <button onClick={() => { setEditingComment(null); setEditingCommentText(''); }} className="px-3 py-1 rounded ">Cancel</button>
-                             <button onClick={() => handleUpdateComment(comment._id)} className="px-3 py-1 rounded bg-accent">Save</button>
+                            <button onClick={() => { setEditingComment(null); setEditingCommentText(''); }} className="px-3 py-1 rounded">Cancel</button>
+                            <button onClick={() => handleUpdateComment(comment._id)} className="px-3 py-1 rounded bg-accent">Save</button>
                           </div>
                         </div>
                       ) : (
@@ -590,26 +594,27 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
                   <button onClick={() => setIsDependencyModalOpen(true)} className="btn btn-sm btn-outline">Add Dependency</button>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold">Depends On</h4>
-                  <ul>
+                  <div>
+                    <h4 className="font-semibold">Depends On</h4>
+                    <ul>
                       {task.dependsOn?.map(dep => (
                         <li key={dep._id}>{dep.title}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Blocking</h4>
-                  <ul>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Blocking</h4>
+                    <ul>
                       {task.blocking?.map(block => (
                         <li key={block._id}>{block.title}</li>
-                    ))}
-                  </ul>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
-
+            )}
           </div>
+
           <div className="mt-6 flex justify-between items-center">
             <div>
               {task && (
@@ -624,8 +629,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             </div>
           </div>
         </div>
-        </div>
-      )}
+      </div>
     </>
   );
 };
