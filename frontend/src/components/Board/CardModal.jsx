@@ -39,6 +39,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
   const [editingCommentText, setEditingCommentText] = useState('');
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [isDependencyModalOpen, setIsDependencyModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('details');
 
   const getToken = () => localStorage.getItem('token');
 
@@ -375,93 +376,104 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               </button>
             )}
           </div>
+          <div className="tabs tabs-boxed mb-4">
+            <a className={`tab ${activeTab === 'details' ? 'tab-active' : ''}`} onClick={() => setActiveTab('details')}>Details</a>
+            <a className={`tab ${activeTab === 'checklist' ? 'tab-active' : ''}`} onClick={() => setActiveTab('checklist')}>Checklist</a>
+            <a className={`tab ${activeTab === 'attachments' ? 'tab-active' : ''}`} onClick={() => setActiveTab('attachments')}>Attachments</a>
+            <a className={`tab ${activeTab === 'comments' ? 'tab-active' : ''}`} onClick={() => setActiveTab('comments')}>Comments</a>
+            <a className={`tab ${activeTab === 'dependencies' ? 'tab-active' : ''}`} onClick={() => setActiveTab('dependencies')}>Dependencies</a>
+          </div>
           <div className="space-y-4">
-            <input
-              type="text"
-              placeholder="Card title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-2 rounded border bg-base-100"
-            />
-            <textarea
-              placeholder="Card description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-2 rounded border h-32 bg-base-300"
-            />
-            <div>
-              <label className="block text-sm font-medium">Due Date</label>
-              <input
-                type="date"
-                value={dueDate || ''}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="mt-1 block w-full p-2 rounded border bg-base-300"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Priority</label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                className="mt-1 block w-full p-2 rounded border bg-base-300"
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
-            </div>
-            <LabelManager
-              projectLabels={projectLabels}
-              assignedLabels={assignedLabels.map(l => l._id || l)}
-              onLabelToggle={handleLabelToggle}
-              onNewLabel={onNewLabel}
-            />
-            <div>
-              <h3 className="font-semibold mb-2">Assignees</h3>
-              <div className="flex items-center space-x-2">
-                <div className="flex -space-x-2">
-                  {assignees.map(assigneeId => {
-                    const member = projectMembers.find(m => m.user && m.user._id === assigneeId);
-                    return member && member.user ? (
-                      <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
-                        <div className="avatar">
-                          <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
-                            {member.user.name.charAt(0)}
-                          </div>
-                        </div>
-                      </div>
-                    ) : null;
-                  })}
+            {activeTab === 'details' && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Card title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full p-2 rounded border bg-base-100"
+                />
+                <textarea
+                  placeholder="Card description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full p-2 rounded border h-32 bg-base-300"
+                />
+                <div>
+                  <label className="block text-sm font-medium">Due Date</label>
+                  <input
+                    type="date"
+                    value={dueDate || ''}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="mt-1 block w-full p-2 rounded border bg-base-300"
+                  />
                 </div>
-                <button onClick={() => setIsAssigneeModalOpen(true)} className="btn btn-outline btn-circle btn-sm">
-                  <UserPlus size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Attachments Section */}
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Attachments</h3>
-              <div className="space-y-2">
-                {attachments.map(file => (
-                  <div key={file._id} className="flex items-center justify-between p-2 rounded">
-                    <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
-                    <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
-                      <Trash2 size={16} />
+                <div>
+                  <label className="block text-sm font-medium">Priority</label>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    className="mt-1 block w-full p-2 rounded border bg-base-300"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </div>
+                <LabelManager
+                  projectLabels={projectLabels}
+                  assignedLabels={assignedLabels.map(l => l._id || l)}
+                  onLabelToggle={handleLabelToggle}
+                  onNewLabel={onNewLabel}
+                />
+                <div>
+                  <h3 className="font-semibold mb-2">Assignees</h3>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex -space-x-2">
+                      {assignees.map(assigneeId => {
+                        const member = projectMembers.find(m => m.user && m.user._id === assigneeId);
+                        return member && member.user ? (
+                          <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
+                            <div className="avatar">
+                              <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
+                                {member.user.name.charAt(0)}
+                              </div>
+                            </div>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                    <button onClick={() => setIsAssigneeModalOpen(true)} className="btn btn-outline btn-circle btn-sm">
+                      <UserPlus size={16} />
                     </button>
                   </div>
-                ))}
-              </div>
-              <div className="mt-2">
-                <label className="w-full flex items-center px-4 py-2 rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
-                  <span className="text-base leading-normal">Select a file</span>
-                  <input type='file' className="hidden" onChange={handleFileChange} />
-                </label>
-              </div>
-            </div>
+                </div>
+              </>
+            )}
 
-            {/* Checklist Section */}
-            {task && (
+            {activeTab === 'attachments' && (
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">Attachments</h3>
+                <div className="space-y-2">
+                  {attachments.map(file => (
+                    <div key={file._id} className="flex items-center justify-between p-2 rounded">
+                      <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
+                      <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2">
+                  <label className="w-full flex items-center px-4 py-2 rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
+                    <span className="text-base leading-normal">Select a file</span>
+                    <input type='file' className="hidden" onChange={handleFileChange} />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'checklist' && task && (
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Checklist</h3>
                 {checklist.length > 0 && (
@@ -513,8 +525,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               </div>
             )}
 
-            {/* Comments Section */}
-            {task && (
+            {activeTab === 'comments' && task && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Comments</h3>
                 <div className="bg-base-100/90 p-3 rounded-lg text-2xl">
@@ -594,8 +605,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
               </div>
             )}
 
-            {/* Dependencies Section */}
-            {task && (
+            {activeTab === 'dependencies' && task && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold">Dependencies</h3>
