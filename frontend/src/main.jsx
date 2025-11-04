@@ -11,15 +11,15 @@ import { SettingsProvider } from './context/SettingsContext'
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <SettingsProvider>
-            <ProjectProvider>
+      <AuthProvider>
+        <SettingsProvider>
+          <ProjectProvider>
+            <ThemeProvider>
               <App />
-            </ProjectProvider>
-          </SettingsProvider>
-        </AuthProvider>
-      </ThemeProvider>
+            </ThemeProvider>
+          </ProjectProvider>
+        </SettingsProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,
 )
