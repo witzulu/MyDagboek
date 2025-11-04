@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
+    localStorage.removeItem('theme'); // Clear theme on logout
     setToken(null);
     setUser(null);
     setNotifications([]);
@@ -78,8 +79,14 @@ export const AuthProvider = ({ children }) => {
   }, [token, fetchNotifications, logout]);
 
   const login = (newToken) => {
+    const decoded = decodeJwt(newToken);
+    if (decoded?.user?.theme) {
+      localStorage.setItem('theme', decoded.user.theme);
+    }
     localStorage.setItem('token', newToken);
     setToken(newToken);
+    // Force a reload to ensure all contexts are reset and the new theme is applied
+    window.location.reload();
   };
 
   const value = {
