@@ -30,7 +30,7 @@ const DependencySelectionModal = ({ isOpen, onClose, onAddDependency, projectId,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-base-200/50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-base-200/50 flex justify-center items-center z-60">
       <div className="bg-base-300 p-6 rounded-lg w-full max-w-lg">
         <h2 className="text-2xl font-bold mb-4">Add Dependency</h2>
         <input

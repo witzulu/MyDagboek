@@ -624,7 +624,8 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, task, listId, projectLab
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </>
   );
 };
