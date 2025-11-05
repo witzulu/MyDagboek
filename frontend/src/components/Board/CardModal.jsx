@@ -422,7 +422,7 @@ const handleFileChange = async (e) => {
                       {assignees.map(assigneeId => {
                         const member = projectMembers.find(m => m.user && m.user._id === assigneeId);
                         return member && member.user ? (
-                          <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
+                          <div key={assigneeId} className="tooltip" data-tip={member.user.name}>
                             <div className="avatar">
                               <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
                                 {member.user.name.charAt(0)}
