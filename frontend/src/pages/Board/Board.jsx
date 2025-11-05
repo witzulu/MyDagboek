@@ -372,7 +372,7 @@ const Board = () => {
         }
 
         // Re-fetch board data to show that dependencies are removed from other tasks.
-        fetchBoardDetails();
+        await fetchBoardDetails();
 
         setIsCardModalOpen(false);
         setEditingTask(null);

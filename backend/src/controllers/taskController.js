@@ -193,7 +193,10 @@ exports.updateTask = [authorizeTaskAccess, async (req, res, next) => {
       otherUpdates.board = newList.board._id;
     }
 
-    const updatedTask = await Task.findByIdAndUpdate(taskId, otherUpdates, { new: true, runValidators: true });
+    const updatedTask = await Task.findByIdAndUpdate(taskId, otherUpdates, { new: true, runValidators: true })
+      .populate({ path: 'dependsOn', select: 'title' })
+      .populate({ path: 'blocking', select: 'title' });
+
     await logChange(req.project._id, req.user.id, `Updated task "${updatedTask.title}"`, 'board');
     res.status(200).json(updatedTask);
   } catch (error) {
