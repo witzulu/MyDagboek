@@ -4,7 +4,7 @@ import LabelManager from './LabelManager';
 import toast from 'react-hot-toast';
 import AssigneeSelectionModal from './AssigneeSelectionModal';
 import DependencySelectionModal from './DependencySelectionModal';
-import { Plus, Trash2, Edit2, UserPlus, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, UserPlus, X, File } from 'lucide-react';
 import {
   MDXEditor,
   UndoRedo,
@@ -443,17 +443,37 @@ const handleFileChange = async (e) => {
             {activeTab === 'attachments' && (
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Attachments</h3>
-                <div className="space-y-2">
-                  {attachments.map(file => (
-                    <div key={file._id} className="flex items-center justify-between p-2 rounded">
-                      <a href={`/${file.filepath}`} download={file.filename} className="text-blue-500 hover:underline">{file.filename}</a>
-                      <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {attachments.map(file => {
+                    const isImage = file.mimetype && file.mimetype.startsWith('image/');
+                    return (
+                      <div key={file._id} className="relative group">
+                        <a href={`${API_BASE}${file.urlPath}`}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           download={!isImage}
+                           className="block w-full h-32 bg-base-200 rounded-lg overflow-hidden"
+                        >
+                          {isImage ? (
+                            <img src={`${API_BASE}${file.thumbnailPath}`} alt={file.originalName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center">
+                              <File size={48} className="text-base-content" />
+                              <span className="text-xs text-center mt-2 truncate px-2">{file.originalName}</span>
+                            </div>
+                          )}
+                        </a>
+                        <button
+                          onClick={() => handleDeleteAttachment(file._id)}
+                          className="absolute top-1 right-1 btn btn-xs btn-circle btn-error opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="mt-2">
+                <div className="mt-4">
                   <label className="w-full flex items-center px-4 py-2 rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
                     <span className="text-base leading-normal">Select a file</span>
                     <input type='file' className="hidden" onChange={handleFileChange} />
