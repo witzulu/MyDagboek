@@ -371,17 +371,9 @@ const Board = () => {
           throw new Error('Failed to delete task');
         }
 
-        setLists(prevLists => {
-          const newLists = JSON.parse(JSON.stringify(prevLists));
-          for (const list of newLists) {
-            const taskIndex = list.tasks.findIndex(t => t._id === taskId);
-            if (taskIndex !== -1) {
-              list.tasks.splice(taskIndex, 1);
-              break;
-            }
-          }
-          return newLists;
-        });
+        // Re-fetch board data to show that dependencies are removed from other tasks.
+        fetchBoardDetails();
+
         setIsCardModalOpen(false);
         setEditingTask(null);
       } catch (err) {
