@@ -78,18 +78,8 @@ exports.addAttachment = async (req, res) => {
     task.attachments.push(attachment._id);
     await task.save();
 
-    // Return the created attachment (with public url paths)
-    res.status(201).json({
-      _id: attachment._id,
-      filename: attachment.filename,
-      urlPath: attachment.urlPath,
-      thumbnailPath: attachment.thumbnailPath || null,
-      mimetype: attachment.mimetype,
-      originalName: attachment.originalName,
-      size: attachment.size,
-      createdBy: attachment.createdBy,
-      createdAt: attachment.createdAt
-    });
+    // Return the created attachment
+    res.status(201).json(attachment);
 
   } catch (err) {
     console.error('addAttachment error:', err);
