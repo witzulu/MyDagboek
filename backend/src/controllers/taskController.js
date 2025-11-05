@@ -100,6 +100,35 @@ exports.getTaskById = [authorizeTaskAccess, async (req, res, next) => {
     }
 }];
 
+// @desc    Remove a dependency from a task
+// @route   DELETE /api/tasks/:id/dependency/:dependencyId
+// @access  Private
+exports.removeDependency = [authorizeTaskAccess, async (req, res, next) => {
+    try {
+        const { dependencyId } = req.params;
+        const task = req.task;
+
+        // Remove dependency from the current task
+        await Task.findByIdAndUpdate(task._id, {
+            $pull: { dependsOn: dependencyId, blocking: dependencyId }
+        });
+
+        // Remove the corresponding blocking/dependsOn from the other task
+        await Task.findByIdAndUpdate(dependencyId, {
+            $pull: { blocking: task._id, dependsOn: task._id }
+        });
+
+        // Fetch the updated task to return
+        const updatedTask = await Task.findById(task._id).populate('dependsOn blocking');
+
+        await logChange(req.project._id, req.user.id, `Removed dependency from task "${updatedTask.title}"`, 'board');
+
+        res.status(200).json(updatedTask);
+    } catch (error) {
+        next(error);
+    }
+}];
+
 // @desc    Search for tasks within a project
 // @route   GET /api/projects/:projectId/tasks/search
 // @access  Private
@@ -255,6 +284,18 @@ exports.completeTask = [authorizeTaskAccess, async (req, res, next) => {
 
             await logChange(req.project._id, req.user.id, `Reopened task "${task.title}"`, 'board');
         } else {
+            // Check for incomplete dependencies before completing
+            const incompleteDependencies = await Task.find({
+                _id: { $in: task.dependsOn },
+                completedAt: null
+            });
+
+            if (incompleteDependencies.length > 0) {
+                return res.status(400).json({
+                    message: 'This task cannot be completed until its dependencies are resolved.'
+                });
+            }
+
             // Task is not complete, so complete it
             const doneList = await List.findOne({ board: task.list.board._id, name: 'Done' });
             if (!doneList) {
