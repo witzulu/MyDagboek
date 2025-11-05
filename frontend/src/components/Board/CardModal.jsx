@@ -121,7 +121,8 @@ const handleFileChange = async (e) => {
       throw new Error(errText || 'Upload failed');
     }
 
-    const updatedAttachments = await res.json();
+    const newAttachment = await res.json();
+    const updatedAttachments = [...attachments, newAttachment];
     setAttachments(updatedAttachments);
     onTaskUpdate({ ...task, attachments: updatedAttachments });
 
