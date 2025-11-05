@@ -41,7 +41,7 @@ exports.addAttachment = async (req, res) => {
       mimetype: req.file.mimetype,
       originalName: req.file.originalname,
       size: req.file.size,
-      createdBy: req.user ? req.user._id : null
+      createdBy: req.user.id
     };
 
     // If image → create thumbnail
