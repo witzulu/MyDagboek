@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Star, CheckSquare, MessageSquare, MoreVertical, Edit, Trash2, Check, GripVertical, Clock, Lock } from 'lucide-react';
+import { Star, CheckSquare, MessageSquare, MoreVertical, Edit, Trash2, Check, GripVertical, Clock, Lock, Paperclip } from 'lucide-react';
 
 const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask = () => {}, onAddTimeEntry, isHighlighted }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -115,6 +115,12 @@ const Card = ({ task, onEditTask, onUpdateTask, onDeleteTask, onCompleteTask = (
               <span className="flex items-center space-x-1">
                 <MessageSquare size={14} />
                 <span>{task.comments.length}</span>
+              </span>
+            )}
+            {task.attachments && task.attachments.length > 0 && (
+              <span className="flex items-center space-x-1">
+                <Paperclip size={14} />
+                <span>{task.attachments.length}</span>
               </span>
             )}
             {checklistExists && (
