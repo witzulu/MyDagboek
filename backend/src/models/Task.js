@@ -1,19 +1,5 @@
 const mongoose = require('mongoose');
 
-const attachmentSchema = new mongoose.Schema({
-  filename: {
-    type: String,
-    required: true,
-  },
-  filepath: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
 
 const checklistItemSchema = new mongoose.Schema({
   text: {
@@ -92,7 +78,10 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Task'
   }],
-  attachments: [attachmentSchema],
+  attachments: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Attachment'
+  }],
   checklist: [checklistItemSchema],
   comments: [commentSchema],
 }, { timestamps: true });
