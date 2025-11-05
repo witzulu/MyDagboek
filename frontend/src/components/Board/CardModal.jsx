@@ -3,7 +3,7 @@ import { debounce } from 'lodash';
 import LabelManager from './LabelManager';
 import AssigneeSelectionModal from './AssigneeSelectionModal';
 import DependencySelectionModal from './DependencySelectionModal';
-import { Plus, Trash2, Edit2, UserPlus } from 'lucide-react';
+import { Plus, Trash2, Edit2, UserPlus, X } from 'lucide-react';
 import {
   MDXEditor,
   UndoRedo,
@@ -311,6 +311,23 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId
     }
   };
 
+  const handleRemoveDependency = async (dependencyId) => {
+    if (!task) return;
+    try {
+      const res = await fetch(`/api/tasks/${task._id}/dependency/${dependencyId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      if (!res.ok) {
+        throw new Error('Failed to remove dependency');
+      }
+      const updatedTask = await res.json();
+      onTaskUpdate(updatedTask);
+    } catch (error) {
+      console.error('Error removing dependency:', error);
+    }
+  };
+
   return (
     <>
       <AssigneeSelectionModal
@@ -577,17 +594,27 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold">Depends On</h4>
-                    <ul>
+                    <ul className="list-disc pl-5 space-y-1">
                       {task.dependsOn?.map(dep => (
-                        <li key={dep._id}>{dep.title}</li>
+                        <li key={dep._id} className="flex justify-between items-center">
+                          <span>{dep.title}</span>
+                          <button onClick={() => handleRemoveDependency(dep._id)} className="text-red-500 hover:text-red-700">
+                            <X size={16} />
+                          </button>
+                        </li>
                       ))}
                     </ul>
                   </div>
                   <div>
                     <h4 className="font-semibold">Blocking</h4>
-                    <ul>
+                    <ul className="list-disc pl-5 space-y-1">
                       {task.blocking?.map(block => (
-                        <li key={block._id}>{block.title}</li>
+                        <li key={block._id} className="flex justify-between items-center">
+                          <span>{block.title}</span>
+                          <button onClick={() => handleRemoveDependency(block._id)} className="text-red-500 hover:text-red-700">
+                            <X size={16} />
+                          </button>
+                        </li>
                       ))}
                     </ul>
                   </div>

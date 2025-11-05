@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -412,7 +413,9 @@ const Board = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to complete task');
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Failed to complete task');
+        return;
       }
 
       // Re-fetch the board details to get the updated state from the server
