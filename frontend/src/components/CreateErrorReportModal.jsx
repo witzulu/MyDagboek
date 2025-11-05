@@ -107,107 +107,108 @@ const CreateErrorReportModal = ({ isOpen, onClose, onSave, report, projectMember
               <div className="space-y-4">
                 <div className="form-control">
                   <label className="label">
-                  <span className="label-text">Title</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="input input-bordered w-full"
-              />
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Description</span>
-              </label>
-              <textarea
-                required
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="textarea textarea-bordered w-full"
-                rows="4"
-              ></textarea>
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Severity</span>
-              </label>
-              <select
-                value={severity}
-                onChange={(e) => setSeverity(e.target.value)}
-                className="select select-bordered w-full"
-              >
-                <option>Trivial</option>
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-                <option>Critical</option>
-              </select>
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Status</span>
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="select select-bordered w-full"
-              >
-                <option>New</option>
-                <option>In Progress</option>
-                <option>Resolved</option>
-                <option>Verified</option>
-                <option>Closed</option>
-              </select>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Assigned To</h3>
-              <div className="flex items-center space-x-2">
-                <div className="avatar-group -space-x-4">
-                  {assignedMembers.map(member => (
-                    member.user ? (
-                      <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
-                        <div className="avatar">
-                          <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
-                            {member.user.name.charAt(0)}
-                          </div>
-                        </div>
-                      </div>
-                    ) : null
-                  ))}
+                    <span className="label-text">Title</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="input input-bordered w-full"
+                  />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAssigneeModalOpen(true)}
-                  className="btn btn-outline btn-circle btn-sm"
-                >
-                  <UserPlus size={16} />
-                </button>
-              </div>
-            </div>
-          )}
-          {activeTab === 'Attachments' && report && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Attachments</h3>
-              <div className="space-y-2">
-                {attachments.map(file => (
-                  <div key={file._id} className="flex items-center justify-between p-2 rounded">
-                    <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
-                    <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
-                      <Trash2 size={16} />
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Description</span>
+                  </label>
+                  <textarea
+                    required
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="textarea textarea-bordered w-full"
+                    rows="4"
+                  ></textarea>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Severity</span>
+                  </label>
+                  <select
+                    value={severity}
+                    onChange={(e) => setSeverity(e.target.value)}
+                    className="select select-bordered w-full"
+                  >
+                    <option>Trivial</option>
+                    <option>Low</option>
+                    <option>Medium</option>
+                    <option>High</option>
+                    <option>Critical</option>
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Status</span>
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="select select-bordered w-full"
+                  >
+                    <option>New</option>
+                    <option>In Progress</option>
+                    <option>Resolved</option>
+                    <option>Verified</option>
+                    <option>Closed</option>
+                  </select>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Assigned To</h3>
+                  <div className="flex items-center space-x-2">
+                    <div className="avatar-group -space-x-4">
+                      {assignedMembers.map(member => (
+                        member.user ? (
+                          <div key={member.user._id} className="tooltip" data-tip={member.user.name}>
+                            <div className="avatar">
+                              <div className="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs">
+                                {member.user.name.charAt(0)}
+                              </div>
+                            </div>
+                          </div>
+                        ) : null
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsAssigneeModalOpen(true)}
+                      className="btn btn-outline btn-circle btn-sm"
+                    >
+                      <UserPlus size={16} />
                     </button>
                   </div>
-                ))}
+                </div>
               </div>
-              <div className="mt-2">
-                <label className="w-full flex items-center px-4 py-2  rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
-                  <span className="text-base leading-normal">Select a file</span>
-                  <input type='file' className="hidden" onChange={handleFileChange} />
-                </label>
+            )}
+            {activeTab === 'Attachments' && report && (
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">Attachments</h3>
+                <div className="space-y-2">
+                  {attachments.map(file => (
+                    <div key={file._id} className="flex items-center justify-between p-2 rounded">
+                      <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
+                      <button type="button" onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2">
+                  <label className="w-full flex items-center px-4 py-2 rounded-lg shadow-sm tracking-wide uppercase border border-blue cursor-pointer hover:bg-accent hover:text-">
+                    <span className="text-base leading-normal">Select a file</span>
+                    <input type='file' className="hidden" onChange={handleFileChange} />
+                  </label>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </form>
           <div className="mt-6 flex justify-end gap-4 flex-shrink-0">
             <button type="button" onClick={onClose} className="btn btn-ghost">

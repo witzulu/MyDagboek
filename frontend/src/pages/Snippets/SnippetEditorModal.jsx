@@ -10,12 +10,22 @@ import hljs from 'highlight.js';
 import { toast } from 'react-hot-toast';
 
 
+import { cpp } from '@codemirror/lang-cpp';
+import { css } from '@codemirror/lang-css';
+import { csharp } from '@replit/codemirror-lang-csharp';
+
 const getLanguageExtension = (language) => {
     switch (language.toLowerCase()) {
         case 'python':
             return python();
         case 'html':
             return html();
+        case 'cpp':
+            return cpp();
+        case 'csharp':
+            return csharp();
+        case 'css':
+            return css();
         case 'javascript':
         default:
             return javascript({ jsx: true });
@@ -33,7 +43,17 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
   const [titleError, setTitleError] = useState(false);
   const [projectTags, setProjectTags] = useState([]);
 
-  const supportedLanguages = ['javascript', 'python', 'cpp', 'csharp', 'html', 'css'];
+  const hljsToInternalLanguage = {
+    'javascript': 'javascript',
+    'python': 'python',
+    'c++': 'cpp',
+    'csharp': 'csharp',
+    'cs': 'csharp',
+    'html': 'html',
+    'css': 'css',
+
+  };
+  const supportedLanguages = ['javascript', 'python', 'cpp', 'c++', 'csharp', 'cs', 'html', 'css'];
 
   useEffect(() => {
     if (isOpen) {
@@ -72,26 +92,31 @@ const SnippetEditorModal = ({ isOpen, onClose, onSave, snippet }) => {
   }, [snippet, isOpen, projectId]);
 
   // Debounced language detection
-  useEffect(() => {
+ useEffect(() => {
     if (manualLanguageChange || !code || code.trim().length < 20) {
-      return;
+        return;
     }
 
     const handler = setTimeout(() => {
-      const result = hljs.highlightAuto(code, supportedLanguages);
-      const detectedLanguage = result.language;
+        const result = hljs.highlightAuto(code, supportedLanguages);
+        const detectedLanguage = result.language;
 
-      if (detectedLanguage && result.relevance > 10 && supportedLanguages.includes(detectedLanguage) && detectedLanguage !== language) {
-        setLanguage(detectedLanguage);
-        const langLabel = detectedLanguage.charAt(0).toUpperCase() + detectedLanguage.slice(1).replace('sharp', '#').replace('pp', '++');
-        toast.success(`Language detected: ${langLabel}`);
-      }
-    }, 500); // 500ms delay
+        if (detectedLanguage && result.relevance > 10 && supportedLanguages.includes(detectedLanguage)) {
+            // Map the detected language to internal name
+            const mappedLanguage = hljsToInternalLanguage[detectedLanguage] || detectedLanguage;
+            console.log('Detected language:', detectedLanguage, 'Mapped to:', mappedLanguage);
+            if (mappedLanguage !== language) {
+                setLanguage(mappedLanguage);
+                const langLabel = languages.find(l => l.value === mappedLanguage)?.label || mappedLanguage;
+                toast.success(`Language detected: ${langLabel}`);
+            }
+        }
+    }, 500);
 
     return () => {
-      clearTimeout(handler);
+        clearTimeout(handler);
     };
-  }, [code, language, manualLanguageChange]);
+}, [code, language, manualLanguageChange]);
 
 
   if (!isOpen) return null;

@@ -403,8 +403,7 @@ const Board = () => {
       }
     }
   };
-
-  const handleCompleteTask = async (taskId) => {
+const handleCompleteTask = async (taskId) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/tasks/${taskId}/complete`, {
@@ -414,7 +413,17 @@ const Board = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to complete task');
+        
+        // If there are blocking tasks, show them in the toast
+        if (errorData.blockingTasks && errorData.blockingTasks.length > 0) {
+          const blockingTasksList = errorData.blockingTasks.join(', ');
+          toast.error(`${errorData.message}\n${blockingTasksList}`, {
+            duration: 5000,
+            style: { maxWidth: '500px' }
+          });
+        } else {
+          toast.error(errorData.message || 'Failed to complete task');
+        }
         return;
       }
 
@@ -427,12 +436,15 @@ const Board = () => {
       }
       const boardData = await boardRes.json();
       setLists(boardData.lists);
+      
+      // Show success message
+      toast.success('Task completed successfully!');
 
     } catch (err) {
+      toast.error(err.message);
       setError(err.message);
     }
   };
-
   const handleNewLabel = async (labelData) => {
     try {
       const token = localStorage.getItem('token');

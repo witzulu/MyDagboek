@@ -20,3 +20,13 @@ node_modules/
 .env
 .env.*
 !/.env.example
+.vs/MyDagboek.slnx/v18/.wsuo
+.vs/MyDagboek.slnx/FileContentIndex/3c19cd16-a140-43f7-933e-16b168e8eb8f.vsidx
+.vs/slnx.sqlite
+.vs/VSWorkspaceState.json
+.vs/MyDagboek.slnx/FileContentIndex/4773dcd7-2471-4f49-b8a2-079e96239e27.vsidx
+.vs/MyDagboek.slnx/FileContentIndex/ecf8dd1a-c39f-4ac7-85ee-a4b98f2011f7.vsidx
+.vs/MyDagboek.slnx/FileContentIndex/ed58b061-7a5e-4ed7-a795-d6897a053006.vsidx
+.vs/MyDagboek.slnx/FileContentIndex/f43d8612-89d0-4041-a7cc-7ac471a47a14.vsidx
+.vs/MyDagboek.slnx/v18/DocumentLayout.backup.json
+.vs/MyDagboek.slnx/v18/DocumentLayout.json

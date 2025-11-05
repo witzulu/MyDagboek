@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { debounce } from 'lodash';
 import LabelManager from './LabelManager';
+import toast from 'react-hot-toast';
 import AssigneeSelectionModal from './AssigneeSelectionModal';
 import DependencySelectionModal from './DependencySelectionModal';
 import { Plus, Trash2, Edit2, UserPlus, X } from 'lucide-react';

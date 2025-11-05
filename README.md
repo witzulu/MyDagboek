@@ -81,10 +81,8 @@ To get a local copy up and running, follow these simple steps.
 
 ## Status
 
-Currently this app is not working the frontend shows and the authentication is setup but i have not implemented all the features yet.
-I am currently working on.
+    Currently not implemented all the features yet.
 
-    > Refactor Themes(currently only light stable)
     
     
     
