@@ -21,7 +21,8 @@ import {
 import '../../mdxeditor.css'
 import { AuthContext } from '../../context/AuthContext';
 
-const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers, projectId }) => {
+  const API_BASE = 'http://localhost:5000';
+  const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers, projectId }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -101,28 +102,34 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId
     }
   };
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !task) return;
+const handleFileChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file || !task) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
+  const formData = new FormData();
+  formData.append('file', file);
 
-    try {
-      const res = await fetch(`/api/tasks/${task._id}/attachments`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-        body: formData,
-      });
-      if (res.ok) {
-        const updatedAttachments = await res.json();
-        setAttachments(updatedAttachments);
-        onTaskUpdate({ ...task, attachments: updatedAttachments });
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error);
+  try {
+    const res = await fetch(`${API_BASE}/api/tasks/${task._id}/attachments`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText || 'Upload failed');
     }
-  };
+
+    const updatedAttachments = await res.json();
+    setAttachments(updatedAttachments);
+    onTaskUpdate({ ...task, attachments: updatedAttachments });
+
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    toast.error('Attachment upload failed');
+  }
+};
 
   const handleDeleteAttachment = async (attachmentId) => {
     try {

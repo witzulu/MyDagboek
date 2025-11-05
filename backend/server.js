@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+const path = require('path');
 
 // Load env vars
 dotenv.config();
@@ -204,11 +205,12 @@ const startServer = async () => {
     app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
     app.use(cors());
     app.use(express.json());
+    app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
     app.use(express.urlencoded({ extended: true }));
     if (process.env.NODE_ENV === 'development') {
       app.use(require('morgan')('dev'));
     }
-    app.use('/uploads', express.static('uploads'));
+
 
     // 5. Mount all API routers
     app.use('/api/auth', authRoutes);
