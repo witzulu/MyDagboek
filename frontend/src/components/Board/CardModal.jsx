@@ -437,7 +437,7 @@ const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId
                 <div className="space-y-2">
                   {attachments.map(file => (
                     <div key={file._id} className="flex items-center justify-between p-2 rounded">
-                      <a href={`/${file.filepath}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{file.filename}</a>
+                      <a href={`/${file.filepath}`} download={file.filename} className="text-blue-500 hover:underline">{file.filename}</a>
                       <button onClick={() => handleDeleteAttachment(file._id)} className="text-error hover:text-shadow-error-content">
                         <Trash2 size={16} />
                       </button>
