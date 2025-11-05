@@ -123,6 +123,10 @@ exports.getBoardById = async (req, res, next) => {
             path: 'blocking',
             model: 'Task',
             select: 'title'
+          },
+          {
+            path: 'attachments'
+            // The model is automatically inferred from the schema's 'ref'
           }
         ]
       });
