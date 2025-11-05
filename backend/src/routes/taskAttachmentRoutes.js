@@ -12,7 +12,7 @@ const { addAttachment, deleteAttachment } = require('../controllers/taskAttachme
 const storage = multer.diskStorage({
   destination: async function (req, file, cb) {
     try {
-      const task = await Task.findById(req.params.id || req.params.taskId);
+      const task = await Task.findById(req.params.taskId);
       if (!task) {
         return cb(new Error('Task not found'), false);
       }
