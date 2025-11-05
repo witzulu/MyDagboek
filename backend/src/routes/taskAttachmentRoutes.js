@@ -11,12 +11,21 @@ const storageFactory = require('../utils/multerProjectStorage');
 // POST /api/tasks/:taskId/attachments
 router.post('/', protect, async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.taskId);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
+    const task = await Task.findById(req.params.taskId).populate('board');
+    if (!task) {
+        return res.status(404).json({ message: 'Task not found' });
+    }
 
-    // find project; supports boards being a single ref or array
-    const project = await Project.findOne({ boards: { $in: [ task.board ] } });
-    if (!project) return res.status(404).json({ message: 'Project not found for this task' });
+    if (!task.board || !task.board.project) {
+        // This is the error the user was seeing.
+        return res.status(404).json({ message: 'Project not found for this task' });
+    }
+
+    const project = await Project.findById(task.board.project);
+    if (!project) {
+        // This is a sanity check, in case the project was deleted.
+        return res.status(404).json({ message: 'Project associated with board not found' });
+    }
 
     // Create storage for this request
     const storage = storageFactory(project._id, task._id);
