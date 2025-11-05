@@ -206,8 +206,21 @@ exports.updateTask = [authorizeTaskAccess, async (req, res, next) => {
 // @access  Private
 exports.deleteTask = [authorizeTaskAccess, async (req, res, next) => {
   try {
-    await req.task.deleteOne();
-    await logChange(req.project._id, req.user.id, `Deleted task "${req.task.title}"`, 'board');
+    const taskToDelete = req.task;
+    const taskId = taskToDelete._id;
+
+    // Remove references to this task from other tasks
+    await Task.updateMany(
+      { _id: { $in: taskToDelete.dependsOn } },
+      { $pull: { blocking: taskId } }
+    );
+    await Task.updateMany(
+      { _id: { $in: taskToDelete.blocking } },
+      { $pull: { dependsOn: taskId } }
+    );
+
+    await taskToDelete.deleteOne();
+    await logChange(req.project._id, req.user.id, `Deleted task "${taskToDelete.title}"`, 'board');
     res.status(200).json({ message: 'Task deleted' });
   } catch (error) {
     next(error);

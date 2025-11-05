@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { DndContext, closestCenter } from '@dnd-kit/core';
@@ -37,57 +37,57 @@ const Board = () => {
   const queryParams = new URLSearchParams(location.search);
   const highlightTaskId = queryParams.get('highlight');
 
-  useEffect(() => {
-    const fetchBoardDetails = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("Authentication token not found.");
-        }
-
-        const [boardRes, labelsRes, membersRes] = await Promise.all([
-          fetch(`/api/boards/${boardId}`, {
-            headers: { "Authorization": `Bearer ${token}` },
-          }),
-          fetch(`/api/projects/${projectId}/labels`, {
-            headers: { "Authorization": `Bearer ${token}` },
-          }),
-          fetch(`/api/projects/${projectId}/members`, {
-            headers: { "Authorization": `Bearer ${token}` },
-          }),
-        ]);
-
-        if (!boardRes.ok) {
-          throw new Error(`Failed to fetch board details: ${boardRes.status}`);
-        }
-        if (!labelsRes.ok) {
-          throw new Error(`Failed to fetch labels: ${labelsRes.status}`);
-        }
-        if (!membersRes.ok) {
-            throw new Error(`Failed to fetch members: ${membersRes.status}`);
-        }
-
-        const boardData = await boardRes.json();
-        const labelsData = await labelsRes.json();
-        const membersData = await membersRes.json();
-
-        setBoard(boardData.board);
-        setLists(boardData.lists);
-        setProjectLabels(labelsData);
-        setProjectMembers(membersData || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const fetchBoardDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found.");
       }
-    };
 
+      const [boardRes, labelsRes, membersRes] = await Promise.all([
+        fetch(`/api/boards/${boardId}`, {
+          headers: { "Authorization": `Bearer ${token}` },
+        }),
+        fetch(`/api/projects/${projectId}/labels`, {
+          headers: { "Authorization": `Bearer ${token}` },
+        }),
+        fetch(`/api/projects/${projectId}/members`, {
+          headers: { "Authorization": `Bearer ${token}` },
+        }),
+      ]);
+
+      if (!boardRes.ok) {
+        throw new Error(`Failed to fetch board details: ${boardRes.status}`);
+      }
+      if (!labelsRes.ok) {
+        throw new Error(`Failed to fetch labels: ${labelsRes.status}`);
+      }
+      if (!membersRes.ok) {
+          throw new Error(`Failed to fetch members: ${membersRes.status}`);
+      }
+
+      const boardData = await boardRes.json();
+      const labelsData = await labelsRes.json();
+      const membersData = await membersRes.json();
+
+      setBoard(boardData.board);
+      setLists(boardData.lists);
+      setProjectLabels(labelsData);
+      setProjectMembers(membersData || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [boardId, projectId]);
+
+  useEffect(() => {
     if (boardId) {
       fetchBoardDetails();
     }
-  }, [boardId, projectId]);
+  }, [boardId, fetchBoardDetails]);
 
   if (loading) return <div className="p-4">Loading board...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
@@ -317,26 +317,12 @@ const Board = () => {
   };
 
   const handleTaskUpdate = (updatedTask) => {
-    setLists(prevLists => {
-      const newLists = JSON.parse(JSON.stringify(prevLists));
-      const listIndex = newLists.findIndex(l => l._id === updatedTask.list);
-      if (listIndex !== -1) {
-        const taskIndex = newLists[listIndex].tasks.findIndex(t => t._id === updatedTask._id);
-        if (taskIndex !== -1) {
-          // Preserve and re-populate labels and assignees
-          const repopulatedLabels = (updatedTask.labels || []).map(labelId =>
-            projectLabels.find(l => l._id === labelId) || labelId
-          ).filter(Boolean);
-          const repopulatedAssignees = (updatedTask.assignees || []).map(assigneeId =>
-            projectMembers.find(m => m.user._id === assigneeId)?.user || assigneeId
-            ).filter(Boolean);
+    // No longer doing an optimistic update.
+    // We will refetch the board data to ensure the UI is in sync with the backend.
+    fetchBoardDetails();
 
-          newLists[listIndex].tasks[taskIndex] = { ...updatedTask, labels: repopulatedLabels, assignees: repopulatedAssignees };
-        }
-      }
-      return newLists;
-    });
-    // also update editing task so modal shows new state
+    // We still need to update the editingTask to ensure the modal
+    // has the latest data if it remains open.
     setEditingTask(prev => ({...prev, ...updatedTask}));
   };
 
