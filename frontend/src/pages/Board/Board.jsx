@@ -32,6 +32,7 @@ const Board = () => {
   const [targetListId, setTargetListId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [modalActiveTab, setModalActiveTab] = useState('details');
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -468,7 +469,10 @@ const handleCompleteTask = async (taskId) => {
           setIsCardModalOpen(false);
           setEditingTask(null);
           setTargetListId(null);
+          setModalActiveTab('details'); // Reset tab on close
         }}
+        activeTab={modalActiveTab}
+        setActiveTab={setModalActiveTab}
         onSave={handleSaveTask}
         onDelete={handleDeleteTask}
         onComplete={handleCompleteTask}

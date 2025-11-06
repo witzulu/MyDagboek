@@ -22,7 +22,7 @@ import '../../mdxeditor.css'
 import { AuthContext } from '../../context/AuthContext';
 
   const API_BASE = 'http://localhost:5000';
-  const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers, projectId }) => {
+  const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers, projectId, activeTab, setActiveTab }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -41,7 +41,6 @@ import { AuthContext } from '../../context/AuthContext';
   const [editingCommentText, setEditingCommentText] = useState('');
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [isDependencyModalOpen, setIsDependencyModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('details');
 
   const getToken = () => localStorage.getItem('token');
 
