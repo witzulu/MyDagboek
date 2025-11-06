@@ -173,12 +173,4 @@ To get a local copy up and running, follow these simple steps.
 11. Team Member
     - invite team maembers and manage members for a project
           
-     
-## Roadmap
-
-- [x] Add a backend to persist data
-- [x] Implement user authentication
-- [x] Add more features to the notebook and boards
-- [ ] Add a CI/CD pipeline
-- [ ] Add a testing suite
-- [ ] Add a documentation site
+ 
