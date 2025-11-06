@@ -11,11 +11,13 @@ const {
   getProjectMembers,
   addProjectMember,
   updateProjectMemberRole,
-  removeProjectMember
+  removeProjectMember,
+  getProjectDashboardStats
 } = require('../controllers/projectController');
 const { getProjectTasks, searchTasks } = require('../controllers/taskController');
 const { protect } = require('../middleware/authMiddleware');
 
+router.route('/:id/dashboard').get(protect, getProjectDashboardStats);
 router.route('/').get(protect, getProjects).post(protect, createProject);
 router.route('/:id').get(protect, getProjectById).put(protect, updateProject).delete(protect, deleteProject);
 
