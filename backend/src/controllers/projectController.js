@@ -2,6 +2,7 @@ const Project = require('../models/Project');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const Task = require('../models/Task');
+const Board = require('../models/Board');
 const Note = require('../models/Note');
 const ErrorReport = require('../models/ErrorReport');
 const CodeSnippet = require('../models/CodeSnippet');
@@ -46,15 +47,18 @@ exports.getProjectDashboardStats = async (req, res) => {
 
     const projectId = req.params.id;
 
+    // Correctly count tasks by finding boards for the project first
+    const boards = await Board.find({ project: projectId });
+    const boardIds = boards.map(board => board._id);
+    const taskCount = await Task.countDocuments({ board: { $in: boardIds } });
+
     const [
       noteCount,
-      taskCount,
       openErrorCount,
       snippetCount,
       recentActivity
     ] = await Promise.all([
       Note.countDocuments({ project: projectId }),
-      Task.countDocuments({ project: projectId }),
       ErrorReport.countDocuments({ project: projectId, status: { $ne: 'Resolved' } }),
       CodeSnippet.countDocuments({ project: projectId }),
       ChangeLog.find({ project: projectId }).sort({ createdAt: -1 }).limit(10).populate('user', 'name')
@@ -62,7 +66,7 @@ exports.getProjectDashboardStats = async (req, res) => {
 
     res.json({
       notes: noteCount,
-      tasks: taskCount,
+      tasks: taskCount, // Use the correctly calculated task count
       openErrors: openErrorCount,
       snippets: snippetCount,
       recentActivity: recentActivity
