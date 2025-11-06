@@ -4,7 +4,7 @@ import { Book } from 'lucide-react';
 import api from '../../services/api';
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', username: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
@@ -48,6 +48,18 @@ export default function RegisterPage() {
               onChange={handleChange}
               className="w-full px-4 py-3 bg-secondary border border-border rounded-lg text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Enter your full name"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Username</label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              className="w-full px-4 py-3 bg-secondary border border-border rounded-lg text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Choose a unique username"
               required
             />
           </div>
