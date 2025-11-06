@@ -171,6 +171,6 @@ To get a local copy up and running, follow these simple steps.
 10. Diagrams.
     - Make diagrams like flowcharts
 11. Team Member
-    - invite team maembers and manage members for a project
+    - invite team members and manage members for a project
           
  
