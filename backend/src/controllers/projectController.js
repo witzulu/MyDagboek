@@ -2,6 +2,10 @@ const Project = require('../models/Project');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const Task = require('../models/Task');
+const Note = require('../models/Note');
+const ErrorReport = require('../models/ErrorReport');
+const CodeSnippet = require('../models/CodeSnippet');
+const ChangeLog = require('../models/ChangeLog');
 const { logChange } = require('../utils/changeLogService');
 
 // @desc    Get all projects for a user
@@ -17,6 +21,58 @@ exports.getProjects = async (req, res, next) => {
     res.json(projects);
   } catch (err) {
     console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @desc    Get dashboard stats for a project
+// @route   GET /api/projects/:id/dashboard
+// @access  Private
+exports.getProjectDashboardStats = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ msg: 'Project not found' });
+    }
+
+    // Authorization check
+    if (req.user.role !== 'system_admin') {
+      const isMember = project.members.some(member => member.user && member.user._id.toString() === req.user.id);
+      if (!isMember) {
+        return res.status(403).json({ msg: 'Access denied: You are not a member of this project.' });
+      }
+    }
+
+    const projectId = req.params.id;
+
+    const [
+      noteCount,
+      taskCount,
+      openErrorCount,
+      snippetCount,
+      recentActivity
+    ] = await Promise.all([
+      Note.countDocuments({ project: projectId }),
+      Task.countDocuments({ project: projectId }),
+      ErrorReport.countDocuments({ project: projectId, status: { $ne: 'Resolved' } }),
+      CodeSnippet.countDocuments({ project: projectId }),
+      ChangeLog.find({ project: projectId }).sort({ createdAt: -1 }).limit(10).populate('user', 'name')
+    ]);
+
+    res.json({
+      notes: noteCount,
+      tasks: taskCount,
+      openErrors: openErrorCount,
+      snippets: snippetCount,
+      recentActivity: recentActivity
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Project not found' });
+    }
     res.status(500).send('Server Error');
   }
 };

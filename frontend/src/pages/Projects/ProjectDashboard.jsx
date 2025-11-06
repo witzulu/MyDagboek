@@ -2,13 +2,15 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useProject } from '../../hooks/useProject';
 import api from '../../services/api';
-import { Book, Layout, AlertCircle, Code, Users } from 'lucide-react';
+import { Book, Layout, AlertCircle, Code, Users, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 
 const ProjectDashboard = () => {
   const { projectId } = useParams();
   const { setSelectedProject } = useProject();
   const [project, setProject] = useState(null);
   const [members, setMembers] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -18,12 +20,18 @@ const ProjectDashboard = () => {
       try {
         setLoading(true);
         setError(null);
-        const projectData = await api(`/projects/${projectId}`);
+
+        const [projectData, memberData, statsData] = await Promise.all([
+          api(`/projects/${projectId}`),
+          api(`/projects/${projectId}/members`),
+          api(`/projects/${projectId}/dashboard`),
+        ]);
+
         setProject(projectData);
         setSelectedProject(projectData);
-
-        const memberData = await api(`/projects/${projectId}/members`);
         setMembers(memberData);
+        setDashboardStats(statsData);
+
       } catch (error) {
         console.error('Failed to fetch project details', error);
         setError('Failed to load project dashboard. Please try again later.');
@@ -73,7 +81,7 @@ const ProjectDashboard = () => {
         <div className="card bg-base-100 border border-base-300 shadow-sm">
           <div className="card-body text-center">
             <Book className="w-8 h-8 text-primary mx-auto mb-2" />
-            <h3 className="text-2xl font-bold">0</h3>
+            <h3 className="text-2xl font-bold">{dashboardStats?.notes ?? '...'}</h3>
             <p className="text-sm text-base-content/70">Notes</p>
           </div>
         </div>
@@ -81,7 +89,7 @@ const ProjectDashboard = () => {
         <div className="card bg-base-100 border border-base-300 shadow-sm">
           <div className="card-body text-center">
             <Layout className="w-8 h-8 text-secondary mx-auto mb-2" />
-            <h3 className="text-2xl font-bold">0</h3>
+            <h3 className="text-2xl font-bold">{dashboardStats?.tasks ?? '...'}</h3>
             <p className="text-sm text-base-content/70">Tasks</p>
           </div>
         </div>
@@ -89,7 +97,7 @@ const ProjectDashboard = () => {
         <div className="card bg-base-100 border border-base-300 shadow-sm">
           <div className="card-body text-center">
             <AlertCircle className="w-8 h-8 text-error mx-auto mb-2" />
-            <h3 className="text-2xl font-bold">0</h3>
+            <h3 className="text-2xl font-bold">{dashboardStats?.openErrors ?? '...'}</h3>
             <p className="text-sm text-base-content/70">Open Errors</p>
           </div>
         </div>
@@ -97,7 +105,7 @@ const ProjectDashboard = () => {
         <div className="card bg-base-100 border border-base-300 shadow-sm">
           <div className="card-body text-center">
             <Code className="w-8 h-8 text-accent mx-auto mb-2" />
-            <h3 className="text-2xl font-bold">0</h3>
+            <h3 className="text-2xl font-bold">{dashboardStats?.snippets ?? '...'}</h3>
             <p className="text-sm text-base-content/70">Snippets</p>
           </div>
         </div>
@@ -108,10 +116,28 @@ const ProjectDashboard = () => {
         {/* Recent Activity */}
         <div className="lg:col-span-2 card bg-base-100 border border-base-300 shadow-md">
           <div className="card-body">
-            <h3 className="card-title text-lg font-bold mb-2">Recent Activity</h3>
-            <p className="text-base-content/70">
-              No recent activity to show.
-            </p>
+            <h3 className="card-title text-lg font-bold mb-4">Recent Activity</h3>
+            {dashboardStats?.recentActivity && dashboardStats.recentActivity.length > 0 ? (
+              <ul className="space-y-4">
+                {dashboardStats.recentActivity.map((activity) => (
+                  <li key={activity._id} className="flex items-start space-x-3">
+                    <Clock className="w-5 h-5 text-base-content/50 mt-1" />
+                    <div className="flex-1">
+                      <p className="text-sm">
+                        <span className="font-semibold">{activity.user?.name || 'A user'}</span> {activity.message}
+                      </p>
+                      <p className="text-xs text-base-content/60">
+                        {format(new Date(activity.createdAt), 'MMM d, yyyy h:mm a')}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-base-content/70 italic">
+                No recent activity to show.
+              </p>
+            )}
           </div>
         </div>
 
