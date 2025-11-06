@@ -40,15 +40,19 @@ exports.handleImageUpload = async (req, res) => {
 
 exports.getNotes = async (req, res, next) => {
   try {
-    const project = await Project.findById(req.params.projectId);
-    if (!project || project.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+    const project = await Project.findById(req.params.projectId).select('members');
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to access this project\'s notes' });
     }
 
     const { search } = req.query;
     const query = {
       project: req.params.projectId,
-      user: req.user.id,
     };
 
     if (search) {
@@ -73,9 +77,17 @@ exports.getNoteById = async (req, res, next) => {
     if (!note) {
       return res.status(404).json({ msg: 'Note not found' });
     }
-    if (note.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+
+    const project = await Project.findById(note.project).select('members');
+    if (!project) {
+      return res.status(404).json({ message: 'Parent project not found' });
     }
+
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to access this note' });
+    }
+
     res.json(note);
   } catch (err) {
     console.error(err.message);
@@ -86,10 +98,16 @@ exports.getNoteById = async (req, res, next) => {
 exports.createNote = async (req, res, next) => {
   const { title, content, tags, isPinned, drawing, folder } = req.body;
   try {
-    const project = await Project.findById(req.params.projectId);
-    if (!project || project.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+    const project = await Project.findById(req.params.projectId).select('members');
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
     }
+
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to create a note in this project' });
+    }
+
     const newNote = new Note({
       title,
       content,
@@ -127,9 +145,17 @@ exports.updateNote = async (req, res, next) => {
     if (!note) {
       return res.status(404).json({ msg: 'Note not found' });
     }
-    if (note.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+
+    const project = await Project.findById(note.project).select('members');
+    if (!project) {
+      return res.status(404).json({ message: 'Parent project not found' });
     }
+
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to update this note' });
+    }
+
     note = await Note.findByIdAndUpdate(req.params.id, { $set: noteFields }, { new: true });
 
     // Log the change
@@ -148,8 +174,15 @@ exports.deleteNote = async (req, res, next) => {
     if (!note) {
       return res.status(404).json({ msg: 'Note not found' });
     }
-    if (note.user.toString() !== req.user.id) {
-      return res.status(401).json({ msg: 'Not authorized' });
+
+    const project = await Project.findById(note.project).select('members');
+    if (!project) {
+      return res.status(404).json({ message: 'Parent project not found' });
+    }
+
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to delete this note' });
     }
 
     // Log the change before deleting
