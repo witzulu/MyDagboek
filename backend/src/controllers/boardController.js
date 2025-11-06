@@ -10,11 +10,16 @@ const TimeEntry = require('../models/TimeEntry');
 // @access  Private
 exports.getBoards = async (req, res, next) => {
   try {
-    // First, check if the project exists and belongs to the user
-    const project = await Project.findOne({ _id: req.params.projectId, user: req.user.id });
+    const project = await Project.findById(req.params.projectId).select('members');
 
     if (!project) {
-      return res.status(404).json({ message: 'Project not found or user not authorized' });
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
+
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to access this project\'s boards' });
     }
 
     const boards = await Board.find({ project: req.params.projectId });
@@ -30,15 +35,16 @@ exports.getBoards = async (req, res, next) => {
 exports.createBoard = async (req, res, next) => {
   try {
     const { name, description } = req.body;
-    const project = await Project.findById(req.params.projectId);
+    const project = await Project.findById(req.params.projectId).select('members');
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Ensure the user owns the project
-    if (project.user.toString() !== req.user.id) {
-      return res.status(401).json({ message: 'User not authorized' });
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
+
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to create a board in this project' });
     }
 
     const board = await Board.create({
@@ -183,8 +189,15 @@ exports.updateBoard = async (req, res, next) => {
       return res.status(404).json({ message: 'Board not found' });
     }
 
-    if (board.user.toString() !== req.user.id) {
-      return res.status(401).json({ message: 'User not authorized' });
+    const project = await Project.findById(board.project).select('members');
+    if (!project) {
+      return res.status(404).json({ message: 'Parent project not found' });
+    }
+
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
+
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to update this board' });
     }
 
     board.name = name ?? board.name;
@@ -208,8 +221,15 @@ exports.deleteBoard = async (req, res, next) => {
       return res.status(404).json({ message: 'Board not found' });
     }
 
-    if (board.user.toString() !== req.user.id) {
-      return res.status(401).json({ message: 'User not authorized' });
+    const project = await Project.findById(board.project).select('members');
+    if (!project) {
+      return res.status(404).json({ message: 'Parent project not found' });
+    }
+
+    const isMember = project.members.some(member => member && member.user && member.user.toString() === req.user.id);
+
+    if (!isMember && req.user.role !== 'system_admin') {
+      return res.status(403).json({ message: 'User not authorized to delete this board' });
     }
 
     // ✅ Remove board from project's boards array
