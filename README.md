@@ -8,14 +8,54 @@ This project was created to provide a centralized hub for developers to manage t
 
 ## Getting Started
 
+### Using Docker (Recommended)
+
+This is the easiest and recommended way to get the application running locally. It ensures a consistent environment for all services.
+
+#### Prerequisites
+
+*   **Docker:** Make sure you have Docker and Docker Compose installed. You can download them from the [Docker website](https://www.docker.com/products/docker-desktop).
+
+#### Running the Application
+
+1.  **Clone the repository:**
+    ```sh
+    git clone https://github.com/witzulu/MyDagboek.git
+    cd MyDagboek
+    ```
+
+2.  **Build and start the containers:**
+    Run the following command from the root of the project:
+    ```sh
+    docker-compose up --build
+    ```
+    This command will:
+    - Build the Docker images for the frontend and backend services.
+    - Start the frontend, backend, and a MongoDB database container.
+    - The first time you run this, it may take a few minutes to download the base images and install dependencies.
+
+3.  **Access the application:**
+    - The frontend will be available at `http://localhost:5173`.
+    - The backend API will be available at `http://localhost:5000`.
+
+#### Stopping the Application
+
+To stop all the running containers, press `Ctrl+C` in the terminal where `docker-compose` is running, and then run:
+```sh
+docker-compose down
+```
+This will stop and remove the containers, but your database data will be preserved in a Docker volume.
+
+### Manual Setup
+
 To get a local copy up and running, follow these simple steps.
 
-### Prerequisites
+#### Prerequisites
 
 *   **Node.js and npm:** Make sure you have Node.js and npm installed. You can download them from [nodejs.org](https://nodejs.org/).
 *   **MongoDB:** A running instance of MongoDB is required. You can use a local installation or a cloud service like MongoDB Atlas.
 
-### Frontend Setup
+#### Frontend Setup
 
 1.  **Navigate to the frontend directory:**
     ```sh
