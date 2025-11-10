@@ -1,5 +1,8 @@
 # Dagboek
 
+![Boards in Dagboek](Images/boards.png)
+
+
 Dagboek is a developer hub and collaboration platform designed to streamline your workflow. It includes a notebook for jotting down ideas, a kanban-style board for managing tasks, progress reports for tracking your project's status, and much more.
 
 ## About The Project
