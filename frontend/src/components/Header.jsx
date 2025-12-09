@@ -62,7 +62,7 @@ export default function Header({
         {/* Logo + Site Name */}
         {settings.siteLogo ? (
           <img
-            src={`http://localhost:5000${settings.siteLogo}`}
+            src={`${settings.siteLogo}`}
             alt="Site Logo"
             className="h-8 w-8 rounded-md object-cover"
           />

@@ -21,8 +21,8 @@ import {
 import '../../mdxeditor.css'
 import { AuthContext } from '../../context/AuthContext';
 
-  const API_BASE = 'http://localhost:5000';
-  const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers, projectId, activeTab, setActiveTab }) => {
+const API_BASE = '';
+const CardModal = ({ isOpen, onClose, onSave, onDelete, onComplete, task, listId, projectLabels, onNewLabel, onTaskUpdate, projectMembers, projectId, activeTab, setActiveTab }) => {
   const { user } = useContext(AuthContext);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -97,39 +97,39 @@ import { AuthContext } from '../../context/AuthContext';
       setAssignedLabels(prev => prev.filter(l => l._id !== labelId));
     } else {
       const labelToAdd = projectLabels.find(l => l._id === labelId);
-      if(labelToAdd) setAssignedLabels(prev => [...prev, labelToAdd]);
+      if (labelToAdd) setAssignedLabels(prev => [...prev, labelToAdd]);
     }
   };
 
-const handleFileChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file || !task) return;
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !task) return;
 
-  const formData = new FormData();
-  formData.append('file', file);
+    const formData = new FormData();
+    formData.append('file', file);
 
-  try {
-    const res = await fetch(`${API_BASE}/api/tasks/${task._id}/attachments`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${getToken()}` },
-      body: formData,
-    });
+    try {
+      const res = await fetch(`${API_BASE}/api/tasks/${task._id}/attachments`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData,
+      });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(errText || 'Upload failed');
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Upload failed');
+      }
+
+      const newAttachment = await res.json();
+      const updatedAttachments = [...attachments, newAttachment];
+      setAttachments(updatedAttachments);
+      onTaskUpdate({ ...task, attachments: updatedAttachments });
+
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Attachment upload failed');
     }
-
-    const newAttachment = await res.json();
-    const updatedAttachments = [...attachments, newAttachment];
-    setAttachments(updatedAttachments);
-    onTaskUpdate({ ...task, attachments: updatedAttachments });
-
-  } catch (error) {
-    console.error('Error uploading file:', error);
-    toast.error('Attachment upload failed');
-  }
-};
+  };
 
   const handleDeleteAttachment = async (attachmentId) => {
     try {
@@ -448,10 +448,10 @@ const handleFileChange = async (e) => {
                     return (
                       <div key={file._id} className="relative group">
                         <a href={`${API_BASE}${file.urlPath}`}
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           download={!isImage}
-                           className="block w-full h-32 bg-base-200 rounded-lg overflow-hidden"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={!isImage}
+                          className="block w-full h-32 bg-base-200 rounded-lg overflow-hidden"
                         >
                           {isImage ? (
                             <img src={`${API_BASE}${file.thumbnailPath}`} alt={file.originalName} className="w-full h-full object-cover" />
@@ -528,7 +528,7 @@ const handleFileChange = async (e) => {
                     placeholder="Add an item"
                     className="w-full p-2 rounded border"
                   />
-                  <button onClick={handleAddChecklistItem} className="ml-2 px-4 py-3 rounded bg-accent"><Plus size={18}/></button>
+                  <button onClick={handleAddChecklistItem} className="ml-2 px-4 py-3 rounded bg-accent"><Plus size={18} /></button>
                 </div>
               </div>
             )}
@@ -599,7 +599,7 @@ const handleFileChange = async (e) => {
                           </div>
                         </div>
                       ) : (
-                        <MDXEditor contentEditableClassName="mxEditor" markdown={comment.content} readOnly className="prose dark:prose-invert max-w-none"/>
+                        <MDXEditor contentEditableClassName="mxEditor" markdown={comment.content} readOnly className="prose dark:prose-invert max-w-none" />
                       )}
                       {user && user.id === comment.user._id && editingComment !== comment._id && (
                         <div className="flex justify-end space-x-2 mt-2">

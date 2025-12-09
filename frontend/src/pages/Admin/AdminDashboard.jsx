@@ -102,7 +102,7 @@ const AdminDashboard = () => {
               <label htmlFor="siteLogo" className="block text-sm font-medium">Site Logo</label>
               {settings.siteLogo && (
                 <div className="mt-2">
-                  <img src={`http://localhost:5000${settings.siteLogo}`} alt="Site Logo" className="h-16 w-16 object-cover" />
+                  <img src={`${settings.siteLogo}`} alt="Site Logo" className="h-16 w-16 object-cover" />
                 </div>
               )}
               <input

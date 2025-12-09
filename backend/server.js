@@ -32,13 +32,13 @@ const { projectTimeEntriesRouter, timeEntryRouter } = require('./src/routes/time
 const projectTaskRoutes = require('./src/routes/projectTaskRoutes');
 const snippetRoutes = require('./src/routes/snippets');
 const {
-  projectErrorReports,
-  errorReportRouter,
+    projectErrorReports,
+    errorReportRouter,
 } = require('./src/routes/errorReportRoutes');
 const errorReportAttachmentRoutes = require('./src/routes/errorReportAttachmentRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8275;
 
 // Helper Functions (Seeders & Migrations)
 const seedAdminUser = async () => {
@@ -172,106 +172,106 @@ const migrateTasks = async () => {
 
 
 const startServer = async () => {
-  try {
-    // 1. Connect to Database
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dagboek');
-    console.log('✅ MongoDB connected');
+    try {
+        // 1. Connect to Database
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dagboek');
+        console.log('✅ MongoDB connected');
 
-    // 2. Register all Mongoose models
-    require('./src/models/User');
-    require('./src/models/Project');
-    require('./src/models/Board');
-    require('./src/models/List');
-    require('./src/models/Task');
-    require('./src/models/Diagram');
-    require('./src/models/ChangeLog');
-    require('./src/models/Folder');
-    require('./src/models/TimeEntry');
-    require('./src/models/Note');
-    require('./src/models/Label');
-    require('./src/models/SiteSettings');
-    require('./src/models/Notification');
-    require('./src/models/CodeSnippet');
-    require('./src/models/ErrorReport');
+        // 2. Register all Mongoose models
+        require('./src/models/User');
+        require('./src/models/Project');
+        require('./src/models/Board');
+        require('./src/models/List');
+        require('./src/models/Task');
+        require('./src/models/Diagram');
+        require('./src/models/ChangeLog');
+        require('./src/models/Folder');
+        require('./src/models/TimeEntry');
+        require('./src/models/Note');
+        require('./src/models/Label');
+        require('./src/models/SiteSettings');
+        require('./src/models/Notification');
+        require('./src/models/CodeSnippet');
+        require('./src/models/ErrorReport');
 
-    // 3. Run seeders and migrations
-    await seedAdminUser();
-    await migrateProjects();
-    await migrateUsers();
-    await migrateTimeEntries();
-    await migrateTasks();
+        // 3. Run seeders and migrations
+        await seedAdminUser();
+        await migrateProjects();
+        await migrateUsers();
+        await migrateTimeEntries();
+        await migrateTasks();
 
-    // 4. Configure Express Middleware
-    app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-    app.use(cors());
-    app.use(express.json());
-    app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-    app.use(express.urlencoded({ extended: true }));
-    if (process.env.NODE_ENV === 'development') {
-      app.use(require('morgan')('dev'));
+        // 4. Configure Express Middleware
+        app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+        app.use(cors());
+        app.use(express.json());
+        app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+        app.use(express.urlencoded({ extended: true }));
+        if (process.env.NODE_ENV === 'development') {
+            app.use(require('morgan')('dev'));
+        }
+
+
+        // 5. Mount all API routers
+        app.use('/api/auth', authRoutes);
+        app.use('/api/users', userRoutes);
+        app.use('/api/notifications', notificationRoutes);
+        app.use('/api/projects', projectRoutes);
+        app.use('/api/projects/:projectId/boards', projectBoardsRouter);
+        app.use('/api/boards', boardRouter);
+        app.use('/api/lists', listRoutes);
+        app.use('/api/tasks', taskRoutes);
+        app.use('/api/tasks/:taskId/attachments', taskAttachmentRoutes);
+        app.use('/api/tasks/:taskId/checklist', taskChecklistRoutes);
+        app.use('/api/tasks/:taskId/comments', taskCommentRoutes);
+        app.use('/api/settings', settingsRoutes);
+        app.use('/api/projects/:projectId/notes', projectNotesRouter);
+        app.use('/api/notes', noteRouter);
+        app.use('/api/projects/:projectId/labels', projectLabelsRouter);
+        app.use('/api/labels', labelRouter);
+        app.use('/api/projects/:projectId/progress-report', progressReportRoutes);
+        app.use('/api/reports', reportRoutes);
+        app.use('/api/projects/:projectId/diagrams', projectDiagrams);
+        app.use('/api/diagrams', diagrams);
+        app.use('/api/projects/:projectId/changelog', projectChangeLogRouter);
+        app.use('/api/changelog', changeLogRouter);
+        app.use('/api/projects/:projectId/folders', projectFoldersRouter);
+        app.use('/api/folders', folderRouter);
+        app.use('/api/projects/:projectId/time-entries', projectTimeEntriesRouter);
+        app.use('/api/time-entries', timeEntryRouter);
+        app.use('/api/projects/:projectId/tasks', projectTaskRoutes);
+        app.use('/api/projects/:projectId/snippets', snippetRoutes);
+        app.use('/api/projects/:projectId/errors', projectErrorReports);
+        app.use('/api/errors', errorReportRouter);
+        app.use('/api/errors/:id/attachments', errorReportAttachmentRoutes);
+
+        // Health check endpoint
+        app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+        // 6. Configure Error Handlers
+        app.use((req, res, next) => {
+            const error = new Error(`Route not found: ${req.originalUrl}`);
+            res.status(404);
+            next(error);
+        });
+        app.use((err, req, res, next) => {
+            const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+            res.status(statusCode);
+            res.json({
+                error: err.message,
+                stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+            });
+        });
+
+        // 7. Start the server
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+        });
+
+    } catch (err) {
+        console.error('❌ Server startup failed:', err);
+        process.exit(1);
     }
-
-
-    // 5. Mount all API routers
-    app.use('/api/auth', authRoutes);
-    app.use('/api/users', userRoutes);
-    app.use('/api/notifications', notificationRoutes);
-    app.use('/api/projects', projectRoutes);
-    app.use('/api/projects/:projectId/boards', projectBoardsRouter);
-    app.use('/api/boards', boardRouter);
-    app.use('/api/lists', listRoutes);
-    app.use('/api/tasks', taskRoutes);
-    app.use('/api/tasks/:taskId/attachments', taskAttachmentRoutes);
-    app.use('/api/tasks/:taskId/checklist', taskChecklistRoutes);
-    app.use('/api/tasks/:taskId/comments', taskCommentRoutes);
-    app.use('/api/settings', settingsRoutes);
-    app.use('/api/projects/:projectId/notes', projectNotesRouter);
-    app.use('/api/notes', noteRouter);
-    app.use('/api/projects/:projectId/labels', projectLabelsRouter);
-    app.use('/api/labels', labelRouter);
-    app.use('/api/projects/:projectId/progress-report', progressReportRoutes);
-    app.use('/api/reports', reportRoutes);
-    app.use('/api/projects/:projectId/diagrams', projectDiagrams);
-    app.use('/api/diagrams', diagrams);
-    app.use('/api/projects/:projectId/changelog', projectChangeLogRouter);
-    app.use('/api/changelog', changeLogRouter);
-    app.use('/api/projects/:projectId/folders', projectFoldersRouter);
-    app.use('/api/folders', folderRouter);
-    app.use('/api/projects/:projectId/time-entries', projectTimeEntriesRouter);
-    app.use('/api/time-entries', timeEntryRouter);
-    app.use('/api/projects/:projectId/tasks', projectTaskRoutes);
-    app.use('/api/projects/:projectId/snippets', snippetRoutes);
-    app.use('/api/projects/:projectId/errors', projectErrorReports);
-    app.use('/api/errors', errorReportRouter);
-    app.use('/api/errors/:id/attachments', errorReportAttachmentRoutes);
-
-    // Health check endpoint
-    app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-
-    // 6. Configure Error Handlers
-    app.use((req, res, next) => {
-      const error = new Error(`Route not found: ${req.originalUrl}`);
-      res.status(404);
-      next(error);
-    });
-    app.use((err, req, res, next) => {
-      const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-      res.status(statusCode);
-      res.json({
-        error: err.message,
-        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
-      });
-    });
-
-    // 7. Start the server
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-    });
-
-  } catch (err) {
-    console.error('❌ Server startup failed:', err);
-    process.exit(1);
-  }
 };
 
 startServer();
