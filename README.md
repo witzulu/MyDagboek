@@ -122,22 +122,31 @@ To get a local copy up and running, follow these simple steps.
     ```
 
 ## Ports
-1. Default Ports 
-Frontend: Defaults to 7526.
-Backend: Defaults to 8275.
+
+1. Default Ports
+
+> Frontend: Defaults to 7526.
+> Backend: Defaults to 8275.
+
 2. Configuration Files
-Backend: 
-server.js
- respects the PORT environment variable.
-const PORT = process.env.PORT || 8275;
-Frontend: 
-vite.config.js
- respects VITE_PORT, VITE_BACKEND_PORT, and VITE_BACKEND_HOST.
-Development server connects to backend on VITE_BACKEND_HOST (default 'localhost') and VITE_BACKEND_PORT (default 8275).
-Created 
-frontend/env.example
- as a template for customization.
- 
+
+Backend:
+
+>server.js
+>respects the PORT environment variable.
+>const PORT = process.env.PORT || 8275;
+
+Frontend:
+
+>vite.config.js
+>respects VITE_PORT, VITE_BACKEND_PORT, and VITE_BACKEND_HOST.
+>Development server connects to backend on VITE_BACKEND_HOST (default 'localhost') and >VITE_BACKEND_PORT (default 8275).
+
+Created
+
+>frontend/env.example
+>as a template for customization.
+
 ## Status
 
     Currently not implemented all the features yet.
